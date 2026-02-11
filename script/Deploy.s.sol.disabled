@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "forge-std/Script.sol";
+
+import "../contracts/epk/EPKernel.sol";
+import "../contracts/validators/CompositeValidator.sol";
+import "../contracts/validators/TargetSelectorGuard.sol";
+import "../contracts/validators/SpendLimitValidator.sol";
+// Optional placeholder (v1 no-op)
+import "../contracts/validators/ThreatFeedBlocklistValidator.sol";
+
+contract Deploy is Script {
+    function run() external {
+        // Deployer is also default owner for validators (can be replaced with multisig)
+        address owner = vm.envAddress("OWNER");
+
+        uint256 pk = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(pk);
+
+        // 1) Kernel
+        EPKernel kernel = new EPKernel();
+
+        // 2) Composite (Kernel -> Composite)
+        address;
+        address;
+        CompositeValidator composite = new CompositeValidator(address(kernel), owner, empty);
+
+        // 3) Validators (Composite -> Validators)
+        TargetSelectorGuard guard = new TargetSelectorGuard(address(composite), owner);
+        SpendLimitValidator spend = new SpendLimitValidator(address(composite), owner);
+        // Optional placeholder (v1.1 plan)
+        bool deployThreatFeed = vm.envBool("DEPLOY_THREATFEED");
+        ThreatFeedBlocklistValidator threatFeed;
+        if (deployThreatFeed) {
+            bytes32 root = vm.envBytes32("THREAT_ROOT");     // can be 0x0
+            uint256 epoch = vm.envUint("THREAT_EPOCH");      // can be 0
+            threatFeed = new ThreatFeedBlocklistValidator(address(composite), owner, root, epoch);
+        }
+
+        // 4) Wire validators into composite (order matters if you want)
+        if (deployThreatFeed) {
+            address;
+            vals[0] = address(guard);
+            vals[1] = address(spend);
+            vals[2] = address(blocklist);
+            vals[3] = address(threatFeed);
+            composite.setValidators(vals);
+        } else {
+            address;
+            vals[0] = address(guard);
+            vals[1] = address(spend);
+            vals[2] = address(blocklist);
+            composite.setValidators(vals);
+        }
+
+        vm.stopBroadcast();
+
+        // Print addresses
+        console2.log("EPKernel:", address(kernel));
+        console2.log("CompositeValidator:", address(composite));
+        console2.log("TargetSelectorGuard:", address(guard));
+        console2.log("SpendLimitValidator:", address(spend));
+        if (deployThreatFeed) console2.log("ThreatFeedBlocklistValidator:", address(threatFeed));
+
+        console2.log("Policy.validator should be CompositeValidator address.");
+    }
+}
