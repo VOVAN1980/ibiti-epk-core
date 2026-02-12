@@ -4,3 +4,4 @@ coverage/
 coverage-report/
 lcov.info
 *.gas-snapshot
+.gas-snapshot
