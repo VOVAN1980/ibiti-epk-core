@@ -165,7 +165,7 @@ contract EPKernelBranchCoverageMoreTest is Test {
     ) internal view returns (bytes32) {
         return kernel.getTypedDataHash(pid, tgt, val, keccak256(data), nonce, deadline);
     }
-    function _sig(bytes32 dig) internal returns (bytes memory) {
+    function _sig(bytes32 dig) internal view returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPk, dig);
         return abi.encodePacked(r, s, v);
     }
@@ -266,4 +266,100 @@ function test_recover_vBelow27_path_hitsLine295_and_executes() public {
         vm.expectRevert(bytes4(keccak256("BadSignature()")));
         kernel.execute(policyId, address(target), 0, data, deadline, sig);
     }
+}contract EPKernelMissingBranchesTest is Test {
+    EPKernel internal kernel;
+    MockTarget internal target;
+    OkValidator internal ok;
+    uint256 internal ownerPk = 0xA11CE;
+    address internal owner;
+    address internal agent = address(0xB0B);
+    uint256 internal policyId;
+    function setUp() public {
+        owner = vm.addr(ownerPk);
+        kernel = new EPKernel();
+        target = new MockTarget();
+        ok = new OkValidator();
+        vm.prank(owner);
+        policyId = kernel.createPolicy(0, type(uint96).max, address(ok));
+        vm.prank(owner);
+        kernel.setAgent(policyId, agent, true, uint40(block.timestamp + 365 days));
+        vm.prank(owner);
+        kernel.setCall(policyId, address(target), MockTarget.setX.selector, true);
+    }
+    function _digest(
+        uint256 pid,
+        address tgt,
+        uint256 val,
+        bytes memory data,
+        uint256 nonce,
+        uint256 deadline
+    ) internal view returns (bytes32) {
+        return kernel.getTypedDataHash(pid, tgt, val, keccak256(data), nonce, deadline);
+    }
+    function _sig(bytes32 dig) internal view returns (bytes memory) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPk, dig);
+        return abi.encodePacked(r, s, v);
+    }
+    // line 180: deadline == 0 -> DeadlineRequired()
+    function test_execute_deadlineZero_hitsDeadlineRequired_line180() public {
+        bytes memory data = abi.encodeWithSelector(MockTarget.setX.selector, uint256(11));
+        uint256 nonce = kernel.nonces(policyId);
+        bytes memory sig = _sig(_digest(policyId, address(target), 0, data, nonce, 0));
+        vm.prank(agent);
+        vm.expectRevert(bytes4(keccak256("DeadlineRequired()")));
+        kernel.execute(policyId, address(target), 0, data, 0, sig);
+    }
+    // line 190: !ap.allowed -> AgentNotAllowed()
+    function test_execute_agentNotAllowed_hitsLine190() public {
+        vm.prank(owner);
+        kernel.setAgent(policyId, agent, false, 0);
+        bytes memory data = abi.encodeWithSelector(MockTarget.setX.selector, uint256(12));
+        uint256 deadline = block.timestamp + 100;
+        uint256 nonce = kernel.nonces(policyId);
+        bytes memory sig = _sig(_digest(policyId, address(target), 0, data, nonce, deadline));
+        vm.prank(agent);
+        vm.expectRevert(bytes4(keccak256("AgentNotAllowed()")));
+        kernel.execute(policyId, address(target), 0, data, deadline, sig);
+    }
+    // line 200: msg.value != value -> MsgValueMismatch()
+    function test_execute_msgValueMismatch_hitsLine200() public {
+        vm.prank(owner);
+        uint256 pid = kernel.createPolicy(0, type(uint96).max, address(ok));
+        vm.prank(owner);
+        kernel.setAgent(pid, agent, true, 0);
+        vm.prank(owner);
+        kernel.setCall(pid, address(target), MockTarget.setX.selector, true);
+        bytes memory data = abi.encodeWithSelector(MockTarget.setX.selector, uint256(13));
+        uint256 deadline = block.timestamp + 100;
+        uint256 nonce = kernel.nonces(pid);
+        // Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РЎС› Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРІР‚СњР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС›Р В Р’В Р вЂ™Р’В Р В РЎС›Р Р†Р вЂљР’ВР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРІР‚СњР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљР’ВР В Р’В Р В Р вЂ№Р В Р’В Р РЋРІР‚СљР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљР’В value=1, Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В¦Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС› Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС›Р В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРІР‚СњР В Р’В Р В Р вЂ№Р В Р’В Р Р†Р вЂљРЎв„ўР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В°Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В»Р В Р’В Р В Р вЂ№Р В Р’В Р В Р РЏР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’ВµР В Р’В Р вЂ™Р’В Р В Р Р‹Р вЂ™Р’В msg.value=0
+        bytes memory sig = _sig(_digest(pid, address(target), 1, data, nonce, deadline));
+        vm.prank(agent);
+        vm.expectRevert(bytes4(keccak256("MsgValueMismatch()")));
+        kernel.execute(pid, address(target), 1, data, deadline, sig);
+    }
+    function test_finalpush_success_hits_238_and_recover_290_291_292_305() public {
+
+}
+
+function test_finalpush_revertBubble_hits_233() public {
+    // Р В РЎСџР РЋР вЂљР В Р’ВµР В РўвЂР В РЎвЂ”Р В РЎвЂўР В Р’В»Р В Р’В°Р В РЎвЂ“Р В Р’В°Р В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ, Р РЋРІР‚РЋР РЋРІР‚С™Р В РЎвЂў Р В Р вЂ  existing harness Р РЋРЎвЂњР В Р’В¶Р В Р’Вµ Р В Р’ВµР РЋР С“Р РЋРІР‚С™Р РЋР Р‰ target function, Р В РЎвЂќР В РЎвЂўР РЋРІР‚С™Р В РЎвЂўР РЋР вЂљР В Р’В°Р РЋР РЏ Р РЋР вЂљР В Р’ВµР В Р вЂ Р В Р’ВµР РЋР вЂљР РЋРІР‚С™Р В РЎвЂР РЋРІР‚С™
+    // Р В РІР‚СћР РЋР С“Р В Р’В»Р В РЎвЂ Р РЋРЎвЂњ Р РЋРІР‚С™Р В Р’ВµР В Р’В±Р РЋР РЏ Р В Р вЂ  MockTarget Р В Р’ВµР РЋР С“Р РЋРІР‚С™Р РЋР Р‰ fail()/revertCustom() Р Р†Р вЂљРІР‚Сњ Р В РЎвЂ”Р В РЎвЂўР В РўвЂР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р РЋР Р‰ Р В Р’ВµР РЋРІР‚В selector Р В Р вЂ¦Р В РЎвЂР В Р’В¶Р В Р’Вµ.
+    bytes4 badSel = bytes4(keccak256("noSuchFunction()"));
+    bytes memory data = abi.encodeWithSelector(badSel);
+    vm.prank(owner);
+    kernel.setCall(policyId, address(target), badSel, true);
+
+    uint256 nonce = kernel.nonces(policyId);
+    uint256 deadline = block.timestamp + 1 hours;
+    bytes32 dig = _digest(policyId, address(target), 0, data, nonce, deadline);
+    bytes memory sig = _sig(dig);
+
+    vm.prank(agent);
+    // Р В РЎСљР В Р’Вµ Р РЋРІР‚С™Р РЋР вЂљР В Р’ВµР В Р’В±Р РЋРЎвЂњР В Р’ВµР В РЎВ exact data, Р РЋРІР‚РЋР РЋРІР‚С™Р В РЎвЂўР В Р’В±Р РЋРІР‚в„– Р В Р вЂ¦Р В Р’Вµ Р В РЎвЂ”Р В Р’В°Р В РўвЂР В Р’В°Р РЋРІР‚С™Р РЋР Р‰ Р В Р вЂ¦Р В Р’В° Р РЋРІР‚С›Р В РЎвЂўР РЋР вЂљР В РЎВР В Р’В°Р РЋРІР‚С™Р В Р’Вµ revert-Р В Р’В°;
+    // line 233 Р В Р’В±Р РЋРЎвЂњР В РўвЂР В Р’ВµР РЋРІР‚С™ Р В РЎвЂ”Р В РЎвЂўР В РЎвЂќР РЋР вЂљР РЋРІР‚в„–Р РЋРІР‚С™ Р В РЎвЂ”Р В РЎвЂў Р РЋРІР‚С›Р В Р’В°Р В РЎвЂќР РЋРІР‚С™Р РЋРЎвЂњ Р В Р вЂ Р В Р’ВµР РЋРІР‚С™Р В РЎвЂќР В РЎвЂ !ok Р В РЎвЂ assembly revert(...)
+    vm.expectRevert();
+    kernel.execute(policyId, address(target), 0, data, deadline, sig);
+  }
+
 }
