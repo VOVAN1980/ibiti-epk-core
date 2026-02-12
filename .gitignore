@@ -1,0 +1,6 @@
+out/
+cache/
+coverage/
+coverage-report/
+lcov.info
+*.gas-snapshot
