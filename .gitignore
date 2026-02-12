@@ -1,7 +1,16 @@
+# Foundry build/cache artifacts
 out/
 cache/
+
+# Coverage artifacts
 coverage/
 coverage-report/
 lcov.info
+coverage.summary.txt
+
+# Gas snapshots
 *.gas-snapshot
 .gas-snapshot
+
+
+
