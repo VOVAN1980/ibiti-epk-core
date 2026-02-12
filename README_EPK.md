@@ -32,3 +32,9 @@ forge test -vv
 В отличие от строгого "view-only" подхода в ERC-4337, EPK v1 разрешает stateful validators (например rolling spend limits).
 Kernel вызывает validate ДО external call и доверяет, что валидатор не мутирует состояние при revert.
 Это осознанный trade-off для удобства rolling-window без commit-фазы.
+
+## Repository status
+Reference implementation (v1), actively hardened with tests and coverage.
+
+## License
+MIT
