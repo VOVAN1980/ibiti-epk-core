@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import {ThreatFeedBlocklistValidator} from "../contracts/validators/ThreatFeedBlocklistValidator.sol";
 import {MockTarget} from "../contracts/mocks/MockTarget.sol";
+
 contract ThreatFeedBlocklistValidatorTest is Test {
     ThreatFeedBlocklistValidator v;
     MockTarget target;
@@ -10,13 +11,16 @@ contract ThreatFeedBlocklistValidatorTest is Test {
     address agent = address(0xB0B);
     address caller = address(this); // authorized caller for validate
     uint256 policyId = 1;
+
     function setUp() public {
         target = new MockTarget();
         v = new ThreatFeedBlocklistValidator(caller, owner, bytes32(0), 0);
     }
+
     function _dataSetX(uint256 n) internal pure returns (bytes memory) {
         return abi.encodeCall(MockTarget.setX, (n));
     }
+
     // --- access control ---
     function testValidate_unauthorizedCaller_reverts() public {
         bytes memory data = _dataSetX(1);
@@ -24,33 +28,39 @@ contract ThreatFeedBlocklistValidatorTest is Test {
         vm.expectRevert(ThreatFeedBlocklistValidator.UnauthorizedCaller.selector);
         v.validate(policyId, owner, agent, address(target), 0, data);
     }
+
     function testUpdateRoot_notOwner_reverts() public {
         vm.prank(agent);
         vm.expectRevert(ThreatFeedBlocklistValidator.NotOwner.selector);
         v.updateRoot(keccak256("r1"), 1);
     }
+
     function testTransferOwnership_notOwner_reverts() public {
         vm.prank(agent);
         vm.expectRevert(ThreatFeedBlocklistValidator.NotOwner.selector);
         v.transferOwnership(agent);
     }
+
     function testTransferOwnership_owner_success() public {
         vm.prank(owner);
         v.transferOwnership(agent);
         vm.prank(agent);
         v.updateRoot(keccak256("r2"), 2);
     }
+
     // --- root/epoch update path ---
     function testUpdateRoot_owner_success() public {
         vm.prank(owner);
         v.updateRoot(keccak256("new-root"), 42);
     }
+
     // --- validate behavior ---
     // empty root: nothing is blocked
     function testValidate_emptyRoot_passes() public view {
         bytes memory data = _dataSetX(2);
         v.validate(policyId, owner, agent, address(target), 0, data);
     }
+
     // non-empty root, random calldata: usually not blocklisted, should pass
     function testValidate_nonEmptyRoot_nonMember_passes() public {
         vm.prank(owner);
@@ -58,6 +68,7 @@ contract ThreatFeedBlocklistValidatorTest is Test {
         bytes memory data = _dataSetX(3);
         v.validate(policyId, owner, agent, address(target), 0, data);
     }
+
     // deterministic blocked case: make root exactly equal one checked item hash
     // Most implementations check at least target or selector hashes against root.
     // We try both patterns in separate calls and assert one of them reverts with Blocklisted.
@@ -88,7 +99,6 @@ contract ThreatFeedBlocklistValidatorTest is Test {
             bytes memory expB = abi.encodeWithSelector(ThreatFeedBlocklistValidator.Blocklisted.selector, itemB);
             assertEq(keccak256(errB), keccak256(expB));
         }
-        // Р В Р Р‹Р Р†Р вЂљР’В¦Р В Р’В Р РЋРІР‚СћР В Р Р‹Р Р†Р вЂљРЎв„ўР В Р Р‹Р В Р РЏ Р В Р’В Р вЂ™Р’В±Р В Р Р‹Р Р†Р вЂљРІвЂћвЂ“ Р В Р’В Р РЋРІР‚СћР В Р’В Р СћРІР‚ВР В Р’В Р РЋРІР‚ВР В Р’В Р В РІР‚В¦ Р В Р’В Р РЋРІР‚ВР В Р’В Р вЂ™Р’В· Р В Р Р‹Р В РЎвЂњР В Р Р‹Р Р†Р вЂљРЎв„ўР В Р’В Р вЂ™Р’В°Р В Р’В Р В РІР‚В¦Р В Р’В Р СћРІР‚ВР В Р’В Р вЂ™Р’В°Р В Р Р‹Р В РІР‚С™Р В Р Р‹Р Р†Р вЂљРЎв„ўР В Р’В Р В РІР‚В¦Р В Р Р‹Р Р†Р вЂљРІвЂћвЂ“Р В Р Р‹Р Р†Р вЂљР’В¦ Р В Р’В Р РЋРІР‚вЂќР В Р’В Р вЂ™Р’В°Р В Р Р‹Р Р†Р вЂљРЎв„ўР В Р Р‹Р Р†Р вЂљРЎв„ўР В Р’В Р вЂ™Р’ВµР В Р Р‹Р В РІР‚С™Р В Р’В Р В РІР‚В¦Р В Р’В Р РЋРІР‚СћР В Р’В Р В РІР‚В  Р В Р’В Р СћРІР‚ВР В Р’В Р РЋРІР‚СћР В Р’В Р вЂ™Р’В»Р В Р’В Р вЂ™Р’В¶Р В Р’В Р вЂ™Р’ВµР В Р’В Р В РІР‚В¦ Р В Р Р‹Р В РЎвЂњР В Р Р‹Р В РІР‚С™Р В Р’В Р вЂ™Р’В°Р В Р’В Р вЂ™Р’В±Р В Р’В Р РЋРІР‚СћР В Р Р‹Р Р†Р вЂљРЎв„ўР В Р’В Р вЂ™Р’В°Р В Р Р‹Р Р†Р вЂљРЎв„ўР В Р Р‹Р В Р вЂ°
         assertTrue(revertedA || revertedB, "No blocklist pattern matched implementation");
     }
 }

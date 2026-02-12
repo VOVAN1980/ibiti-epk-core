@@ -50,14 +50,11 @@ contract TargetSelectorGuard is IPolicyValidator {
         blockedCallKey[policyId][key] = blocked;
     }
 
-    function validate(
-        uint256 policyId,
-        address,
-        address,
-        address target,
-        uint256,
-        bytes calldata data
-    ) external view override {
+    function validate(uint256 policyId, address, address, address target, uint256, bytes calldata data)
+        external
+        view
+        override
+    {
         if (msg.sender != authorizedCaller) revert UnauthorizedCaller();
         if (data.length < 4) revert BlockedSelector(0x00000000);
 

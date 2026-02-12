@@ -46,14 +46,7 @@ contract ThreatFeedBlocklistValidator is IPolicyValidator {
         emit RootUpdated(newRoot, newEpoch);
     }
 
-    function validate(
-        uint256,
-        address,
-        address,
-        address target,
-        uint256,
-        bytes calldata data
-    ) external view override {
+    function validate(uint256, address, address, address target, uint256, bytes calldata data) external view override {
         if (msg.sender != authorizedCaller) revert UnauthorizedCaller();
         if (data.length < 4) return;
         if (root == bytes32(0)) return;

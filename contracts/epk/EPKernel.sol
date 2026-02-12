@@ -20,22 +20,23 @@ contract EPKernel {
     address private immutable _CACHED_THIS;
 
     // Execute(policyId, target, value, keccak256(data), nonce, deadline)
-    bytes32 private constant _EXECUTE_TYPEHASH =
-        keccak256("Execute(uint256 policyId,address target,uint256 value,bytes32 dataHash,uint256 nonce,uint256 deadline)");
+    bytes32 private constant _EXECUTE_TYPEHASH = keccak256(
+        "Execute(uint256 policyId,address target,uint256 value,bytes32 dataHash,uint256 nonce,uint256 deadline)"
+    );
 
     // --- v1 policy model (normative)
     struct Policy {
-        address owner;            // policy exists iff owner != address(0)
-        bool    active;           // quick revoke switch
-        uint48  validUntil;       // policy TTL (0 = no expiry)
-        uint96  maxValuePerCall;  // max native value per call
-        address validator;        // optional validator (0 = none)
+        address owner; // policy exists iff owner != address(0)
+        bool active; // quick revoke switch
+        uint48 validUntil; // policy TTL (0 = no expiry)
+        uint96 maxValuePerCall; // max native value per call
+        address validator; // optional validator (0 = none)
     }
 
     // --- v1 agent permissions (normative)
     struct AgentPermission {
-        bool   allowed;
-        uint40 validUntil;        // agent TTL (0 = no expiry)
+        bool allowed;
+        uint40 validUntil; // agent TTL (0 = no expiry)
     }
 
     // --- storage (normative)
@@ -204,17 +205,7 @@ contract EPKernel {
 
         // 8) EIP-712 signature check (owner only)
         bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(
-                    _EXECUTE_TYPEHASH,
-                    policyId,
-                    target,
-                    value,
-                    keccak256(data),
-                    nonce,
-                    deadline
-                )
-            )
+            keccak256(abi.encode(_EXECUTE_TYPEHASH, policyId, target, value, keccak256(data), nonce, deadline))
         );
 
         address signer = _recover(digest, signature);
@@ -257,15 +248,8 @@ contract EPKernel {
     }
 
     function _buildDomainSeparator() private view returns (bytes32) {
-        return keccak256(
-            abi.encode(
-                _EIP712_DOMAIN_TYPEHASH,
-                _HASHED_NAME,
-                _HASHED_VERSION,
-                block.chainid,
-                address(this)
-            )
-        );
+        return
+            keccak256(abi.encode(_EIP712_DOMAIN_TYPEHASH, _HASHED_NAME, _HASHED_VERSION, block.chainid, address(this)));
     }
 
     function _domainSeparatorV4() internal view returns (bytes32) {
@@ -296,8 +280,7 @@ contract EPKernel {
         if (v != 27 && v != 28) revert BadSignature();
 
         // secp256k1n/2
-        bytes32 halfOrder =
-            0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
+        bytes32 halfOrder = 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
         if (uint256(s) > uint256(halfOrder)) revert BadSignature();
 
         address signer = ecrecover(digest, v, r, s);

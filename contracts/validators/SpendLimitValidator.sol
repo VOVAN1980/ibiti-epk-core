@@ -16,12 +16,12 @@ contract SpendLimitValidator is IPolicyValidator {
     struct Limits {
         uint128 maxPerTx;
         uint128 maxPerWindow;
-        uint32  windowSeconds;
-        bool    enabled;
+        uint32 windowSeconds;
+        bool enabled;
     }
 
     struct WindowState {
-        uint64  windowStart;
+        uint64 windowStart;
         uint192 spent;
     }
 
@@ -65,22 +65,14 @@ contract SpendLimitValidator is IPolicyValidator {
         bool enabled
     ) external onlyOwner {
         require(windowSeconds > 0, "window=0");
-        limits[policyId][token] = Limits({
-            maxPerTx: maxPerTx,
-            maxPerWindow: maxPerWindow,
-            windowSeconds: windowSeconds,
-            enabled: enabled
-        });
+        limits[policyId][token] =
+            Limits({maxPerTx: maxPerTx, maxPerWindow: maxPerWindow, windowSeconds: windowSeconds, enabled: enabled});
     }
 
-    function validate(
-        uint256 policyId,
-        address,
-        address,
-        address target,
-        uint256 value,
-        bytes calldata data
-    ) external override {
+    function validate(uint256 policyId, address, address, address target, uint256 value, bytes calldata data)
+        external
+        override
+    {
         if (msg.sender != authorizedCaller) revert UnauthorizedCaller();
 
         // 1) Native value rolling window

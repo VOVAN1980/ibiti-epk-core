@@ -7,14 +7,7 @@ import {IPolicyValidator} from "../contracts/epk/IPolicyValidator.sol";
 import {RevertingValidator} from "../contracts/mocks/RevertingValidator.sol";
 
 contract PassValidator is IPolicyValidator {
-    function validate(
-        uint256,
-        address,
-        address,
-        address,
-        uint256,
-        bytes calldata
-    ) external pure override {}
+    function validate(uint256, address, address, address, uint256, bytes calldata) external pure override {}
 }
 
 contract CompositeValidatorTest is Test {
@@ -53,7 +46,7 @@ contract CompositeValidatorTest is Test {
         vals[0] = address(passV);
 
         vm.prank(notOwner);
-        vm.expectRevert(); // NotOwner из OwnableLite — если имя другое, подставь точное
+        vm.expectRevert();
         comp.setValidators(vals);
     }
 
@@ -104,7 +97,7 @@ contract CompositeValidatorTest is Test {
 
     function testTransferOwnership_notOwner_reverts() public {
         vm.prank(notOwner);
-        vm.expectRevert(); // NotOwner из OwnableLite — если имя другое, подставь точное
+        vm.expectRevert();
         comp.transferOwnership(notOwner);
     }
 
