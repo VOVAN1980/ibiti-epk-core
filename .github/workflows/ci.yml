@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+
+jobs:
+  forge-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Cache forge
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.foundry
+            cache
+            out
+          key: ${{ runner.os }}-forge-${{ hashFiles('foundry.toml', 'contracts/**/*.sol', 'test/**/*.sol') }}
+
+      - name: Forge build
+        run: forge build -vvv
+
+      - name: Forge test
+        run: forge test -vvv
