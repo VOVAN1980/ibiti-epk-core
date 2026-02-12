@@ -33,8 +33,10 @@ forge test -vv
 Kernel вызывает validate ДО external call и доверяет, что валидатор не мутирует состояние при revert.
 Это осознанный trade-off для удобства rolling-window без commit-фазы.
 
-## Repository status
-Reference implementation (v1), actively hardened with tests and coverage.
-
-## License
-MIT
+@'
+### Coverage note (Foundry viaIR)
+When running `forge coverage --ir-minimum`, some EPKernel lines can remain uncovered in LCOV
+(e.g. 224, 229, 274-276, 288) despite dedicated passing tests hitting those paths.
+This is a known source-mapping artifact with viaIR/min-optimization mode.
+Use test pass evidence and branch-specific tests as ground truth.
+'@ | Add-Content .\README_EPK.md.txt
