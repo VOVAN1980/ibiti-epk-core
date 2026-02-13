@@ -1,0 +1,89 @@
+name: Security (free scanners)
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Foundry
+        uses: foundry-rs/setup-foundry@v1
+        with:
+          version: stable
+
+      - name: Forge build
+        run: forge build -vv
+
+      - name: Forge tests
+        run: forge test -vv
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Slither
+        run: |
+          python -m pip install --upgrade pip
+          pip install slither-analyzer
+
+      - name: Run Slither (SARIF)
+        continue-on-error: true
+        run: |
+          mkdir -p reports
+          slither . \
+            --foundry-out-directory out \
+            --exclude-dependencies \
+            --sarif reports/slither.sarif || true
+
+      - name: Upload Slither SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/slither.sarif
+
+      - name: Install Aderyn
+        continue-on-error: true
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source $HOME/.cargo/env
+          cargo install aderyn || true
+
+      - name: Run Aderyn
+        continue-on-error: true
+        run: |
+          source $HOME/.cargo/env
+          mkdir -p reports
+          aderyn . > reports/aderyn.txt || true
+
+      - name: Install Mythril
+        continue-on-error: true
+        run: |
+          pip install mythril
+
+      - name: Run Mythril (EPKernel)
+        continue-on-error: true
+        run: |
+          mkdir -p reports
+          myth analyze contracts/epk/EPKernel.sol \
+            --solv 0.8.24 \
+            --execution-timeout 600 \
+            --max-depth 22 \
+            -o json > reports/mythril.json || true
+
+      - name: Upload reports artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: reports/
