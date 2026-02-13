@@ -50,7 +50,7 @@ jobs:
           slither . \
             --foundry-out-directory out \
             --exclude-dependencies \
-            --sarif reports/slither.sarif || true
+            --sarif reports/slither.sarif > reports/slither.txt 2>&1 || true
 
       - name: Upload Slither SARIF
         continue-on-error: true
@@ -70,22 +70,23 @@ jobs:
         run: |
           source "$HOME/.cargo/env"
           mkdir -p reports
-          aderyn . > reports/aderyn.txt || true
+          aderyn . > reports/aderyn.txt 2>&1 || true
 
       - name: Install Mythril
         continue-on-error: true
         run: |
           pip install mythril
 
-      - name: Run Mythril (EPKernel)
+      - name: Run Mythril (EPKernel viaIR)
         continue-on-error: true
         run: |
           mkdir -p reports
           myth analyze contracts/epk/EPKernel.sol \
             --solv 0.8.24 \
+            --solc-args "--via-ir --optimize --optimize-runs 200" \
             --execution-timeout 600 \
             --max-depth 22 \
-            -o json > reports/mythril.json || true
+            -o json > reports/mythril.json 2>&1 || true
 
       - name: Upload reports artifact
         if: always()
