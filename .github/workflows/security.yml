@@ -19,9 +19,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Foundry
-        uses: foundry-rs/setup-foundry@v1
+        uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: stable
+        version: stable
 
       - name: Forge build
         run: forge build -vv
