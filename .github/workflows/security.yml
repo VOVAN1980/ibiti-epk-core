@@ -14,6 +14,7 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,13 +22,16 @@ jobs:
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-        version: stable
+          version: stable
 
       - name: Forge build
-        run: forge build -vv
+        run: |
+          forge --version
+          forge build -vv
 
       - name: Forge tests
-        run: forge test -vv
+        run: |
+          forge test -vv
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -49,6 +53,7 @@ jobs:
             --sarif reports/slither.sarif || true
 
       - name: Upload Slither SARIF
+        continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/slither.sarif
@@ -57,13 +62,13 @@ jobs:
         continue-on-error: true
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source $HOME/.cargo/env
+          source "$HOME/.cargo/env"
           cargo install aderyn || true
 
       - name: Run Aderyn
         continue-on-error: true
         run: |
-          source $HOME/.cargo/env
+          source "$HOME/.cargo/env"
           mkdir -p reports
           aderyn . > reports/aderyn.txt || true
 
@@ -83,6 +88,7 @@ jobs:
             -o json > reports/mythril.json || true
 
       - name: Upload reports artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-reports
