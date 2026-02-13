@@ -40,5 +40,5 @@ When running `forge coverage --ir-minimum`, some EPKernel lines can remain uncov
 This is a known source-mapping artifact with viaIR/min-optimization mode.
 Use test pass evidence and branch-specific tests as ground truth.
 '@ | Add-Content .\README_EPK.md.txt
-
+----------------------------------------------------------------------------------
 License: MIT (see LICENSE).
