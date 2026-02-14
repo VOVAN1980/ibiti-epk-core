@@ -1,5 +1,7 @@
 # Eternal Permission Kernel (EPK) — v1 Reference Implementation
 
+![CI](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml/badge.svg)
+
 EPK is an immutable execution kernel with modular validators and instant revocation.
 It enables safe delegated execution for agents without implicit approve(∞).
 
