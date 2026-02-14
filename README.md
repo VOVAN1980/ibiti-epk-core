@@ -9,6 +9,8 @@
 
 - [Labs (demo + docs mirror)](https://www.ibiticoin.com/ibiti-web/labs/index.html)
 
+- Testnet deployment: [docs/TESTNET_ADDRESSES.md](docs/TESTNET_ADDRESSES.md)
+
 -----------------------------------------------------------------------------------
 
 EPK is an immutable execution kernel with modular validators and instant revocation.  
