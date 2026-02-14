@@ -20,6 +20,28 @@ EPK replaces that with a **Policy** (a capability) that is strictly scoped by:
 - **Instant revoke** (`setPolicyActive(false)`) and **panic button** (`emergencyNonceBump`)
 - **Modular validators** (pluggable safety logic)
 
+## Minimal flow (deploy → policy → execute)
+Goal: show the real 3-step usage.
+
+1) **Deploy** the kernel:
+- deploy `EPKernel`
+
+2) **Create a Policy (capability)**:
+- allow one or more agents
+- allow specific calls (target + selector)
+- set `deadline` (TTL) + `nonce` replay protection
+- optionally attach validators (e.g., spend limits)
+
+3) **Execute** a call through the kernel:
+- agent signs EIP-712 `Execute(...)` for a specific `(policyId, target, value, dataHash, nonce, deadline)`
+- relayer submits `execute(...)`
+- kernel verifies: policy active + allowlists + nonce/deadline + validators
+- kernel performs deterministic call
+
+Revocation:
+- `setPolicyActive(false)` to disable a policy instantly
+- `emergencyNonceBump()` to invalidate pending signed executes (panic button)
+
 ## Validator statefulness (v1)
 In this v1 reference, `IPolicyValidator.validate(...)` is **NOT** `view`.
 Validators may update internal state during validation (e.g., rolling spend windows).
