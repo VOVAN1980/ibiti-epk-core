@@ -1,16 +1,38 @@
+
+---
+
+## C) GitHub Actions CI — `.github/workflows/ci.yml`
+
+Создай папку и workflow:
+
+```powershell
+New-Item -ItemType Directory -Force .\.github\workflows | Out-Null
+
 @'
-# Contributing
+name: CI
 
-Thanks for contributing.
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
 
-## Setup
+jobs:
+  test:
+    runs-on: ubuntu-latest
 
-This repo uses Foundry.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-Install Foundry:
-- https://book.getfoundry.sh/getting-started/installation
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
 
-## Running tests
+      - name: Forge fmt (check)
+        run: forge fmt --check
 
-```bash
-forge test -vv
+      - name: Forge test
+        run: forge test -vv
+'@ | Set-Content -Encoding utf8 .\.github\workflows\ci.yml
