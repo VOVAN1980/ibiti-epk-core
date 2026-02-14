@@ -1,46 +1,38 @@
 # Eternal Permission Kernel (EPK) — v1 Reference Implementation
 
-This repository contains a v1 reference implementation of the EPK standard:
+This repository contains a v1 reference implementation of the Eternal Permission Kernel (EPK):
 an immutable execution kernel with modular validators and instant revocation.
 
+EPK is a permission layer for delegated execution:
+instead of giving apps/agents approve(∞), owners grant a **Policy** (a capability) scoped by:
+- agent allowlist
+- call allowlist (target + selector)
+- per-call native value cap
+- TTL / deadline
+- optional modular validators (spend limits, threat feeds, etc.)
+
 ## Key properties
-- Immutable kernel (no business logic)
-- Capability-based execution (PolicyId instead of approve(∞))
-- Instant revoke + emergencyNonceBump
-- Modular validators (may be stateful in this reference)
+- **Immutable kernel** (no business logic)
+- **Capability-based execution** (PolicyId instead of approve(∞))
+- **Instant revoke** (`setPolicyActive(false)`) + **panic button** (`emergencyNonceBump`)
+- **Modular validators** (pluggable safety logic)
 
 ## IMPORTANT: Validator statefulness (v1 reference)
-In this v1 reference, `IPolicyValidator.validate(...)` is NOT `view`.
+In this v1 reference, `IPolicyValidator.validate(...)` is **NOT** `view`.
 Validators may update internal state (e.g., rolling spend windows) during validation.
-Kernel bubbles validator reverts unchanged.
+
 Security note: validators must be designed so state updates only happen after checks.
 
 ## Signing (EIP-712)
 Domain:
-- name: "Eternal Permission Kernel"
-- version: "1"
-- chainId + verifyingContract
+- name: `Eternal Permission Kernel`
+- version: `1`
+- includes `chainId` and `verifyingContract`
 
 Typed data:
-Execute(policyId, target, value, dataHash, nonce, deadline)
+`Execute(policyId, target, value, dataHash, nonce, deadline)`
 
 ## Running tests
-forge install OpenZeppelin/openzeppelin-contracts --no-commit
+```bash
+forge install
 forge test -vv
-
-## Validator Statefulness
-В отличие от строгого "view-only" подхода в ERC-4337, EPK v1 разрешает stateful validators (например rolling spend limits).
-Kernel вызывает validate ДО external call и доверяет, что валидатор не мутирует состояние при revert.
-Это осознанный trade-off для удобства rolling-window без commit-фазы.
-
-@'
-### Coverage note (Foundry viaIR)
-When running `forge coverage --ir-minimum`, some EPKernel lines can remain uncovered in LCOV
-(e.g. 224, 229, 274-276, 288) despite dedicated passing tests hitting those paths.
-This is a known source-mapping artifact with viaIR/min-optimization mode.
-Use test pass evidence and branch-specific tests as ground truth.
-'@ | Add-Content .\README_EPK.md.txt
-
-----------------------------------------------------------------------------------
-License: MIT (see LICENSE).
----------------------------
