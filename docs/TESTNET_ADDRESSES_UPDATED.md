@@ -33,49 +33,93 @@ Source of truth: **verified contract addresses**, **deployment tx hashes**, and 
 
 ---
 
-## Smoke test evidence (policy → execute → revoke)
+## Smoke test #1 (owner = agent) — policy → execute → revoke
 
 **Network:** BSC Testnet (chainId 97)  
 **Script:** `scripts/SmokeTest.s.sol`  
-**Owner/Agent (EOA):** `0xA2BD166173925E5b8E640f091b0f3bEcBbBE15f8`  
 **Kernel used:** `0x0beEB0083C576B54DB99B4abEF0Dcbc5Bc70bF82`  
-**Block:** `90335969`  
-**policyId:** `0`
+**Owner/Agent (EOA):** `0xA2BD166173925E5b8E640f091b0f3bEcBbBE15f8`  
+**policyId:** `0`  
+**Block:** `90335969`
 
-### Target used for smoke
+### Target (helper)
 
 - **MockTarget (deployed by smoke script):** `0x7D98759DD0eD3282C9712670cdC7AFe60d9ee706`  
-  Contract page: https://testnet.bscscan.com/address/0x7d98759dd0ed3282c9712670cdc7afe60d9ee706  
-  Note: MockTarget is a helper contract for smoke-testing; it is **not source-verified** (no code published), which is expected.
+  https://testnet.bscscan.com/address/0x7d98759dd0ed3282c9712670cdc7afe60d9ee706  
+  Note: helper contract; **not source-verified** (expected).
 
-### On-chain transactions (Sequence #1)
+### On-chain transactions
 
-1) **Deploy MockTarget (CREATE)**  
-   Tx: https://testnet.bscscan.com/tx/0x795bc46df64e66ec64db0f298813444902fdeb57330186a1e2716d2be52b6b90  
-   Resulting contract: `0x7D98759DD0eD3282C9712670cdC7AFe60d9ee706`
+1) Deploy MockTarget (CREATE)  
+   https://testnet.bscscan.com/tx/0x795bc46df64e66ec64db0f298813444902fdeb57330186a1e2716d2be52b6b90
 
-2) **Create policy** — `createPolicy(uint48,uint96,address)`  
-   Tx: https://testnet.bscscan.com/tx/0x76d00d4a1efcf55af4b79f51ae71af1dd917932cdd6b13f396851c035286848f
+2) Create policy — `createPolicy(uint48,uint96,address)`  
+   https://testnet.bscscan.com/tx/0x76d00d4a1efcf55af4b79f51ae71af1dd917932cdd6b13f396851c035286848f
 
-3) **Authorize agent** — `setAgent(uint256,address,bool,uint40)`  
-   Tx: https://testnet.bscscan.com/tx/0xe59a29735fda9e45c6e76e0fbf4d0334253862dcbe7e933d3eac9a48edc160b7
+3) Authorize agent — `setAgent(uint256,address,bool,uint40)`  
+   https://testnet.bscscan.com/tx/0xe59a29735fda9e45c6e76e0fbf4d0334253862dcbe7e933d3eac9a48edc160b7
 
-4) **Allow target + selector** — `setCall(uint256,address,bytes4,bool)`  
-   Tx: https://testnet.bscscan.com/tx/0x3b1eb3abcbc9eabc65f2f4274ddee926b2d27251507ac074b017cd82da958009
+4) Allow target + selector — `setCall(uint256,address,bytes4,bool)`  
+   https://testnet.bscscan.com/tx/0x3b1eb3abcbc9eabc65f2f4274ddee926b2d27251507ac074b017cd82da958009
 
-5) **Execute allowed call** — `execute(uint256,address,uint256,bytes,uint256,bytes)`  
-   Tx: https://testnet.bscscan.com/tx/0xc8fe32cc2697980e2c16fb3909b37bd69eda19ffb8875eab8316f234731798b4  
-   Effect: `MockTarget.setX(123)` and `EPKernel.Executed(...)` emitted.
+5) Execute allowed call — `execute(uint256,address,uint256,bytes,uint256,bytes)`  
+   https://testnet.bscscan.com/tx/0xc8fe32cc2697980e2c16fb3909b37bd69eda19ffb8875eab8316f234731798b4  
+   Effect: `MockTarget.setX(123)` executed; `EPKernel.Executed(...)` emitted.
 
-6) **Revoke policy** — `setPolicyActive(uint256,bool)` (active=false)  
-   Tx: https://testnet.bscscan.com/tx/0x9daf885cc6221ac2778aeaa45955749b5bc18598cc4c185ef45f262764c69e5b
+6) Revoke policy — `setPolicyActive(uint256,bool)` (active=false)  
+   https://testnet.bscscan.com/tx/0x9daf885cc6221ac2778aeaa45955749b5bc18598cc4c185ef45f262764c69e5b
 
-### Expected failure after revoke
+**Expected failure after revoke:** calling `execute(...)` reverts with `PolicyInactive()` ✅  
+(Checked inside the script as a call/prank; **no tx hash by design**.)
 
-After revoke, calling `execute(...)` is expected to revert with `PolicyInactive()` ✅  
-This check is performed inside the script as a **call/prank** (not broadcast), so it has no tx hash by design.
+---
 
-### Foundry artifacts
+## Smoke test #2 (owner ≠ agent) — owner signs, agent executes, owner revokes
+
+**Network:** BSC Testnet (chainId 97)  
+**Script:** `scripts/SmokeTest.s.sol`  
+**Kernel used:** `0x0beEB0083C576B54DB99B4abEF0Dcbc5Bc70bF82`  
+**Owner (signer):** `0xA2BD166173925E5b8E640f091b0f3bEcBbBE15f8`  
+**Agent (executor):** `0xC0213D4bd24CEC95C3804879653D9c66E92F39d6`  
+**policyId:** `1`  
+**Blocks:** `90338227` → `90338271`
+
+### Target (helper)
+
+- **MockTarget (deployed by smoke script):** `0x01dc1612edB74D42e6dbd9cd0D4cF08a40757d12`  
+  https://testnet.bscscan.com/address/0x01dc1612edb74d42e6dbd9cd0d4cf08a40757d12  
+  Note: helper contract; **not source-verified** (expected).
+
+### On-chain transactions
+
+1) Fund agent for gas (owner → agent, 0.001 BNB)  
+   https://testnet.bscscan.com/tx/0xd3c48eb3621eed4d9372fa7422024a8bc530c78f45bf7546d87c634de480cc71
+
+2) Deploy MockTarget (CREATE)  
+   https://testnet.bscscan.com/tx/0xda887ae658687921e7b415650eece6de839bb8110e4fe7daec71c5bec378df60
+
+3) Create policy — `createPolicy(uint48,uint96,address)`  
+   https://testnet.bscscan.com/tx/0xdf1ea569b4323be0aef7543348e7d9b9cabb07bd57f2d0d223c5e145088ed3f7
+
+4) Authorize agent — `setAgent(uint256,address,bool,uint40)`  
+   https://testnet.bscscan.com/tx/0x01866173b56033f7b8142a1441335535abdfb6089b5d482e916066cd6f9bbae3
+
+5) Allow target + selector — `setCall(uint256,address,bytes4,bool)`  
+   https://testnet.bscscan.com/tx/0x0ace3d399a651342b8ec725883eac922e981c602b2ef4ad29574cd02b846a8a4
+
+6) Agent executes (owner-signed EIP-712) — `execute(uint256,address,uint256,bytes,uint256,bytes)`  
+   https://testnet.bscscan.com/tx/0x1375282de3fc243b75411b0b44a77149394cbbf1e0fe72613df3857bb1abbec4  
+   Proof point: `EPKernel.Executed(...)` emitted with **owner=0xA2BD...** and **agent=0xC021...**.
+
+7) Owner revokes policy — `setPolicyActive(uint256,bool)` (active=false)  
+   https://testnet.bscscan.com/tx/0x500bf67100efa9badbd30e84007e6c9c624667d32a87b0ee7166c4e4a9e38bbd
+
+**Expected failure after revoke:** agent calling `execute(...)` reverts with `PolicyInactive()` ✅  
+(Checked inside the script as a call/prank; **no tx hash by design**.)
+
+---
+
+## Foundry artifacts (smoke runs)
 
 - `broadcast/SmokeTest.s.sol/97/run-latest.json`
 - `cache/SmokeTest.s.sol/97/run-latest.json`
