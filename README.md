@@ -3,9 +3,11 @@
 ![CI](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml/badge.svg)
 
 ## Docs
-- Spec (v1): ./docs/SPEC.md
-- Integration: ./docs/INTEGRATION.md
-- Threat model: ./docs/THREAT_MODEL.md
+- [Spec (v1)](docs/SPEC.md)
+- [Integration](docs/INTEGRATION.md)
+- [Threat model](docs/THREAT_MODEL.md)
+
+-----------------------------------------------------------------------------------
 
 EPK is an immutable execution kernel with modular validators and instant revocation.  
 It enables safe delegated execution for agents without implicit approve(∞).
