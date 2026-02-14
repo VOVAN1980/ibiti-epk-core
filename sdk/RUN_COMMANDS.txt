@@ -1,0 +1,19 @@
+Команды (железно, без фантазий):
+
+Создать новый policy + разрешить agent + разрешить вызов (это твой “3й” шаг):
+
+cd D:\ibiti-epk-core\sdk
+npm run example:setup
+
+
+В конце он печатает:
+
+DONE. Put this into sdk/.env:
+POLICY_ID=4
+
+
+Вставь это в D:\ibiti-epk-core\sdk\.env (замени POLICY_ID).
+
+Запусти write:
+
+npm run example:write

@@ -1,0 +1,42 @@
+{
+  "name": "@ibiti/epk-sdk",
+  "version": "1.0.0",
+  "description": "IBITI EPK v1 TypeScript SDK (viem)",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rimraf dist",
+    "sync-abi": "cd .. && forge build && cd sdk && node scripts/sync-abi.mjs",
+    "build": "npm run sync-abi && npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build",
+    "example:smoke": "tsx -r dotenv/config examples/smoke.ts",
+    "example:clients": "tsx -r dotenv/config examples/clients.ts",
+    "postbuild": "node -e \"const fs=require('fs');const path=require('path');const src=path.join('src','abi');const dst=path.join('dist','abi');fs.mkdirSync(dst,{recursive:true});for(const f of fs.readdirSync(src)){fs.copyFileSync(path.join(src,f),path.join(dst,f));}console.log('ABI copied to',dst);\"",
+    "example:write": "tsx -r dotenv/config examples/write.ts",
+    "example:setup": "tsx -r dotenv/config examples/setup.ts"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "dotenv": "^16.4.5",
+    "rimraf": "^5.0.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
