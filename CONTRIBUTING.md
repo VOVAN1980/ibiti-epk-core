@@ -2,35 +2,15 @@
 
 Thanks for your interest in contributing to EPK.
 
-## Development setup
-
-Requirements:
+## Requirements
 - Foundry (forge)
 
-Install deps:
-```bash
-forge install
-Running tests
-forge test -vv
-Optional (coverage):
+## Pull requests
+- Keep PRs small and focused.
+- Include tests for fixes and new behavior.
+- Do not change core semantics unless discussed.
+- Keep toolchain settings consistent with the repo.
 
-forge coverage --ir-minimum
-Formatting
-Run:
-
-forge fmt
-Check (CI-style):
-
-forge fmt --check
-Pull requests
-Keep PRs small and focused.
-
-Include tests for fixes and new behavior.
-
-Do not change core semantics unless explicitly discussed.
-
-Keep Solidity pragmas consistent with the repo’s toolchain (see foundry.toml).
-
-Security
+## Security
 If you find a vulnerability, do not open a public issue.
-Report it privately (see SECURITY.md).
+Report it privately (see `SECURITY.md`).
