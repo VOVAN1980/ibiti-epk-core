@@ -12,5 +12,6 @@ coverage.summary.txt
 *.gas-snapshot
 .gas-snapshot
 
+.env
 
 
