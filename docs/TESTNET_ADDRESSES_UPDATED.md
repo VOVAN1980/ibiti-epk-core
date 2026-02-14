@@ -130,6 +130,36 @@ cache/SmokeTest.s.sol/97/run-latest.json
 
 Network
 
+SDK demo evidence (Node / viem) — execute → revoke → expected revert
+
+This is additional reproducibility proof from the TypeScript SDK (sdk/).
+It confirms that after policy revoke, the next execute fails on-chain with PolicyInactive() (custom error).
+
+Network: BSC Testnet (chainId 97)
+RPC: https://data-seed-prebsc-1-s1.binance.org:8545
+
+Folder: sdk/
+Command: npm run example:write
+
+Observed console output (key facts):
+
+Kernel: 0x0beEB0083C576B54DB99B4abEF0Dcbc5Bc70bF82
+Owner (signer): 0xA2BD166173925E5b8E640f091b0f3bEcBbBE15f8
+Agent (executor): 0xcC3b10e3FcBFc15a0B7942B6f06A7c5efB3fde16
+policyId: 4
+nonce: 0
+Target (called): 0x01dc1612edB74D42e6dbd9cd0D4cF08a40757d12
+
+After revoke: calling execute(...) reverted with PolicyInactive() ✅
+viem decoded error selector (raw): 0x7a9204f4
+viem version: 2.45.3
+
+Notes:
+
+This SDK run is local console evidence (developer reproducibility).
+
+Primary source of truth remains BscScan verified contracts and on-chain txs above.
+
 Chain: BSC Testnet
 
 ChainId: 97
