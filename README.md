@@ -7,6 +7,8 @@
 - [Integration](docs/INTEGRATION.md)
 - [Threat model](docs/THREAT_MODEL.md)
 
+- [Labs (demo + docs mirror)](https://www.ibiticoin.com/ibiti-web/labs/index.html)
+
 -----------------------------------------------------------------------------------
 
 EPK is an immutable execution kernel with modular validators and instant revocation.  
@@ -27,6 +29,12 @@ EPK replaces that with a **Policy** (a capability) that is strictly scoped by:
 - **Capability-based delegation** (policyId instead of approvals)
 - **Instant revoke** (`setPolicyActive(false)`) and **panic button** (`emergencyNonceBump`)
 - **Modular validators** (pluggable safety logic)
+
+## Quickstart
+```bash
+forge build
+forge test -vv
+forge coverage --ir-minimum --report summary --report lcov
 
 ## Minimal flow (deploy → policy → execute)
 Goal: show the real 3-step usage.
@@ -60,8 +68,15 @@ EIP-712 domain:
 Typed data:
 `Execute(policyId, target, value, dataHash, nonce, deadline)`
 
-## Tests
-This repository includes a comprehensive Foundry test suite (202/202 passing).
+## Tests & coverage (Feb 2026)
+- Functional: **202/202 passing** (100%)
+- Line: **94.21%** • Statement: **95.11%**
+- Branch: **58.33%** *(viaIR mapping limitations; may be underreported)*
+- Invariants: **2 passed** *(nonce monotonicity + revoked policy safety)* — **256 runs / 128k calls**
+
+Notes:
+- viaIR + `--ir-minimum` used to avoid "stack too deep" → branch % can look lower than reality.
+- Ground truth: 100% functional pass + explicit branch-hit tests.
 
 ## License
 MIT (see `LICENSE`).
