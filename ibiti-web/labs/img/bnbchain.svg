@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.2" baseProfile="tiny" id="Binance_Logo"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 5000 5000"
+	 xml:space="preserve">
+<rect id="BG_Remove_it" fill="#FFFFFF" width="5000" height="5000"/>
+<g id="Logo">
+	<circle id="Ellipse" fill="#F3BA2C" cx="2500" cy="2500" r="1444.3"/>
+	<g>
+		<g id="Triangles_1_">
+			<polygon fill="#FFFFFF" points="3119.7,2888.4 3119.5,2888.5 2500,3508.1 1880.6,2888.7 1880.3,2888.4 2108.4,2660.9 
+				2108.4,2660.9 2500,3052.4 2891.7,2660.7 			"/>
+			<polygon fill="#FFFFFF" points="3119.5,2111.5 2891.7,2339.3 2500,1947.6 2108.4,2339.1 1880.6,2111.3 2500,1491.9 			"/>
+		</g>
+		<g id="Rectangles_1_">
+			
+				<rect x="3119.2" y="2339" transform="matrix(0.7071 -0.7071 0.7071 0.7071 -807.0563 3051.8191)" fill="#FFFFFF" width="322.2" height="322.2"/>
+			
+				<rect x="1558.6" y="2338.9" transform="matrix(0.7071 -0.7071 0.7071 0.7071 -1264.0356 1948.2675)" fill="#FFFFFF" width="322.2" height="322.2"/>
+			<path fill="#FFFFFF" d="M2731.1,2499.9h0.1L2500,2268.7l-170.8,170.8h0l-19.6,19.6l-40.5,40.5l-0.3,0.3l0.3,0.3l231,231
+				l231.2-231.2l0.1-0.1L2731.1,2499.9"/>
+		</g>
+	</g>
+</g>
+</svg>
