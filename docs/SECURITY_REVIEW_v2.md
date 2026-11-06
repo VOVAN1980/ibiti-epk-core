@@ -110,7 +110,8 @@ forge coverage --ir-minimum --match-path "test/v2/*" --report summary
 
 Results on 2026-11-06:
 
-- Whole repository: **290 / 290 tests passing** (v1: 202, v2: 88).
+- Whole repository: **295 / 295 tests passing** (v1: 202, v2: 93).
+- Static analysis: Slither reports **0** results on `contracts/v2/` — every original finding fixed or justified with proof tests, see [SLITHER_TRIAGE.md](SLITHER_TRIAGE.md); reentrancy and native-transfer proofs in `test/v2/EPKVault.reentrancy.t.sol`.
 - v2 unit + fuzz: 55 passing; fuzz tests at 257 runs each, including `testFuzz_compromisedOperatorCannotDrain` (operator signer, agent and co-signer all compromised).
 - v2 upgrade mechanism: 27 unit/fuzz + 2 stateful invariants (`test/v2/EPKVault.upgrade.t.sol`), see [EPK_V2_UPGRADE_ARCHITECTURE.md §10](EPK_V2_UPGRADE_ARCHITECTURE.md#10-test-evidence).
 - v2 stateful invariants: 4 passing, 64 runs × depth 60 (3 840 attacker actions each), with a check that the attacker achieved successful executions in every run:
@@ -126,8 +127,8 @@ Results on 2026-11-06:
 
 | File | Lines | Statements | Branches | Functions |
 |---|---|---|---|---|
-| `contracts/v2/EPKVault.sol` | 96.80% (423/437) | 93.17% (573/615) | 80.17% (97/121) | 100% (77/77) |
-| `contracts/v2/EPKRegistry.sol` | 93.75% (45/48) | 90.91% (50/55) | 81.82% (9/11) | 100% (9/9) |
+| `contracts/v2/EPKVault.sol` | 97.69% (422/432) | 94.36% (569/603) | 81.90% (95/116) | 100% (78/78) |
+| `contracts/v2/EPKRegistry.sol` | 100% (46/46) | 94.44% (51/54) | 75.00% (9/12) | 100% (9/9) |
 | `contracts/v2/EPKVaultFactory.sol` | 100% (17/17) | 95.00% (19/20) | 50.00% (1/2) | 100% (5/5) |
 
 With via-IR + `--ir-minimum`, Foundry's source maps under-report some branches (same artifact as noted for v1); the uncovered remainder is mostly defensive `revert` paths (e.g. zero-address and malformed-calldata checks).

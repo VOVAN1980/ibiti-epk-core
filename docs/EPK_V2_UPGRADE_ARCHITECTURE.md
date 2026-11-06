@@ -135,7 +135,8 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 5. If the meaning of the signed `Execute` data changes, bump `EIP712_VERSION`.
 6. Tests: full suite + an upgrade test from **every** previous release (including skipping releases) + invariants after upgrade.
 7. Independent audit → `proposeRelease` → 7 days → announce.
-8. Bytecode budget: `EPKVault` is 23,271 B of the 24,576 B limit. New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
+8. Static analysis: Slither must report no unexplained findings ([SLITHER_TRIAGE.md](SLITHER_TRIAGE.md)).
+9. Bytecode budget: `EPKVault` is 21,329 B of the 24,576 B limit. New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
 
 ## 10. Test evidence
 

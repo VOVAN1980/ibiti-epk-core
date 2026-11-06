@@ -13,6 +13,7 @@ It enables safe delegated execution for agents **without implicit approve(∞)**
 - [Spec (v2 draft) — EPKVault](docs/SPEC_v2.md)
 - [Security review (v2, internal)](docs/SECURITY_REVIEW_v2.md)
 - [Upgrade architecture (v2)](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
+- [Slither triage (v2)](docs/SLITHER_TRIAGE.md)
 - [Integration](docs/INTEGRATION.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Testnet deployment + smoke evidence](docs/TESTNET_ADDRESSES_UPDATED.md)
