@@ -24,7 +24,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepack": "npm run build",
     "example:smoke": "tsx -r dotenv/config examples/smoke.ts",
-    "example:clients": "tsx -r dotenv/config examples/clients.ts",
     "postbuild": "node -e \"const fs=require('fs');const path=require('path');const src=path.join('src','abi');const dst=path.join('dist','abi');fs.mkdirSync(dst,{recursive:true});for(const f of fs.readdirSync(src)){fs.copyFileSync(path.join(src,f),path.join(dst,f));}console.log('ABI copied to',dst);\"",
     "example:write": "tsx -r dotenv/config examples/write.ts",
     "example:setup": "tsx -r dotenv/config examples/setup.ts"
