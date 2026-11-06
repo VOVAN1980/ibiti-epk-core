@@ -1,4 +1,3 @@
-@'
 # Security Policy
 
 ## Reporting a Vulnerability
@@ -24,8 +23,8 @@ We will acknowledge your report and coordinate a fix as quickly as possible.
 
 ## Supported Versions
 
-| Version | Supported |
-|--------:|:---------:|
-| v1.x    | ✅        |
-| < v1.0  | ❌        |
-'@ | Set-Content -Encoding utf8 .\SECURITY.md
+| Version | Supported | Notes |
+|--------:|:---------:|:------|
+| v2 (EPKVault) | 🚧 | Draft, internally reviewed, not independently audited, not deployed. See [docs/SPEC_v2.md](docs/SPEC_v2.md) and [docs/SECURITY_REVIEW_v2.md](docs/SECURITY_REVIEW_v2.md) |
+| v1.x (EPKernel) | ✅ | Reference / testnet. **Never grant token allowances to, or send tokens to, `EPKernel`** — see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) |
+| < v1.0 | ❌ | |

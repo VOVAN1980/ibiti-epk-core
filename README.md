@@ -10,11 +10,35 @@ It enables safe delegated execution for agents **without implicit approve(∞)**
 ## Docs
 
 - [Spec (v1)](docs/SPEC.md)
+- [Spec (v2 draft) — EPKVault](docs/SPEC_v2.md)
+- [Security review (v2, internal)](docs/SECURITY_REVIEW_v2.md)
 - [Integration](docs/INTEGRATION.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Testnet deployment + smoke evidence](docs/TESTNET_ADDRESSES_UPDATED.md)
 - [TypeScript SDK](sdk/README.md)
 - [Labs (demo + docs mirror)](https://www.ibiticoin.com/ibiti-web/labs/index.html)
+
+---
+
+## EPK v2 — EPKVault (in development)
+
+> Even if the server, the operator key **and** the AI agent are compromised at the same time,
+> the attacker cannot take more than the configured limit per time window, and cannot send funds
+> to an address that was not allowlisted in advance.
+
+- **One isolated vault per customer** (factory, CREATE2) — nobody else's policy can reach your funds
+- **Separate roles**: operator signer / admin / ≥ 2 guardians (can only stop, never move funds) / recovery key
+- **Outflow limits per asset**, measured on real balance changes (token bucket)
+- **Destination allowlist** for transfers, approvals and native value
+- **Signed batches**; token allowances can never outlive the batch that created them
+- **Optional independent co-signer** for large outflows
+- **Tighten instantly, loosen only through a timelock** that guardians can veto
+- **`panic()`**: one call pauses the vault and invalidates every policy and pending change
+
+Status: draft, internally reviewed (all high/medium findings fixed), **not independently audited, not deployed**.
+Details: [docs/SPEC_v2.md](docs/SPEC_v2.md) · [docs/SECURITY_REVIEW_v2.md](docs/SECURITY_REVIEW_v2.md).
+
+> ⚠️ **v1 note:** `EPKernel` is a shared executor. Never `approve` tokens to it or send tokens to it — see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ---
 
