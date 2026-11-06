@@ -2,6 +2,13 @@
 pragma solidity ^0.8.24;
 
 import {IPolicyValidator} from "../epk/IPolicyValidator.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+
+interface IEPKRegistry {
+    function isApproved(address implementation) external view returns (bool);
+    function versionOf(address implementation) external view returns (uint64);
+}
 
 interface IERC20Minimal {
     function balanceOf(address account) external view returns (uint256);
@@ -24,11 +31,15 @@ interface IERC1271 {
 ///         - optional independent co-signer for large outflows;
 ///         - asymmetric rule changes: tighten instantly, loosen only through a timelock that
 ///           guardians can veto;
-///         - one-call kill switch (`panic`) that pauses and invalidates every policy and pending change.
+///         - one-call kill switch (`panic`) that pauses and invalidates every policy and pending change;
+///         - opt-in upgrades: the vault keeps its address and funds; only its own admin can move it to
+///           a newer registry-approved implementation, through a 2x-delay timelock guardians can veto.
 /// @dev Threat model: the operator signer, the agent and the co-signer may all be compromised at the
 ///      same time. Damage is then bounded by `maxPerWindow` per tracked asset and by the destination
-///      allowlist. See docs/SPEC_v2.md and docs/SECURITY_REVIEW_v2.md.
-contract EPKVault {
+///      allowlist. See docs/SPEC_v2.md, docs/SECURITY_REVIEW_v2.md, docs/EPK_V2_UPGRADE_ARCHITECTURE.md.
+///      Deployed behind an ERC-1967 proxy. STORAGE LAYOUT IS APPEND-ONLY across versions
+///      (snapshot: docs/storage-layout/EPKVault-2.0.0.txt).
+contract EPKVault is Initializable, UUPSUpgradeable {
     // ---------------------------------------------------------------------
     // Types & constants
     // ---------------------------------------------------------------------
@@ -64,6 +75,8 @@ contract EPKVault {
     uint256 public constant MAX_CALLS = 16;
     /// @notice Guardians required before the vault can go live (admin is never a guardian).
     uint256 public constant MIN_GUARDIANS = 2;
+    /// @notice An upgrade always waits at least this long, whatever the vault delay is.
+    uint256 public constant UPGRADE_DELAY_FLOOR = 2 days;
 
     bytes4 private constant _ERC1271_MAGIC = 0x1626ba7e;
     bytes4 private constant _SEL_TRANSFER = 0xa9059cbb; // transfer(address,uint256)
@@ -112,6 +125,7 @@ contract EPKVault {
     mapping(address => bool) public isGuardian;
     uint256 public guardianCount;
     address public coSigner;
+    address public registry;
 
     uint256 public delay;
     bool public paused;
@@ -131,8 +145,7 @@ contract EPKVault {
 
     mapping(bytes32 => Operation) public operations;
 
-    uint256 private immutable _CACHED_CHAIN_ID;
-    bytes32 private immutable _CACHED_DOMAIN_SEPARATOR;
+    // Future versions: append new state variables BELOW this line only.
 
     // ---------------------------------------------------------------------
     // Events
@@ -140,6 +153,7 @@ contract EPKVault {
 
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoverySet(address indexed recovery);
+    event RegistrySet(address indexed registry);
     event GuardianSet(address indexed guardian, bool enabled);
     event CoSignerSet(address indexed coSigner);
     event DelaySet(uint256 delay);
@@ -213,6 +227,8 @@ contract EPKVault {
     error TokenCallFailed(address token);
     error LimitExceeded(address token, uint256 amount, uint256 available);
     error CoSignatureRequired(address token, uint256 amount);
+    error ImplementationNotApproved(address implementation);
+    error NotNewerVersion(uint64 current, uint64 proposed);
 
     // ---------------------------------------------------------------------
     // Modifiers
@@ -246,9 +262,21 @@ contract EPKVault {
     // Constructor
     // ---------------------------------------------------------------------
 
+    /// @dev The implementation itself can never be initialized; only proxies can.
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @param recovery_ optional cold key that can replace a lost or compromised admin (0 = none).
-    constructor(address admin_, address[] memory guardians_, uint256 delay_, address recovery_) {
-        if (admin_ == address(0)) revert ZeroAddress();
+    /// @param registry_ catalogue of approved implementations this vault may opt into.
+    function initialize(
+        address admin_,
+        address[] calldata guardians_,
+        uint256 delay_,
+        address recovery_,
+        address registry_
+    ) external initializer {
+        if (admin_ == address(0) || registry_ == address(0)) revert ZeroAddress();
         if (delay_ < MIN_DELAY || delay_ > MAX_DELAY) revert BadDelay();
 
         admin = admin_;
@@ -259,18 +287,23 @@ contract EPKVault {
         for (uint256 i = 0; i < guardians_.length; i++) {
             address g = guardians_[i];
             if (g == address(0)) revert ZeroAddress();
-            if (g == admin_ || g == recovery_ || isGuardian[g]) revert BadRole(g);
+            if (g == admin_ || g == recovery_ || g == address(this) || isGuardian[g]) revert BadRole(g);
             isGuardian[g] = true;
             emit GuardianSet(g, true);
         }
         guardianCount = guardians_.length;
 
-        if (recovery_ == admin_) revert BadRole(recovery_);
+        if (recovery_ == admin_ || recovery_ == address(this)) revert BadRole(recovery_);
         recovery = recovery_;
         emit RecoverySet(recovery_);
 
-        _CACHED_CHAIN_ID = block.chainid;
-        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator();
+        registry = registry_;
+        emit RegistrySet(registry_);
+    }
+
+    /// @notice Implementation version: major * 10_000 + minor * 100 + patch.
+    function vaultVersion() public pure virtual returns (uint64) {
+        return 20_000; // 2.0.0
     }
 
     receive() external payable {}
@@ -302,6 +335,8 @@ contract EPKVault {
     function schedule(bytes calldata data, bytes32 salt) external onlyAdmin returns (bytes32 id) {
         if (data.length < 4) revert BadOperation();
         bytes4 sel = bytes4(data[:4]);
+        // upgrades and migrations only through scheduleUpgrade
+        if (sel == this.upgradeToAndCall.selector || sel == this.migrate.selector) revert BadOperation();
         address shielded;
         if (sel == this.setGuardian.selector) {
             (address g, bool enabled) = abi.decode(data[4:], (address, bool));
@@ -320,10 +355,40 @@ contract EPKVault {
         id = _schedule(abi.encodeCall(this.setAdmin, (newAdmin)), salt, delay * 2, true, true, address(0));
     }
 
+    /// @notice Opt this vault into a newer, registry-approved implementation. Address, funds and
+    ///         settings stay. Takes max(2 × delay, UPGRADE_DELAY_FLOOR); any guardian can veto; a panic
+    ///         cancels it.
+    /// @param withMigration run the new release's own `migrate()` as part of the upgrade. No other
+    ///        code can be attached to an upgrade.
+    function scheduleUpgrade(address newImplementation, bool withMigration, bytes32 salt)
+        external
+        onlyAdmin
+        returns (bytes32 id)
+    {
+        _requireUpgradeAllowed(newImplementation);
+        uint256 wait = delay * 2;
+        if (wait < UPGRADE_DELAY_FLOOR) wait = UPGRADE_DELAY_FLOOR;
+        id = _schedule(_upgradeCall(newImplementation, withMigration), salt, wait, false, false, address(0));
+    }
+
+    /// @notice The exact operation data `scheduleUpgrade` schedules (pass it to `executeScheduled`).
+    function upgradeOperationData(address newImplementation, bool withMigration) external pure returns (bytes memory) {
+        return _upgradeCall(newImplementation, withMigration);
+    }
+
+    function _upgradeCall(address newImplementation, bool withMigration) internal pure returns (bytes memory) {
+        bytes memory init = withMigration ? abi.encodeWithSelector(EPKVault.migrate.selector) : bytes("");
+        return abi.encodeWithSelector(UUPSUpgradeable.upgradeToAndCall.selector, newImplementation, init);
+    }
+
+    /// @notice Admin executes any ready operation; the recovery key only its own recovery operations.
     function executeScheduled(bytes calldata data, bytes32 salt) external nonReentrant {
-        if (msg.sender != admin && msg.sender != recovery) revert NotAdminOrRecovery();
         bytes32 id = hashOperation(data, salt);
         Operation memory op = operations[id];
+        if (msg.sender != admin) {
+            if (msg.sender != recovery) revert NotAdminOrRecovery();
+            if (op.readyAt != 0 && !op.adminCannotCancel) revert NotAdminOrRecovery();
+        }
         if (op.readyAt == 0) revert UnknownOperation();
         if (!_isLive(op)) revert StaleOperation();
         if (block.timestamp < op.readyAt) revert OperationNotReady();
@@ -569,6 +634,28 @@ contract EPKVault {
         if (newAdmin == address(this) || isGuardian[newAdmin] || newAdmin == recovery) revert BadRole(newAdmin);
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
+    }
+
+    /// @notice Release-specific one-time migration. Runs only as part of an upgrade
+    ///         (`scheduleUpgrade(..., withMigration = true, ...)`), with the vault calling itself.
+    /// @dev 2.0.0 has nothing to migrate. Releases override this with `reinitializer(n)` AND a
+    ///      `msg.sender == address(this)` check, and migrate cumulatively from `_getInitializedVersion()`.
+    function migrate() external virtual {
+        revert BadOperation();
+    }
+
+    /// @dev Upgrades happen only through `scheduleUpgrade` → delay → `executeScheduled` (the vault
+    ///      calling itself), and only to a newer implementation the registry approves at that moment.
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        if (msg.sender != address(this)) revert NotTimelocked();
+        _requireUpgradeAllowed(newImplementation);
+    }
+
+    function _requireUpgradeAllowed(address newImplementation) internal view {
+        IEPKRegistry r = IEPKRegistry(registry);
+        if (!r.isApproved(newImplementation)) revert ImplementationNotApproved(newImplementation);
+        uint64 v = r.versionOf(newImplementation);
+        if (v <= vaultVersion()) revert NotNewerVersion(vaultVersion(), v);
     }
 
     function setRecovery(address newRecovery) external onlyTimelocked {
@@ -940,8 +1027,10 @@ contract EPKVault {
         );
     }
 
+    /// @dev Computed on every call: behind a proxy `address(this)` is the vault, and the chain id is
+    ///      always current (fork-safe).
     function _domainSeparator() internal view returns (bytes32) {
-        return block.chainid == _CACHED_CHAIN_ID ? _CACHED_DOMAIN_SEPARATOR : _buildDomainSeparator();
+        return _buildDomainSeparator();
     }
 
     function _hashTypedData(bytes32 structHash) internal view returns (bytes32) {

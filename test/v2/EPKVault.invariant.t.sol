@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {EPKVault} from "../../contracts/v2/EPKVault.sol";
 import {EPKVaultFactory} from "../../contracts/v2/EPKVaultFactory.sol";
+import {EPKRegistry} from "../../contracts/v2/EPKRegistry.sol";
 import {TestToken, MockRouter} from "./V2Mocks.sol";
 
 /// The attacker controls the operator signer, the agent AND the co-signer, and tries random
@@ -119,7 +120,9 @@ contract EPKVaultInvariantTest is Test {
     uint256 nativeStart;
 
     function setUp() public {
-        factory = new EPKVaultFactory();
+        EPKVault impl = new EPKVault();
+        EPKRegistry registry = new EPKRegistry(makeAddr("registryOwner"), address(impl));
+        factory = new EPKVaultFactory(address(impl), address(registry));
         token = new TestToken("TKN");
         router = new MockRouter();
 

@@ -11,6 +11,8 @@ via_ir = true
 fs_permissions = [{ access = "read-write", path = "./" }]
 ffi = false
 verbosity = 2
+# keep storage layouts in artifacts: upgradeable EPKVault releases must be append-only
+extra_output = ["storageLayout"]
 
 [profile.coverage]
 via_ir = true
