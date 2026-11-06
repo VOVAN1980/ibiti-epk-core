@@ -27,7 +27,7 @@ v2 fixes this by construction: **every customer gets their own vault**. Funds si
 | **Co-signer** (per vault, optional) | independent service on separate infrastructure | approve a batch whose outflow is above `coSignAbove` | anything alone |
 | **Admin** | multisig / cold key | tighten instantly; **schedule** loosening changes | loosen without the timelock; be a guardian |
 | **Guardians** (≥ 2) | independent people / monitoring bots | pause, revoke, cancel pending changes, lower limits, `panic` | move funds, loosen anything, unpause, block their own removal |
-| **Recovery** (optional) | cold key | replace a lost or compromised admin (2× delay) | anything else |
+| **Recovery** (optional, recommended) | cold key | replace a lost or compromised admin (2× delay); veto pending changes | move funds, execute admin operations |
 
 ## 4. Lifecycle
 
@@ -105,10 +105,11 @@ See [SECURITY_REVIEW_v2.md §3](SECURITY_REVIEW_v2.md#3-residual-risks-and-desig
 
 Each vault can move to a newer implementation without changing its address or moving funds — **only by its own decision**:
 
-- `scheduleUpgrade(newImplementation, withMigration, salt)` (admin) → **max(2× delay, 2 days)** → `executeScheduled` (admin);
+- `scheduleUpgrade(newImplementation, salt)` (admin) → **max(2× delay, 2 days)** → `executeScheduled` (admin);
 - the new implementation must be approved in the vault's `EPKRegistry` (fixed per vault; 7-day public approval delay, revocable, codehash pinned, version read from the code) and have a strictly higher `vaultVersion()`;
-- the only code that can ride along is the release's own `migrate()` (vault-only, runs once);
-- any guardian can cancel; `panic` / `revokeAll` invalidate a pending upgrade;
+- the release's own migration always runs once (vault-only; it receives the version the vault comes from, so skipped releases are handled); nothing else can ride along;
+- ordinary operations still pending from the old release become stale;
+- any guardian or the recovery key can cancel; `panic` / `revokeAll` invalidate a pending upgrade;
 - no direct `upgradeToAndCall`, no generic `schedule` of it or of `migrate`, no downgrades;
 - the registry and the factory have no power over existing vaults.
 
@@ -116,7 +117,7 @@ Full design, comparison with immutable / beacon / migration approaches, threats 
 
 ## 12. Recommended configuration
 
-- `delay` ≥ 24 hours; at least 2 guardians on infrastructure independent from the operator and from each other; a recovery key in cold storage.
+- `delay` ≥ 24 hours; **at least 3 guardians** (the enforced minimum is 2) on infrastructure independent from the operator and from each other; a recovery key in cold storage. With only 2 guardians and no recovery key, a compromised admin plus one absent guardian can take over (see the upgrade architecture, §7).
 - Monitoring bot as a guardian: auto-`cancel` unexpected `OperationScheduled`, auto-`panic` on anomalies.
 - Co-signer on separate infrastructure (e.g. IBITI Guardian) with a low `coSignAbove`.
 - `maxPerWindow` sized to what the business can afford to lose in one window.

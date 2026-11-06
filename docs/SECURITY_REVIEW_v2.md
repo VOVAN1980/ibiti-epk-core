@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Scope | `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol`, `contracts/v2/EPKRegistry.sol` (upgrade mechanism: second round, §1b) |
+| Scope | `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol`, `contracts/v2/EPKRegistry.sol` (upgrade mechanism: second and third rounds, §1b–§1c) |
 | Date | 2026-11-06 |
 | Method | Internal review by a separate AI agent (code reading + Foundry proof-of-concept tests), fixes by the developer, regression tests for every finding |
 | Status | All high / medium findings fixed. **Not an independent audit.** |
@@ -56,6 +56,26 @@ Scope: proxy/UUPS refactor of `EPKVault`, `EPKRegistry`, `EPKVaultFactory`. No c
 | I8 | Info | EIP-712 version fixed; no ERC-5267 | **Documented** (release rule; future work) | — |
 | I9 | Info | Upgrade invariant handler lacked delay/migration actions | **Fixed** — handler now lowers the delay, uses migrations and generic scheduling | invariants |
 
+### 1c. Upgrade mechanism — third review round (re-review of the fixed path)
+
+No critical or high findings; the only way for a vault to change its code is an operation created by `scheduleUpgrade`.
+
+| ID | Severity | Finding | Status | Regression test |
+|---|---|---|---|---|
+| M-1 | Medium | The documented cumulative-migration pattern read `_getInitializedVersion()` inside a `reinitializer`, where it already equals `n` → steps silently skipped for vaults that skip a release | **Fixed** — base `migrate()` (not overridable) captures the `from` version before calling the release's `_migrate(from)` | `test_skippedReleaseMigrationStillRuns`, `test_stepByStepMigrationRunsEachStepOnce` |
+| M-2 | Medium | Docs overstated the takeover threshold: with 2 guardians, a compromised admin plus one absent guardian can replace the honest guardian (shielded op) | **Fixed / documented** — the recovery key can now veto any pending operation; trust model states the real threshold; recommend ≥ 3 guardians + recovery key | `test_recoveryVetoesGuardianReplacementWhenAGuardianIsAbsent` |
+| L-1 | Low | Pending operations were not tied to the release they were scheduled under; migrations were optional | **Fixed** — operations record `vaultVersion()`; ordinary ones go stale on upgrade; the migration always runs | `test_pendingOperationsGoStaleAfterUpgrade`, `test_releaseWithoutMigrationCannotBeInstalled` |
+| L-2 | Low | A compromised admin could squat the recovery operation's id or poison its target | **Fixed / documented** — recovery operations replace look-alike ordinary operations and cannot be squatted back; poisoning changes are timelocked and vetoable by guardians or the recovery key | `test_recoveryReplacesSquattedOperation` |
+| L-3 | Low | The migration caller check depended on release authors | **Fixed** — enforced by the base `migrate()` | `test_migrationOnlyByTheVaultItself` |
+| I-a | Info | The vault could be configured as its own signer / validator / co-signer | **Fixed** — rejected | `test_vaultCannotBeItsOwnSignerValidatorOrCoSigner` |
+| I-b | Info | Registry: no owner succession, permanent revocation, chained version steps, codehash pin does not cover delegatecall, `0xEF` check vs EOF | **Documented** (§7, §11 of the upgrade architecture) | — |
+| I-c | Info | `pause` alone does not stop upgrades | **Documented** — `panic`/`revokeAll` do; monitoring must re-veto | — |
+| I-d | Info | `migrate()` runs with the reentrancy lock held | **Documented** in release rules | — |
+| I-e | Info | `initialize` did not reject the vault itself as admin | **Fixed** | — |
+| I-f | Info | Bytecode figure in docs out of date | **Fixed** (23,271 B) | — |
+
+Residual items for a professional audit / formal verification: storage compatibility of every future release, a formal proof that only `scheduleUpgrade` operations can set the implementation slot, correctness of each release's `_migrate` across skip paths, guardian/recovery liveness game theory, registry-owner key setup, chain-specific `codehash`/`extcodecopy` behaviour.
+
 ## 2. Verified as sound by the review
 
 - No path around `onlyTimelocked`: no delegatecall; `execute`/`setCall` reject the vault as target; `execute` and `executeScheduled` share one reentrancy lock; timelocked functions make no external calls.
@@ -90,9 +110,9 @@ forge coverage --ir-minimum --match-path "test/v2/*" --report summary
 
 Results on 2026-11-06:
 
-- Whole repository: **283 / 283 tests passing** (v1: 202, v2: 81).
+- Whole repository: **290 / 290 tests passing** (v1: 202, v2: 88).
 - v2 unit + fuzz: 55 passing; fuzz tests at 257 runs each, including `testFuzz_compromisedOperatorCannotDrain` (operator signer, agent and co-signer all compromised).
-- v2 upgrade mechanism: 20 unit/fuzz + 2 stateful invariants (`test/v2/EPKVault.upgrade.t.sol`), see [EPK_V2_UPGRADE_ARCHITECTURE.md §10](EPK_V2_UPGRADE_ARCHITECTURE.md#10-test-evidence).
+- v2 upgrade mechanism: 27 unit/fuzz + 2 stateful invariants (`test/v2/EPKVault.upgrade.t.sol`), see [EPK_V2_UPGRADE_ARCHITECTURE.md §10](EPK_V2_UPGRADE_ARCHITECTURE.md#10-test-evidence).
 - v2 stateful invariants: 4 passing, 64 runs × depth 60 (3 840 attacker actions each), with a check that the attacker achieved successful executions in every run:
   - `invariant_outflowNeverExceedsTheLimit`
   - `invariant_noAllowanceSurvives`
@@ -106,7 +126,7 @@ Results on 2026-11-06:
 
 | File | Lines | Statements | Branches | Functions |
 |---|---|---|---|---|
-| `contracts/v2/EPKVault.sol` | 96.71% (412/426) | 93.28% (555/595) | 80.87% (93/115) | 100% (76/76) |
+| `contracts/v2/EPKVault.sol` | 96.80% (423/437) | 93.17% (573/615) | 80.17% (97/121) | 100% (77/77) |
 | `contracts/v2/EPKRegistry.sol` | 93.75% (45/48) | 90.91% (50/55) | 81.82% (9/11) | 100% (9/9) |
 | `contracts/v2/EPKVaultFactory.sol` | 100% (17/17) | 95.00% (19/20) | 50.00% (1/2) | 100% (5/5) |
 
