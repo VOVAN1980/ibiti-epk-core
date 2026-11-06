@@ -11,21 +11,41 @@ import {EPKVaultFactory} from "../../contracts/v2/EPKVaultFactory.sol";
 import {EPKRegistry} from "../../contracts/v2/EPKRegistry.sol";
 import {TestToken} from "./V2Mocks.sol";
 
-/// A future release: new feature + appended storage + one-time migration (vault-only).
+/// A future release: new feature + appended storage + one-time migration.
 contract EPKVaultV21 is EPKVault {
     uint256 public newSetting; // appended after all v2.0.0 storage
 
-    function vaultVersion() public pure override returns (uint64) {
+    function vaultVersion() public pure virtual override returns (uint64) {
         return 20_100; // 2.1.0
     }
 
-    function migrate() external override reinitializer(2) {
-        if (msg.sender != address(this)) revert NotTimelocked();
-        newSetting = 42;
+    function _migrate(uint64 from) internal virtual override reinitializer(2) {
+        if (from < 2) newSetting = 42;
     }
 
     function hello() external pure returns (string memory) {
         return "2.1";
+    }
+}
+
+/// The release after it: migrates cumulatively, so vaults that skipped 2.1.0 still get its step.
+contract EPKVaultV22 is EPKVaultV21 {
+    uint256 public v22Setting;
+
+    function vaultVersion() public pure override returns (uint64) {
+        return 20_200; // 2.2.0
+    }
+
+    function _migrate(uint64 from) internal override reinitializer(3) {
+        if (from < 2) newSetting = 42; // 2.1.0 step
+        if (from < 3) v22Setting = 7; // 2.2.0 step
+    }
+}
+
+/// A release whose author forgot the migration: it can never be installed.
+contract NoMigrationVault is EPKVault {
+    function vaultVersion() public pure override returns (uint64) {
+        return 20_100;
     }
 }
 
@@ -115,24 +135,31 @@ abstract contract UpgradeBase is Test {
         return address(uint160(uint256(vm.load(address(vault), IMPL_SLOT))));
     }
 
-    function _listV21() internal {
+    function _list(address impl) internal {
         vm.prank(registryOwner);
-        registry.proposeRelease(address(v21));
+        registry.proposeRelease(impl);
         _warp(registry.APPROVAL_DELAY());
     }
 
-    /// @dev Built locally (no external call), so vm.prank / expectRevert hit the intended call.
-    function _op(address impl, bool withMigration) internal pure returns (bytes memory) {
-        bytes memory init = withMigration ? abi.encodeCall(EPKVault.migrate, ()) : bytes("");
-        return abi.encodeCall(UUPSUpgradeable.upgradeToAndCall, (impl, init));
+    function _listV21() internal {
+        _list(address(v21));
     }
 
-    function _upgradeV21(bool withMigration) internal {
+    /// @dev Built locally (no external call), so vm.prank / expectRevert hit the intended call.
+    function _op(address impl) internal pure returns (bytes memory) {
+        return abi.encodeCall(UUPSUpgradeable.upgradeToAndCall, (impl, abi.encodeCall(EPKVault.migrate, ())));
+    }
+
+    function _upgradeTo(address impl) internal {
         vm.prank(admin);
-        vault.scheduleUpgrade(address(v21), withMigration, bytes32(0));
+        vault.scheduleUpgrade(impl, bytes32(0));
         _warp(2 * DELAY);
         vm.prank(admin);
-        vault.executeScheduled(_op(address(v21), withMigration), bytes32(0));
+        vault.executeScheduled(_op(impl), bytes32(0));
+    }
+
+    function _upgradeV21() internal {
+        _upgradeTo(address(v21));
     }
 
     function _transferOnce(uint256 amount) internal {
@@ -152,8 +179,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
     }
 
     function test_upgradeOperationDataMatchesHelper() public view {
-        assertEq(vault.upgradeOperationData(address(v21), true), _op(address(v21), true));
-        assertEq(vault.upgradeOperationData(address(v21), false), _op(address(v21), false));
+        assertEq(vault.upgradeOperationData(address(v21)), _op(address(v21)));
     }
 
     function test_vaultIsProxyOnGenesis() public view {
@@ -166,7 +192,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
     function test_upgradeKeepsAddressFundsAndSettings() public {
         _transferOnce(10e18);
         _listV21();
-        _upgradeV21(true);
+        _upgradeV21();
 
         // same address, new code, migrated state
         assertEq(_impl(), address(v21));
@@ -189,39 +215,93 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         assertTrue(vault.paused());
     }
 
-    /// Review F2: a migration can never be run by an outsider.
+    /// Review round 2 F2 / round 3 L-3: nobody but the vault can run a migration, on any release.
     function test_migrationOnlyByTheVaultItself() public {
-        vm.prank(attacker);
-        vm.expectRevert(EPKVault.BadOperation.selector); // 2.0.0 has nothing to migrate
-        vault.migrate();
-
-        _listV21();
-        _upgradeV21(false); // upgraded without running the migration
         vm.prank(attacker);
         vm.expectRevert(EPKVault.NotTimelocked.selector);
         vault.migrate();
-        assertEq(EPKVaultV21(payable(address(vault))).newSetting(), 0);
+
+        _listV21();
+        _upgradeV21();
+        vm.prank(attacker);
+        vm.expectRevert(EPKVault.NotTimelocked.selector);
+        vault.migrate();
 
         vm.prank(admin);
         vm.expectRevert(EPKVault.BadOperation.selector); // and not through the generic timelock either
         vault.schedule(abi.encodeCall(EPKVault.migrate, ()), bytes32(0));
     }
 
+    /// Review round 3 M-1: a vault that skips a release still gets that release's migration step.
+    function test_skippedReleaseMigrationStillRuns() public {
+        EPKVaultV22 v22 = new EPKVaultV22();
+        _listV21();
+        _list(address(v22));
+
+        _upgradeTo(address(v22)); // 2.0.0 -> 2.2.0 directly
+        assertEq(vault.vaultVersion(), 20_200);
+        assertEq(EPKVaultV22(payable(address(vault))).newSetting(), 42);
+        assertEq(EPKVaultV22(payable(address(vault))).v22Setting(), 7);
+    }
+
+    function test_stepByStepMigrationRunsEachStepOnce() public {
+        EPKVaultV22 v22 = new EPKVaultV22();
+        _listV21();
+        _list(address(v22));
+        _upgradeV21();
+        _upgradeTo(address(v22));
+        assertEq(EPKVaultV22(payable(address(vault))).newSetting(), 42);
+        assertEq(EPKVaultV22(payable(address(vault))).v22Setting(), 7);
+    }
+
+    function test_releaseWithoutMigrationCannotBeInstalled() public {
+        NoMigrationVault lazy = new NoMigrationVault();
+        _list(address(lazy));
+        vm.prank(admin);
+        vault.scheduleUpgrade(address(lazy), bytes32(0));
+        _warp(2 * DELAY);
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.BadOperation.selector);
+        vault.executeScheduled(_op(address(lazy)), bytes32(0));
+        assertEq(_impl(), address(genesis));
+    }
+
+    /// Review round 3 L-1: ordinary operations scheduled under one release do not run under the next;
+    /// recovery operations survive the upgrade.
+    function test_pendingOperationsGoStaleAfterUpgrade() public {
+        _listV21();
+        bytes memory addDest = abi.encodeCall(EPKVault.addDestination, (attacker));
+        vm.prank(admin);
+        vault.schedule(addDest, bytes32(0));
+        vm.prank(recoveryKey);
+        vault.recoverAdmin(makeAddr("newAdmin"), bytes32(0));
+
+        _upgradeV21();
+
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.StaleOperation.selector);
+        vault.executeScheduled(addDest, bytes32(0));
+
+        vm.prank(recoveryKey);
+        vault.executeScheduled(abi.encodeCall(EPKVault.setAdmin, (makeAddr("newAdmin"))), bytes32(0));
+        assertEq(vault.admin(), makeAddr("newAdmin"));
+    }
+
     function test_upgradeNeedsTwiceTheDelay() public {
         _listV21();
         vm.prank(admin);
-        vault.scheduleUpgrade(address(v21), false, bytes32(0));
+        vault.scheduleUpgrade(address(v21), bytes32(0));
         _warp(DELAY);
         vm.prank(admin);
         vm.expectRevert(EPKVault.OperationNotReady.selector);
-        vault.executeScheduled(_op(address(v21), false), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
         _warp(DELAY);
         vm.prank(admin);
-        vault.executeScheduled(_op(address(v21), false), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
         assertEq(_impl(), address(v21));
     }
 
-    /// Review F5: lowering the vault delay first does not make upgrades faster than the floor.
+    /// Review round 2 F5: lowering the vault delay first does not make upgrades faster than the floor.
     function test_upgradeDelayFloorAfterLoweringDelay() public {
         bytes memory lower = abi.encodeCall(EPKVault.setDelay, (1 hours));
         vm.prank(admin);
@@ -233,14 +313,14 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 
         _listV21();
         vm.prank(admin);
-        vault.scheduleUpgrade(address(v21), false, bytes32(0));
+        vault.scheduleUpgrade(address(v21), bytes32(0));
         _warp(2 hours);
         vm.prank(admin);
         vm.expectRevert(EPKVault.OperationNotReady.selector);
-        vault.executeScheduled(_op(address(v21), false), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
         _warp(vault.UPGRADE_DELAY_FLOOR() - 2 hours);
         vm.prank(admin);
-        vault.executeScheduled(_op(address(v21), false), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
         assertEq(_impl(), address(v21));
     }
 
@@ -254,18 +334,18 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         }
         vm.prank(admin);
         vm.expectRevert(EPKVault.BadOperation.selector);
-        vault.schedule(_op(address(v21), false), bytes32(0));
+        vault.schedule(_op(address(v21)), bytes32(0));
 
         vm.prank(admin);
         vm.expectRevert(EPKVault.UnknownOperation.selector);
-        vault.executeScheduled(_op(address(v21), false), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
         assertEq(_impl(), address(genesis));
     }
 
     function test_compromisedAdminCannotInstallUnapprovedCode() public {
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSelector(EPKVault.ImplementationNotApproved.selector, address(evil)));
-        vault.scheduleUpgrade(address(evil), false, bytes32(0));
+        vault.scheduleUpgrade(address(evil), bytes32(0));
         assertEq(_impl(), address(genesis));
     }
 
@@ -275,64 +355,102 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         _warp(registry.APPROVAL_DELAY() - 1);
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSelector(EPKVault.ImplementationNotApproved.selector, address(v21)));
-        vault.scheduleUpgrade(address(v21), false, bytes32(0));
+        vault.scheduleUpgrade(address(v21), bytes32(0));
         _warp(1);
         vm.prank(admin);
-        vault.scheduleUpgrade(address(v21), false, bytes32(0));
+        vault.scheduleUpgrade(address(v21), bytes32(0));
     }
 
     function test_revokedReleaseCannotBeInstalled() public {
         _listV21();
         vm.prank(admin);
-        vault.scheduleUpgrade(address(v21), false, bytes32(0));
+        vault.scheduleUpgrade(address(v21), bytes32(0));
         vm.prank(registryOwner);
         registry.revokeRelease(address(v21));
         _warp(2 * DELAY);
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSelector(EPKVault.ImplementationNotApproved.selector, address(v21)));
-        vault.executeScheduled(_op(address(v21), false), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
         assertEq(_impl(), address(genesis));
     }
 
     function test_noDowngrade() public {
         _listV21();
-        _upgradeV21(false);
+        _upgradeV21();
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSelector(EPKVault.NotNewerVersion.selector, 20_100, 20_000));
-        vault.scheduleUpgrade(address(genesis), false, bytes32(0));
+        vault.scheduleUpgrade(address(genesis), bytes32(0));
     }
 
     function test_guardianVetoAndPanicStopUpgrades() public {
         _listV21();
         vm.prank(admin);
-        bytes32 id = vault.scheduleUpgrade(address(v21), false, bytes32("a"));
+        bytes32 id = vault.scheduleUpgrade(address(v21), bytes32("a"));
         vm.prank(guardian);
         vault.cancel(id);
 
         vm.prank(admin);
-        vault.scheduleUpgrade(address(v21), false, bytes32("b"));
+        vault.scheduleUpgrade(address(v21), bytes32("b"));
         vm.prank(guardian2);
         vault.panic();
 
         _warp(2 * DELAY);
         vm.startPrank(admin);
         vm.expectRevert(EPKVault.UnknownOperation.selector);
-        vault.executeScheduled(_op(address(v21), false), bytes32("a"));
+        vault.executeScheduled(_op(address(v21)), bytes32("a"));
         vm.expectRevert(EPKVault.StaleOperation.selector);
-        vault.executeScheduled(_op(address(v21), false), bytes32("b"));
+        vault.executeScheduled(_op(address(v21)), bytes32("b"));
         vm.stopPrank();
         assertEq(_impl(), address(genesis));
+    }
+
+    /// Review round 3 M-2: with one guardian absent, the recovery key can still veto a compromised
+    /// admin replacing the honest guardian (which that guardian itself cannot cancel).
+    function test_recoveryVetoesGuardianReplacementWhenAGuardianIsAbsent() public {
+        bytes memory replace = abi.encodeCall(EPKVault.replaceGuardian, (guardian, attacker));
+        vm.prank(admin);
+        bytes32 id = vault.schedule(replace, bytes32(0));
+        vm.prank(guardian);
+        vm.expectRevert(EPKVault.CannotCancel.selector);
+        vault.cancel(id);
+        vm.prank(recoveryKey);
+        vault.cancel(id);
+        _warp(DELAY);
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.UnknownOperation.selector);
+        vault.executeScheduled(replace, bytes32(0));
+        assertTrue(vault.isGuardian(guardian));
+    }
+
+    /// Review round 3 L-2: a compromised admin cannot squat the recovery operation's id.
+    function test_recoveryReplacesSquattedOperation() public {
+        address newAdmin = makeAddr("newAdmin");
+        bytes memory op = abi.encodeCall(EPKVault.setAdmin, (newAdmin));
+        vm.prank(admin);
+        vault.schedule(op, bytes32("s")); // squat
+        vm.prank(recoveryKey);
+        bytes32 id = vault.recoverAdmin(newAdmin, bytes32("s")); // replaces it
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.CannotCancel.selector);
+        vault.cancel(id);
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.OperationExists.selector); // and cannot squat it back
+        vault.schedule(op, bytes32("s"));
+        _warp(2 * DELAY);
+        vm.prank(recoveryKey);
+        vault.executeScheduled(op, bytes32("s"));
+        assertEq(vault.admin(), newAdmin);
     }
 
     /// Review I7: the recovery key can only execute its own recovery operations.
     function test_recoveryCannotExecuteAdminOperations() public {
         _listV21();
         vm.prank(admin);
-        vault.scheduleUpgrade(address(v21), false, bytes32(0));
+        vault.scheduleUpgrade(address(v21), bytes32(0));
         _warp(2 * DELAY);
         vm.prank(recoveryKey);
         vm.expectRevert(EPKVault.NotAdminOrRecovery.selector);
-        vault.executeScheduled(_op(address(v21), false), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
     }
 
     function test_registryOwnerCannotUpgradeAnyVault() public {
@@ -344,7 +462,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         vault.upgradeToAndCall(address(v21), "");
         vm.prank(registryOwner);
         vm.expectRevert(EPKVault.NotAdmin.selector);
-        vault.scheduleUpgrade(address(v21), false, bytes32(0));
+        vault.scheduleUpgrade(address(v21), bytes32(0));
     }
 
     function test_implementationAndProxyCannotBeReinitialized() public {
@@ -359,7 +477,25 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         genesis.upgradeToAndCall(address(v21), "");
     }
 
-    /// Review F4: no new vaults on a revoked implementation.
+    /// Review round 3 I-a: the vault can never be its own signer, validator or co-signer.
+    function test_vaultCannotBeItsOwnSignerValidatorOrCoSigner() public {
+        address[] memory g = new address[](2);
+        g[0] = guardian;
+        g[1] = guardian2;
+        vm.prank(admin);
+        EPKVault fresh = EPKVault(payable(factory.createVault(g, DELAY, address(0), bytes32("self"))));
+        bytes memory err = abi.encodeWithSelector(EPKVault.BadRole.selector, address(fresh));
+        vm.startPrank(admin);
+        vm.expectRevert(err);
+        fresh.createPolicy(address(fresh), 0, 0, address(0));
+        vm.expectRevert(err);
+        fresh.createPolicy(vm.addr(signerPk), 0, 0, address(fresh));
+        vm.expectRevert(err);
+        fresh.setCoSigner(address(fresh));
+        vm.stopPrank();
+    }
+
+    /// Review round 2 F4: no new vaults on a revoked implementation.
     function test_factoryRefusesRevokedImplementation() public {
         vm.prank(registryOwner);
         registry.revokeRelease(address(genesis));
@@ -371,7 +507,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         factory.createVault(g, DELAY, address(0), bytes32("new"));
     }
 
-    /// Review F7: payers limited to the 2300-gas stipend can pay the vault in a cold transaction.
+    /// Review round 2 F7: payers limited to the 2300-gas stipend can pay the vault in a cold transaction.
     function test_vaultAcceptsStipendTransfers() public {
         StipendPayer payer = new StipendPayer();
         vm.deal(address(this), 1 ether);
@@ -388,7 +524,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 
     // ------------------------------------------------------------------ registry
 
-    /// Review F3/F8/I2: versions come from the code itself and cannot jump arbitrarily.
+    /// Review round 2 F3/F8/I2: versions come from the code itself and cannot jump arbitrarily.
     function test_registryRules() public {
         FarFutureVault far = new FarFutureVault();
         EPKVault same = new EPKVault();
@@ -436,8 +572,8 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 }
 
 /// Stateful: a compromised admin keeps trying to install code (including after lowering the vault
-/// delay and with migrations); honest guardians do nothing. The implementation may only ever be an
-/// approved release, and an upgrade never lands sooner than UPGRADE_DELAY_FLOOR after scheduling.
+/// delay and through generic scheduling); honest guardians do nothing. The implementation may only
+/// ever be an approved release, and an upgrade never lands sooner than UPGRADE_DELAY_FLOOR.
 contract UpgradeHandler is Test {
     bytes32 constant IMPL_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
@@ -458,15 +594,15 @@ contract UpgradeHandler is Test {
         return address(uint160(uint256(vm.load(address(vault), IMPL_SLOT))));
     }
 
-    function scheduleUpgrade(uint256 which, bool withMigration, uint256 saltSeed) external {
+    function scheduleUpgrade(uint256 which, uint256 saltSeed) external {
         vm.prank(admin);
-        try vault.scheduleUpgrade(impls[which % 3], withMigration, bytes32(saltSeed % 4)) returns (bytes32 id) {
+        try vault.scheduleUpgrade(impls[which % 3], bytes32(saltSeed % 4)) returns (bytes32 id) {
             scheduledAt[id] = vm.getBlockTimestamp();
         } catch {}
     }
 
-    function executeUpgrade(uint256 which, bool withMigration, uint256 saltSeed) external {
-        bytes memory data = vault.upgradeOperationData(impls[which % 3], withMigration);
+    function executeUpgrade(uint256 which, uint256 saltSeed) external {
+        bytes memory data = vault.upgradeOperationData(impls[which % 3]);
         bytes32 salt = bytes32(saltSeed % 4);
         bytes32 id = vault.hashOperation(data, salt);
         address before = _implNow();
@@ -493,10 +629,9 @@ contract UpgradeHandler is Test {
         try vault.upgradeToAndCall(impls[which % 3], "") {} catch {}
     }
 
-    function genericSchedule(uint256 which, bool withMigration, uint256 saltSeed) external {
+    function genericSchedule(uint256 which, uint256 saltSeed) external {
         vm.startPrank(admin);
-        try vault.schedule(vault.upgradeOperationData(impls[which % 3], withMigration), bytes32(saltSeed % 4)) {}
-        catch {}
+        try vault.schedule(vault.upgradeOperationData(impls[which % 3]), bytes32(saltSeed % 4)) {} catch {}
         try vault.schedule(abi.encodeCall(EPKVault.migrate, ()), bytes32(saltSeed % 4)) {} catch {}
         vm.stopPrank();
     }

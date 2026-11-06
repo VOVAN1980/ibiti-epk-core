@@ -114,6 +114,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         bool epochExempt; // survives panic / revokeAll
         bool adminCannotCancel; // recovery operations
         address shielded; // this guardian cannot cancel the operation (it is the one being removed)
+        uint64 version; // vaultVersion() at scheduling; ordinary operations go stale after an upgrade
     }
 
     // ---------------------------------------------------------------------
@@ -277,6 +278,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         address registry_
     ) external initializer {
         if (admin_ == address(0) || registry_ == address(0)) revert ZeroAddress();
+        if (admin_ == address(this)) revert BadRole(admin_);
         if (delay_ < MIN_DELAY || delay_ > MAX_DELAY) revert BadDelay();
 
         admin = admin_;
@@ -336,7 +338,9 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         if (data.length < 4) revert BadOperation();
         bytes4 sel = bytes4(data[:4]);
         // upgrades and migrations only through scheduleUpgrade
-        if (sel == this.upgradeToAndCall.selector || sel == this.migrate.selector) revert BadOperation();
+        if (sel == UUPSUpgradeable.upgradeToAndCall.selector || sel == EPKVault.migrate.selector) {
+            revert BadOperation();
+        }
         address shielded;
         if (sel == this.setGuardian.selector) {
             (address g, bool enabled) = abi.decode(data[4:], (address, bool));
@@ -356,29 +360,27 @@ contract EPKVault is Initializable, UUPSUpgradeable {
     }
 
     /// @notice Opt this vault into a newer, registry-approved implementation. Address, funds and
-    ///         settings stay. Takes max(2 × delay, UPGRADE_DELAY_FLOOR); any guardian can veto; a panic
-    ///         cancels it.
-    /// @param withMigration run the new release's own `migrate()` as part of the upgrade. No other
-    ///        code can be attached to an upgrade.
-    function scheduleUpgrade(address newImplementation, bool withMigration, bytes32 salt)
-        external
-        onlyAdmin
-        returns (bytes32 id)
-    {
+    ///         settings stay. Takes max(2 × delay, UPGRADE_DELAY_FLOOR); any guardian (or the recovery
+    ///         key) can veto; a panic cancels it. The new release's `migrate()` always runs with it;
+    ///         no other code can be attached to an upgrade.
+    function scheduleUpgrade(address newImplementation, bytes32 salt) external onlyAdmin returns (bytes32 id) {
         _requireUpgradeAllowed(newImplementation);
         uint256 wait = delay * 2;
         if (wait < UPGRADE_DELAY_FLOOR) wait = UPGRADE_DELAY_FLOOR;
-        id = _schedule(_upgradeCall(newImplementation, withMigration), salt, wait, false, false, address(0));
+        id = _schedule(_upgradeCall(newImplementation), salt, wait, false, false, address(0));
     }
 
     /// @notice The exact operation data `scheduleUpgrade` schedules (pass it to `executeScheduled`).
-    function upgradeOperationData(address newImplementation, bool withMigration) external pure returns (bytes memory) {
-        return _upgradeCall(newImplementation, withMigration);
+    function upgradeOperationData(address newImplementation) external pure returns (bytes memory) {
+        return _upgradeCall(newImplementation);
     }
 
-    function _upgradeCall(address newImplementation, bool withMigration) internal pure returns (bytes memory) {
-        bytes memory init = withMigration ? abi.encodeWithSelector(EPKVault.migrate.selector) : bytes("");
-        return abi.encodeWithSelector(UUPSUpgradeable.upgradeToAndCall.selector, newImplementation, init);
+    function _upgradeCall(address newImplementation) internal pure returns (bytes memory) {
+        return abi.encodeWithSelector(
+            UUPSUpgradeable.upgradeToAndCall.selector,
+            newImplementation,
+            abi.encodeWithSelector(EPKVault.migrate.selector)
+        );
     }
 
     /// @notice Admin executes any ready operation; the recovery key only its own recovery operations.
@@ -399,8 +401,12 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         emit OperationExecuted(id);
     }
 
-    /// @notice Admin or any guardian can veto a pending change (see shielding rules).
-    function cancel(bytes32 id) external onlyAdminOrGuardian {
+    /// @notice Admin, any guardian or the recovery key can veto a pending change (see shielding rules).
+    ///         The recovery key's veto matters when the admin is compromised and a guardian is absent.
+    function cancel(bytes32 id) external {
+        if (msg.sender != admin && !isGuardian[msg.sender] && (msg.sender != recovery || recovery == address(0))) {
+            revert NotAdminOrGuardian();
+        }
         Operation memory op = operations[id];
         if (op.readyAt == 0) revert UnknownOperation();
         if (msg.sender == op.shielded || (msg.sender == admin && op.adminCannotCancel)) revert CannotCancel();
@@ -494,6 +500,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         returns (uint256 policyId)
     {
         if (signer == address(0)) revert ZeroAddress();
+        if (signer == address(this) || validator == address(this)) revert BadRole(address(this));
         policyId = nextPolicyId++;
         policies[policyId] = Policy({
             signer: signer,
@@ -517,6 +524,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
     ) external onlyTimelocked {
         _requirePolicy(policyId);
         if (signer == address(0)) revert ZeroAddress();
+        if (signer == address(this) || validator == address(this)) revert BadRole(address(this));
         Policy storage p = policies[policyId];
         p.signer = signer;
         p.validUntil = validUntil;
@@ -591,6 +599,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
     }
 
     function setCoSigner(address newCoSigner) external onlyTimelocked {
+        if (newCoSigner == address(this)) revert BadRole(newCoSigner);
         coSigner = newCoSigner;
         emit CoSignerSet(newCoSigner);
     }
@@ -636,11 +645,19 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         admin = newAdmin;
     }
 
-    /// @notice Release-specific one-time migration. Runs only as part of an upgrade
-    ///         (`scheduleUpgrade(..., withMigration = true, ...)`), with the vault calling itself.
-    /// @dev 2.0.0 has nothing to migrate. Releases override this with `reinitializer(n)` AND a
-    ///      `msg.sender == address(this)` check, and migrate cumulatively from `_getInitializedVersion()`.
-    function migrate() external virtual {
+    /// @notice One-time migration of a release. Runs only inside an upgrade (the vault calling itself).
+    /// @dev Not overridable: it enforces the caller and captures the version the vault is migrating
+    ///      FROM before any `reinitializer(n)` updates it, then hands over to `_migrate`.
+    function migrate() external {
+        if (msg.sender != address(this)) revert NotTimelocked();
+        _migrate(_getInitializedVersion());
+    }
+
+    /// @dev Every release overrides this as `internal override reinitializer(n)` and runs every step
+    ///      that `from` has not reached yet (vaults may skip releases). 2.0.0 is the first release,
+    ///      so nothing can upgrade *to* it and this default refuses.
+    function _migrate(uint64 from) internal virtual {
+        from;
         revert BadOperation();
     }
 
@@ -938,20 +955,29 @@ contract EPKVault is Initializable, UUPSUpgradeable {
     ) internal returns (bytes32 id) {
         id = hashOperation(data, salt);
         Operation memory existing = operations[id];
-        if (existing.readyAt != 0 && _isLive(existing)) revert OperationExists();
+        // a live operation blocks the id, except that a recovery operation replaces a look-alike
+        // non-recovery operation (so a compromised admin cannot squat the recovery's id)
+        if (existing.readyAt != 0 && _isLive(existing) && !(adminCannotCancel && !existing.adminCannotCancel)) {
+            revert OperationExists();
+        }
         uint64 readyAt = uint64(block.timestamp + wait);
         operations[id] = Operation({
             readyAt: readyAt,
             epoch: epoch,
             epochExempt: epochExempt,
             adminCannotCancel: adminCannotCancel,
-            shielded: shielded
+            shielded: shielded,
+            version: vaultVersion()
         });
         emit OperationScheduled(id, data, salt, readyAt, msg.sender);
     }
 
+    /// @dev Ordinary operations die with a panic/revokeAll (epoch) and with an upgrade (version), so
+    ///      nothing scheduled under one release's rules runs under another's. Shielded guardian
+    ///      changes and recovery operations survive both.
     function _isLive(Operation memory op) internal view returns (bool) {
-        return (op.epochExempt || op.epoch == epoch) && block.timestamp <= uint256(op.readyAt) + GRACE_PERIOD;
+        return (op.epochExempt || (op.epoch == epoch && op.version == vaultVersion()))
+            && block.timestamp <= uint256(op.readyAt) + GRACE_PERIOD;
     }
 
     function _bumpEpoch() internal {
