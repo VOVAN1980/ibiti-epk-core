@@ -1,6 +1,7 @@
 # Foundry build/cache artifacts
 out/
 cache/
+broadcast/
 
 # Coverage artifacts
 coverage/
@@ -12,6 +13,18 @@ coverage.summary.txt
 *.gas-snapshot
 .gas-snapshot
 
+# Secrets: never commit real keys (use .env.example as a template)
 .env
 
+# Node / SDK build output
+**/node_modules/
+**/dist/
 
+# Backups and stray binaries
+*.bak*
+*.exe
+
+# Local-only files (personal notes, presentations, website working copy)
+*.pptx
+КОМАНДЫ ЗАПУСКА.txt
+ibiticoin.github.io/

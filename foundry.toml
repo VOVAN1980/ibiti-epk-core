@@ -1,6 +1,7 @@
 [profile.default]
 src = "contracts"
 test = "test"
+script = "scripts"
 libs = ["lib"]
 solc = "0.8.24"
 optimizer = true
@@ -16,4 +17,6 @@ via_ir = true
 optimizer = true
 optimizer_runs = 200
 
-
+# Lint notes are noisy during build; run `forge lint` explicitly instead
+[lint]
+lint_on_build = false
