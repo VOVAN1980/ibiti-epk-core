@@ -2,13 +2,11 @@
 pragma solidity ^0.8.24;
 
 import {IPolicyValidator} from "../epk/IPolicyValidator.sol";
+import {IEPKRegistry, IVersionedVault} from "./IEPK.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-
-interface IEPKRegistry {
-    function isApproved(address implementation) external view returns (bool);
-    function versionOf(address implementation) external view returns (uint64);
-}
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 interface IERC20Minimal {
     function balanceOf(address account) external view returns (uint256);
@@ -39,7 +37,7 @@ interface IERC1271 {
 ///      allowlist. See docs/SPEC_v2.md, docs/SECURITY_REVIEW_v2.md, docs/EPK_V2_UPGRADE_ARCHITECTURE.md.
 ///      Deployed behind an ERC-1967 proxy. STORAGE LAYOUT IS APPEND-ONLY across versions
 ///      (snapshot: docs/storage-layout/EPKVault-2.0.0.txt).
-contract EPKVault is Initializable, UUPSUpgradeable {
+contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     // ---------------------------------------------------------------------
     // Types & constants
     // ---------------------------------------------------------------------
@@ -65,7 +63,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
     /// @notice Asset key used for the chain's native coin.
     address public constant NATIVE = address(0);
     /// @notice Selector key used in the call allowlist for a plain native transfer (empty calldata).
-    bytes4 public constant NATIVE_TRANSFER_SELECTOR = 0x00000000;
+    bytes4 public constant NATIVE_TRANSFER_SELECTOR = bytes4(0);
 
     uint256 public constant MIN_DELAY = 1 hours;
     uint256 public constant MAX_DELAY = 30 days;
@@ -304,7 +302,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
     }
 
     /// @notice Implementation version: major * 10_000 + minor * 100 + patch.
-    function vaultVersion() public pure virtual returns (uint64) {
+    function vaultVersion() public pure virtual override returns (uint64) {
         return 20_000; // 2.0.0
     }
 
@@ -341,7 +339,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         if (sel == UUPSUpgradeable.upgradeToAndCall.selector || sel == EPKVault.migrate.selector) {
             revert BadOperation();
         }
-        address shielded;
+        address shielded = address(0);
         if (sel == this.setGuardian.selector) {
             (address g, bool enabled) = abi.decode(data[4:], (address, bool));
             if (!enabled) shielded = g;
@@ -383,24 +381,32 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         );
     }
 
+    // slither-disable-start timestamp,low-level-calls
+    // timestamp: compares a readiness time hours/days away; a few seconds of validator skew are irrelevant.
+    // low-level-calls: the call targets the vault itself (only its onlyTimelocked functions accept it);
+    // its result is checked and bubbled with OpenZeppelin Address.verifyCallResult.
     /// @notice Admin executes any ready operation; the recovery key only its own recovery operations.
     function executeScheduled(bytes calldata data, bytes32 salt) external nonReentrant {
         bytes32 id = hashOperation(data, salt);
         Operation memory op = operations[id];
         if (msg.sender != admin) {
             if (msg.sender != recovery) revert NotAdminOrRecovery();
-            if (op.readyAt != 0 && !op.adminCannotCancel) revert NotAdminOrRecovery();
+            if (_exists(op) && !op.adminCannotCancel) revert NotAdminOrRecovery();
         }
-        if (op.readyAt == 0) revert UnknownOperation();
+        if (!_exists(op)) revert UnknownOperation();
         if (!_isLive(op)) revert StaleOperation();
         if (block.timestamp < op.readyAt) revert OperationNotReady();
         delete operations[id];
 
         (bool ok, bytes memory ret) = address(this).call(data);
-        if (!ok) _bubble(ret);
+        ret = Address.verifyCallResult(ok, ret);
         emit OperationExecuted(id);
     }
+    // slither-disable-end timestamp,low-level-calls
 
+    // slither-disable-start timestamp
+    // timestamp: false positive — only the existence sentinel (`version`) of the stored operation is
+    // compared; Slither taints the whole struct because it also holds `readyAt`.
     /// @notice Admin, any guardian or the recovery key can veto a pending change (see shielding rules).
     ///         The recovery key's veto matters when the admin is compromised and a guardian is absent.
     function cancel(bytes32 id) external {
@@ -408,11 +414,12 @@ contract EPKVault is Initializable, UUPSUpgradeable {
             revert NotAdminOrGuardian();
         }
         Operation memory op = operations[id];
-        if (op.readyAt == 0) revert UnknownOperation();
+        if (!_exists(op)) revert UnknownOperation();
         if (msg.sender == op.shielded || (msg.sender == admin && op.adminCannotCancel)) revert CannotCancel();
         delete operations[id];
         emit OperationCancelled(id, msg.sender);
     }
+    // slither-disable-end timestamp
 
     // ---------------------------------------------------------------------
     // Tightening (instant, admin or any guardian; none of these can move funds)
@@ -469,6 +476,8 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         emit DestinationSet(destination, false);
     }
 
+    // slither-disable-start timestamp
+    // timestamp: refreshes the limit's refill clock (hours/days granularity).
     /// @notice Lower an asset's limits instantly. Both values must not increase.
     function lowerAssetLimit(address token, uint128 newMaxPerWindow, uint128 newCoSignAbove)
         external
@@ -484,6 +493,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         a.coSignAbove = newCoSignAbove;
         emit AssetSet(token, newMaxPerWindow, a.window, newCoSignAbove);
     }
+    // slither-disable-end timestamp
 
     // ---------------------------------------------------------------------
     // Loosening (timelocked; or admin during setup)
@@ -559,6 +569,8 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         emit DestinationSet(destination, true);
     }
 
+    // slither-disable-start timestamp
+    // timestamp: refreshes the limit's refill clock (hours/days granularity).
     /// @notice Track an asset and set its outflow limits (use NATIVE for the native coin).
     /// @dev An asset added after setup starts with an empty bucket, so untrack + re-add cannot be
     ///      used to refill a limit early.
@@ -583,18 +595,21 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         a.coSignAbove = coSignAbove;
         emit AssetSet(token, maxPerWindow, window, coSignAbove);
     }
+    // slither-disable-end timestamp
 
     function untrackAsset(address token) external onlyTimelocked {
         if (!assets[token].tracked) revert UntrackedAsset(token);
         delete assets[token];
-        uint256 n = _trackedAssets.length;
-        for (uint256 i = 0; i < n; i++) {
+        uint256 last = _trackedAssets.length - 1;
+        uint256 index = last;
+        for (uint256 i = 0; i < last; i++) {
             if (_trackedAssets[i] == token) {
-                _trackedAssets[i] = _trackedAssets[n - 1];
-                _trackedAssets.pop();
+                index = i;
                 break;
             }
         }
+        _trackedAssets[index] = _trackedAssets[last];
+        _trackedAssets.pop();
         emit AssetUntracked(token);
     }
 
@@ -656,8 +671,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
     /// @dev Every release overrides this as `internal override reinitializer(n)` and runs every step
     ///      that `from` has not reached yet (vaults may skip releases). 2.0.0 is the first release,
     ///      so nothing can upgrade *to* it and this default refuses.
-    function _migrate(uint64 from) internal virtual {
-        from;
+    function _migrate(uint64 /* from */ ) internal virtual {
         revert BadOperation();
     }
 
@@ -691,6 +705,13 @@ contract EPKVault is Initializable, UUPSUpgradeable {
     ///         binds the agent, so only that agent can submit it.
     /// @param coSignature co-signer's signature over `getCoSignDigest(executeDigest)`; required only
     ///        when this batch moves more than an asset's `coSignAbove` (pass empty bytes otherwise).
+    // slither-disable-start reentrancy-eth,reentrancy-no-eth,reentrancy-benign,reentrancy-events
+    // Reentrancy (reviewed, tested): state written after the external calls is the outflow accounting,
+    // which by design must measure balances AFTER the batch has run. The whole function holds the
+    // `nonReentrant` lock shared with `executeScheduled`, so the batch cannot re-enter either of them;
+    // every other state-changing entry point is restricted to the admin, guardians, recovery key or
+    // the vault itself (onlyTimelocked), none of which a call target is. The nonce is consumed before
+    // any external call. Proof: test/v2/EPKVault.reentrancy.t.sol.
     /// @dev Token allowances created inside the batch must be back to zero when it ends
     ///      (pattern: approve → use → approve(0)), so no allowance can be pulled later.
     function execute(
@@ -716,6 +737,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
 
         emit Executed(policyId, p.signer, msg.sender, nonces[policyId] - 1, calls.length);
     }
+    // slither-disable-end reentrancy-eth,reentrancy-no-eth,reentrancy-benign,reentrancy-events
 
     struct Approvals {
         address[] tokens;
@@ -723,6 +745,8 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         uint256 count;
     }
 
+    // slither-disable-start timestamp
+    // timestamp: deadline/TTL checks with minute-to-day granularity; validator skew is irrelevant.
     function _loadExecutablePolicy(uint256 policyId, uint256 callCount, uint256 deadline)
         internal
         view
@@ -744,6 +768,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         if (!ap.allowed) revert AgentNotAllowed();
         if (ap.validUntil != 0 && block.timestamp > ap.validUntil) revert AgentExpired();
     }
+    // slither-disable-end timestamp
 
     function _checkCalls(uint256 policyId, uint256 maxValuePerCall, Call[] calldata calls)
         internal
@@ -763,6 +788,10 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         }
     }
 
+    // slither-disable-start calls-loop
+    // calls-loop: at most MAX_CALLS validator calls; the validator is chosen by the vault's own admin,
+    // so a reverting validator can only block this vault's own policy.
+    /// @dev Checks-effects-interactions: the nonce is consumed BEFORE the external validator is called.
     function _authorize(
         uint256 policyId,
         Policy memory p,
@@ -773,6 +802,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         uint256 nonce = nonces[policyId];
         digest = _executeDigest(policyId, msg.sender, calls, nonce, deadline);
         if (!_isValidSignature(p.signer, digest, signature)) revert BadSignature();
+        nonces[policyId] = nonce + 1;
 
         if (p.validator != address(0)) {
             for (uint256 i = 0; i < calls.length; i++) {
@@ -781,22 +811,34 @@ contract EPKVault is Initializable, UUPSUpgradeable {
                 );
             }
         }
-        nonces[policyId] = nonce + 1;
     }
+    // slither-disable-end calls-loop
 
+    // slither-disable-start arbitrary-send-eth,low-level-calls,calls-loop
+    // arbitrary-send-eth (reviewed, tested): sending value to the batch targets IS the vault's job.
+    // Before this point `_checkCall` has required, for every call: target allowlisted for the policy,
+    // value <= maxValuePerCall, native asset tracked and target an allowlisted destination; the batch
+    // is signed by the policy signer and submitted by an allowed agent; afterwards the real outflow is
+    // charged against the per-window limit. Proof: test/v2/EPKVault.reentrancy.t.sol and the
+    // invariants in test/v2/EPKVault.invariant.t.sol.
+    // low-level-calls: arbitrary calldata must be forwarded; the result is checked and bubbled.
+    // calls-loop: at most MAX_CALLS calls, all signed by the policy signer.
     function _runCalls(uint256 policyId, Call[] calldata calls) internal returns (bytes[] memory results) {
         uint256 n = calls.length;
         results = new bytes[](n);
         for (uint256 i = 0; i < n; i++) {
             Call calldata c = calls[i];
             (bool ok, bytes memory ret) = c.target.call{value: c.value}(c.data);
-            if (!ok) _bubble(ret);
+            ret = Address.verifyCallResult(ok, ret);
             _checkTokenReturn(c, ret);
             results[i] = ret;
             emit CallExecuted(policyId, c.target, _selectorOf(c.data), c.value);
         }
     }
+    // slither-disable-end arbitrary-send-eth,low-level-calls,calls-loop
 
+    // slither-disable-start calls-loop
+    // calls-loop: at most MAX_CALLS allowance reads on tokens the vault's admin chose to track.
     function _requireAllowancesCleared(Approvals memory a) internal view {
         for (uint256 j = 0; j < a.count; j++) {
             if (IERC20Minimal(a.tokens[j]).allowance(address(this), a.spenders[j]) != 0) {
@@ -804,6 +846,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
             }
         }
     }
+    // slither-disable-end calls-loop
 
     // ---------------------------------------------------------------------
     // Views
@@ -859,8 +902,11 @@ contract EPKVault is Initializable, UUPSUpgradeable {
             if (!isDestination[target]) revert DestinationNotAllowed(target);
         }
         if (c.data.length < 4) return address(0);
+        spender = _checkTokenCall(target, sel, c.data);
+    }
 
-        bytes calldata data = c.data;
+    /// @dev Recipient / spender rules for the ERC-20 (and ERC-721-shaped) calls the vault understands.
+    function _checkTokenCall(address target, bytes4 sel, bytes calldata data) internal view returns (address spender) {
         if (sel == _SEL_TRANSFER) {
             if (!assets[target].tracked) revert UntrackedAsset(target);
             _requireDestination(_addressArg(data, 0));
@@ -902,9 +948,11 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         }
     }
 
+    // slither-disable-start timestamp
+    // timestamp: the limit refills over windows of hours/days; seconds of validator skew are irrelevant.
     /// @dev Charges every real decrease of a tracked balance against that asset's bucket.
     function _settleOutflows(uint256[] memory balancesBefore, bytes32 digest, bytes calldata coSignature) internal {
-        bool coSigned;
+        bool coSigned = false;
         uint256 n = balancesBefore.length;
         for (uint256 i = 0; i < n; i++) {
             address token = _trackedAssets[i];
@@ -939,12 +987,26 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         uint256 avail = uint256(a.available) + refill;
         return avail < cap ? avail : cap;
     }
+    // slither-disable-end timestamp
 
+    // slither-disable-start calls-loop
+    // calls-loop: balance reads over at most MAX_TRACKED_ASSETS tokens the vault's admin chose to track.
     function _balanceOf(address token) internal view returns (uint256) {
         if (token == NATIVE) return address(this).balance;
         return IERC20Minimal(token).balanceOf(address(this));
     }
+    // slither-disable-end calls-loop
 
+    // slither-disable-start timestamp
+    // timestamp: false positive — compares the release version, not a time (see `cancel`).
+    /// @dev Existence sentinel: every scheduled operation records a non-zero release version.
+    function _exists(Operation memory op) internal pure returns (bool) {
+        return op.version != 0;
+    }
+    // slither-disable-end timestamp
+
+    // slither-disable-start timestamp
+    // timestamp: readiness / grace-period arithmetic over hours to weeks; validator skew is irrelevant.
     function _schedule(
         bytes memory data,
         bytes32 salt,
@@ -957,7 +1019,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         Operation memory existing = operations[id];
         // a live operation blocks the id, except that a recovery operation replaces a look-alike
         // non-recovery operation (so a compromised admin cannot squat the recovery's id)
-        if (existing.readyAt != 0 && _isLive(existing) && !(adminCannotCancel && !existing.adminCannotCancel)) {
+        if (_exists(existing) && _isLive(existing) && !(adminCannotCancel && !existing.adminCannotCancel)) {
             revert OperationExists();
         }
         uint64 readyAt = uint64(block.timestamp + wait);
@@ -979,6 +1041,7 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         return (op.epochExempt || (op.epoch == epoch && op.version == vaultVersion()))
             && block.timestamp <= uint256(op.readyAt) + GRACE_PERIOD;
     }
+    // slither-disable-end timestamp
 
     function _bumpEpoch() internal {
         uint64 e = epoch + 1;
@@ -1003,24 +1066,16 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         if (sel == NATIVE_TRANSFER_SELECTOR) revert BadCalldata();
     }
 
-    function _uintArg(bytes calldata data, uint256 index) internal pure returns (uint256 v) {
+    function _uintArg(bytes calldata data, uint256 index) internal pure returns (uint256) {
         uint256 offset = 4 + 32 * index;
         if (data.length < offset + 32) revert BadCalldata();
-        assembly {
-            v := calldataload(add(data.offset, offset))
-        }
+        return uint256(bytes32(data[offset:offset + 32]));
     }
 
     function _addressArg(bytes calldata data, uint256 index) internal pure returns (address) {
         uint256 v = _uintArg(data, index);
         if (v >> 160 != 0) revert BadCalldata();
         return address(uint160(v));
-    }
-
-    function _bubble(bytes memory ret) internal pure {
-        assembly {
-            revert(add(ret, 0x20), mload(ret))
-        }
     }
 
     // ---------------------------------------------------------------------
@@ -1063,34 +1118,33 @@ contract EPKVault is Initializable, UUPSUpgradeable {
         return keccak256(abi.encodePacked("\x19\x01", _domainSeparator(), structHash));
     }
 
-    /// @dev ECDSA first (covers EOAs, including EIP-7702 delegated ones), then ERC-1271 for contracts
-    ///      such as multisigs or MPC wallets. The 1271 answer must be exactly the ABI-encoded magic.
+    // slither-disable-start low-level-calls
+    // low-level-calls: a staticcall, so the answer can be checked to be EXACTLY the 32-byte ERC-1271
+    // magic value (a high-level call would revert on malformed answers instead of returning false).
+    /// @dev ECDSA first (OpenZeppelin ECDSA: 65-byte signatures, low-s enforced; covers EOAs including
+    ///      EIP-7702 delegated ones), then ERC-1271 for contracts such as multisigs or MPC wallets.
     function _isValidSignature(address signer, bytes32 digest, bytes calldata signature)
         internal
         view
         returns (bool)
     {
-        if (_recover(digest, signature) == signer) return true;
+        if (_recoverOrZero(digest, signature) == signer) return true;
         if (signer.code.length == 0) return false;
         (bool ok, bytes memory ret) =
             signer.staticcall(abi.encodeWithSelector(IERC1271.isValidSignature.selector, digest, signature));
         return ok && ret.length == 32 && abi.decode(ret, (bytes32)) == bytes32(_ERC1271_MAGIC);
     }
+    // slither-disable-end low-level-calls
 
-    /// @dev Returns address(0) for any malformed or high-s signature.
-    function _recover(bytes32 digest, bytes calldata signature) internal pure returns (address) {
-        if (signature.length != 65) return address(0);
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        assembly {
-            r := calldataload(signature.offset)
-            s := calldataload(add(signature.offset, 32))
-            v := byte(0, calldataload(add(signature.offset, 64)))
-        }
-        if (v < 27) v += 27;
-        if (v != 27 && v != 28) return address(0);
-        if (uint256(s) > 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0) return address(0);
-        return ecrecover(digest, v, r, s);
+    // slither-disable-start unused-return
+    // unused-return: the third value is only a diagnostic argument of the error (length or s value);
+    // any error at all is treated as "no valid ECDSA signature".
+    /// @dev OpenZeppelin ECDSA recovery; address(0) for any malformed, high-s or invalid signature
+    ///      (address(0) never matches a signer: signers are checked to be non-zero).
+    function _recoverOrZero(bytes32 digest, bytes calldata signature) internal pure returns (address recovered) {
+        ECDSA.RecoverError err;
+        (recovered, err,) = ECDSA.tryRecoverCalldata(digest, signature);
+        if (err != ECDSA.RecoverError.NoError) return address(0);
     }
+    // slither-disable-end unused-return
 }

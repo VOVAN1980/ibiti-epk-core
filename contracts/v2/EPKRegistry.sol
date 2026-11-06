@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.24;
 
-interface IVersionedVault {
-    function vaultVersion() external view returns (uint64);
-}
+import {IEPKRegistry, IVersionedVault} from "./IEPK.sol";
 
 /// @title EPK Registry — catalogue of reviewed EPKVault implementations
 /// @notice Lists the implementation versions that vaults MAY opt into. The registry cannot upgrade,
@@ -11,10 +9,10 @@ interface IVersionedVault {
 ///         A vault's registry is fixed at creation and cannot be swapped.
 ///         A new release becomes usable only APPROVAL_DELAY after it is proposed, so the public can
 ///         inspect it first; a release can be revoked instantly (blocks future opt-ins only).
-contract EPKRegistry {
+contract EPKRegistry is IEPKRegistry {
     struct Release {
-        uint64 version; // read from the implementation's own vaultVersion()
-        uint64 activeAt; // 0 = unknown
+        uint64 version; // read from the implementation's own vaultVersion(); 0 = not listed
+        uint64 activeAt;
         bool revoked;
         bytes32 codehash; // pinned at proposal time
     }
@@ -65,23 +63,30 @@ contract EPKRegistry {
 
     function revokeRelease(address implementation) external onlyOwner {
         Release storage r = releases[implementation];
-        if (r.activeAt == 0) revert UnknownRelease(implementation);
+        if (r.version == 0) revert UnknownRelease(implementation);
         r.revoked = true;
         emit ReleaseRevoked(implementation, r.version);
     }
 
+    // slither-disable-start timestamp,incorrect-equality
+    // timestamp: the approval delay is 7 days; a few seconds of validator skew are irrelevant.
+    // incorrect-equality: the strict comparisons are intentional — `version != 0` is the "listed"
+    // sentinel and `codehash ==` is the pin that must match exactly.
     /// @notice True if a vault may run / upgrade to `implementation` right now.
-    function isApproved(address implementation) external view returns (bool) {
+    function isApproved(address implementation) external view override returns (bool) {
         Release memory r = releases[implementation];
-        return r.activeAt != 0 && block.timestamp >= r.activeAt && !r.revoked
+        return r.version != 0 && block.timestamp >= r.activeAt && !r.revoked
             && implementation.codehash == r.codehash;
     }
+    // slither-disable-end timestamp,incorrect-equality
 
-    function versionOf(address implementation) external view returns (uint64) {
+    function versionOf(address implementation) external view override returns (uint64) {
         return releases[implementation].version;
     }
 
+    /// @notice Starts a two-step ownership transfer (the new owner must accept).
     function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
         pendingOwner = newOwner;
         emit OwnershipTransferStarted(owner, newOwner);
     }
@@ -93,19 +98,17 @@ contract EPKRegistry {
         pendingOwner = address(0);
     }
 
+    // slither-disable-start timestamp
+    // timestamp: false positive — only the "listed" sentinel (`version`) is compared; Slither taints
+    // the whole Release struct because it also stores `activeAt`.
     function _list(address implementation, uint64 activeAt, bool genesis) internal {
-        if (implementation.code.length == 0) revert NoCode(implementation);
+        bytes memory code = implementation.code;
+        if (code.length == 0) revert NoCode(implementation);
         // EIP-7702 delegated accounts (0xEF0100…) can change "their" code at any time
-        uint8 first;
-        assembly {
-            let ptr := mload(0x40)
-            extcodecopy(implementation, ptr, 0, 1)
-            first := byte(0, mload(ptr))
-        }
-        if (first == 0xEF) revert DelegatedCode(implementation);
-        if (releases[implementation].activeAt != 0) revert AlreadyListed(implementation);
+        if (code[0] == 0xEF) revert DelegatedCode(implementation);
+        if (releases[implementation].version != 0) revert AlreadyListed(implementation);
 
-        uint64 version;
+        uint64 version = 0;
         try IVersionedVault(implementation).vaultVersion() returns (uint64 v) {
             version = v;
         } catch {
@@ -122,4 +125,5 @@ contract EPKRegistry {
         latestVersion = version;
         emit ReleaseProposed(implementation, version, activeAt, codehash);
     }
+    // slither-disable-end timestamp
 }

@@ -2,7 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {EPKVault, IEPKRegistry} from "./EPKVault.sol";
+import {EPKVault} from "./EPKVault.sol";
+import {IEPKRegistry} from "./IEPK.sol";
 
 /// @title EPK Vault proxy — permanent address of one customer's vault
 /// @dev Plain native transfers are accepted here without touching the implementation, so senders
