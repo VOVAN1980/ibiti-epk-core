@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-
-import "../epk/EPKernel.sol";
-
+import {IPolicyValidator} from "../epk/IPolicyValidator.sol";
 contract RevertingValidator is IPolicyValidator {
     error ValidatorRejected();
 
