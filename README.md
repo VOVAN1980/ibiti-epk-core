@@ -12,7 +12,8 @@ It enables safe delegated execution for agents **without implicit approve(∞)**
 - [Spec (v1)](docs/SPEC.md)
 - [Integration](docs/INTEGRATION.md)
 - [Threat model](docs/THREAT_MODEL.md)
-- [Testnet deployment + smoke evidence](docs/TESTNET_ADDRESSES.md)
+- [Testnet deployment + smoke evidence](docs/TESTNET_ADDRESSES_UPDATED.md)
+- [TypeScript SDK](sdk/README.md)
 - [Labs (demo + docs mirror)](https://www.ibiticoin.com/ibiti-web/labs/index.html)
 
 ---
@@ -92,12 +93,27 @@ Typed data:
 forge build
 forge test -vv
 forge coverage --ir-minimum --report summary --report lcov
-Smoke test on BSC testnet (policy → execute → revoke)
-The on-chain evidence (tx hashes + verified contracts) is maintained here:
-➡️ docs/TESTNET_ADDRESSES.md
+```
 
-Windows PowerShell (reads RPC from .env, exports vars so vm.env* works):
+### Scripts
 
+| Script | Purpose | Env vars |
+|---|---|---|
+| `scripts/Deploy.s.sol` | Deploy kernel + composite + validators | `OWNER`, `PRIVATE_KEY`, optional `DEPLOY_THREATFEED`, `THREAT_ROOT`, `THREAT_EPOCH` |
+| `scripts/SmokeTest.s.sol` | On-chain smoke: policy → execute → revoke | `PRIVATE_KEY`, `EPKERNEL` |
+| `scripts/coverage.ps1` | Coverage helper (Windows) | — |
+| `scripts/update-site-stats.ps1` | Run coverage and update test stats on the Labs site | — |
+
+Copy `.env.example` to `.env` and fill in your values. `.env` is git-ignored — **never commit real keys**.
+
+### Smoke test on BSC testnet (policy → execute → revoke)
+
+The on-chain evidence (tx hashes + verified contracts) is maintained in
+[docs/TESTNET_ADDRESSES_UPDATED.md](docs/TESTNET_ADDRESSES_UPDATED.md).
+
+Windows PowerShell (reads RPC from `.env`, exports vars so `vm.env*` works):
+
+```powershell
 cd D:\ibiti-epk-core
 
 # export .env -> process env (so vm.envAddress/vm.envUint can read it)
@@ -112,32 +128,36 @@ $rpc = (Select-String -Path .\.env -Pattern '^BSC_RPC_URL=').Line.Split('=')[1].
 
 # broadcast
 forge script .\scripts\SmokeTest.s.sol:SmokeTest --rpc-url $rpc --broadcast -vvvv
+```
+
 Artifacts produced by Foundry:
 
-broadcast/SmokeTest.s.sol/97/run-latest.json
+- `broadcast/SmokeTest.s.sol/97/run-latest.json`
+- `cache/SmokeTest.s.sol/97/run-latest.json`
 
-cache/SmokeTest.s.sol/97/run-latest.json
+---
 
-Testnet deployment (BSC testnet, chainId 97)
+## Testnet deployment (BSC testnet, chainId 97)
+
 Verified contract addresses + deployment tx hashes + smoke-test evidence:
-➡️ docs/TESTNET_ADDRESSES.md
+[docs/TESTNET_ADDRESSES_UPDATED.md](docs/TESTNET_ADDRESSES_UPDATED.md)
 
-Tests & coverage (Feb 2026)
-Functional: 202/202 passing (100%)
+---
 
-Line: 94.21% • Statement: 95.11%
+## Tests & coverage
 
-Branch: 58.33% (viaIR source-map limitations; may be underreported)
-
-Invariants: 2 passed (nonce monotonicity + revoked policy safety) — 256 runs / 128k calls
+- Functional: **202/202 passing** (100%)
+- Line: 94.21% • Statement: 95.11%
+- Branch: 58.33% (viaIR source-map limitations; may be underreported)
+- Invariants: 2 passed (nonce monotonicity + revoked policy safety) — 256 runs / 128k calls
 
 Notes:
 
-viaIR + --ir-minimum used to avoid “stack too deep” → branch % can look lower than reality.
+- `via_ir` + `--ir-minimum` is used to avoid “stack too deep” → branch % can look lower than reality.
+- Ground truth: 100% functional pass + explicit branch-hit tests.
 
-Ground truth: 100% functional pass + explicit branch-hit tests.
+---
 
-License
-MIT (see LICENSE)
+## License
 
-::contentReference[oaicite:0]{index=0}
+MIT (see [LICENSE](LICENSE))
