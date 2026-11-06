@@ -186,4 +186,7 @@ Notes:
 
 ## License
 
-MIT (see [LICENSE](LICENSE))
+- **EPK v1** (`contracts/epk`, `contracts/validators`, `contracts/mocks`), tests, scripts, SDK, docs: **MIT** — see [LICENSE](LICENSE)
+- **EPK v2** (`contracts/v2`, `test/v2`): **Business Source License 1.1** — see [LICENSE-BUSL-1.1](LICENSE-BUSL-1.1). Free for study, audits, testnets, hackathons, education and research; production use with real assets requires a commercial license. Becomes MIT on 2030-11-06.
+
+Details and commercial licensing: [LICENSING.md](LICENSING.md).
