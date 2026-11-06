@@ -1,7 +1,7 @@
 # EPK v2 — EPKVault Specification (draft)
 
 Status: **draft, internally reviewed, not independently audited, not deployed.**
-Contracts: `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol`.
+Contracts: `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol`, `contracts/v2/EPKRegistry.sol`.
 Tests: `test/v2/`. Review: [SECURITY_REVIEW_v2.md](SECURITY_REVIEW_v2.md).
 
 ## 1. The promise
@@ -31,7 +31,7 @@ v2 fixes this by construction: **every customer gets their own vault**. Funds si
 
 ## 4. Lifecycle
 
-1. **Create**: the future admin calls `EPKVaultFactory.createVault(guardians, delay, recovery, salt)`. The caller always becomes the admin (nobody can create a vault "for" someone else). CREATE2 with the salt bound to the caller. `delay` ∈ [1 hour, 30 days].
+1. **Create**: the future admin calls `EPKVaultFactory.createVault(guardians, delay, recovery, salt)`. The factory deploys an ERC-1967 proxy (permanent address) pointing at its fixed implementation and initializes it in the same transaction. The caller always becomes the admin (nobody can create a vault "for" someone else). CREATE2 with the salt bound to the caller. `delay` ∈ [1 hour, 30 days].
 2. **Setup**: while `setupDone == false` the admin configures everything directly (assets, limits, destinations, policies, agents, calls, co-signer, guardians). **No funds can move during setup.**
 3. **`finalizeSetup()`**: one-way switch; requires at least 2 guardians. From now on every loosening change goes through the timelock, and execution is enabled.
 
@@ -75,7 +75,7 @@ Per tracked asset (`NATIVE = address(0)` for the native coin): `maxPerWindow`, `
 - Every scheduled change emits `OperationScheduled(id, data, salt, readyAt, by)` — monitoring must watch it; any guardian can `cancel` within the delay.
 - **Shielded operations**: removing or replacing a guardian cannot be cancelled by that guardian and is not invalidated by a panic, so one rogue guardian cannot freeze the vault forever. The guardian count can never drop below 2 after setup.
 - **Recovery**: `recoverAdmin(newAdmin)` (recovery key only) schedules `setAdmin` with **2× delay**; the admin cannot cancel it and a panic does not invalidate it; any guardian can veto it.
-- `executeScheduled` may be called by the admin or the recovery key. A ready operation must be executed within `GRACE_PERIOD` (14 days), otherwise it is stale and may be scheduled again.
+- `executeScheduled` is called by the admin; the recovery key can execute only its own recovery operations. A ready operation must be executed within `GRACE_PERIOD` (14 days), otherwise it is stale and may be scheduled again.
 
 ## 8. Kill switch
 
@@ -101,7 +101,20 @@ See [SECURITY_REVIEW_v2.md §3](SECURITY_REVIEW_v2.md#3-residual-risks-and-desig
 - External validators must key their state by `msg.sender` (the vault) and should be immutable — a validator's own owner could otherwise change its rules outside the vault timelock.
 - Guardians can cause denial of service (never theft); two colluding guardians can keep the vault frozen.
 
-## 11. Recommended configuration
+## 11. Upgrades (opt-in, same address)
+
+Each vault can move to a newer implementation without changing its address or moving funds — **only by its own decision**:
+
+- `scheduleUpgrade(newImplementation, withMigration, salt)` (admin) → **max(2× delay, 2 days)** → `executeScheduled` (admin);
+- the new implementation must be approved in the vault's `EPKRegistry` (fixed per vault; 7-day public approval delay, revocable, codehash pinned, version read from the code) and have a strictly higher `vaultVersion()`;
+- the only code that can ride along is the release's own `migrate()` (vault-only, runs once);
+- any guardian can cancel; `panic` / `revokeAll` invalidate a pending upgrade;
+- no direct `upgradeToAndCall`, no generic `schedule` of it or of `migrate`, no downgrades;
+- the registry and the factory have no power over existing vaults.
+
+Full design, comparison with immutable / beacon / migration approaches, threats and release rules: [EPK_V2_UPGRADE_ARCHITECTURE.md](EPK_V2_UPGRADE_ARCHITECTURE.md).
+
+## 12. Recommended configuration
 
 - `delay` ≥ 24 hours; at least 2 guardians on infrastructure independent from the operator and from each other; a recovery key in cold storage.
 - Monitoring bot as a guardian: auto-`cancel` unexpected `OperationScheduled`, auto-`panic` on anomalies.

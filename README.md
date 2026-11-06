@@ -12,6 +12,7 @@ It enables safe delegated execution for agents **without implicit approve(∞)**
 - [Spec (v1)](docs/SPEC.md)
 - [Spec (v2 draft) — EPKVault](docs/SPEC_v2.md)
 - [Security review (v2, internal)](docs/SECURITY_REVIEW_v2.md)
+- [Upgrade architecture (v2)](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Integration](docs/INTEGRATION.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Testnet deployment + smoke evidence](docs/TESTNET_ADDRESSES_UPDATED.md)
@@ -34,6 +35,7 @@ It enables safe delegated execution for agents **without implicit approve(∞)**
 - **Optional independent co-signer** for large outflows
 - **Tighten instantly, loosen only through a timelock** that guardians can veto
 - **`panic()`**: one call pauses the vault and invalidates every policy and pending change
+- **Upgradeable without moving funds — only by the owner's decision**: permanent proxy address, registry of reviewed releases, 2× timelock, guardian veto; nobody (including IBITI) can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md))
 
 Status: draft, internally reviewed (all high/medium findings fixed), **not independently audited, not deployed**.
 Details: [docs/SPEC_v2.md](docs/SPEC_v2.md) · [docs/SECURITY_REVIEW_v2.md](docs/SECURITY_REVIEW_v2.md).

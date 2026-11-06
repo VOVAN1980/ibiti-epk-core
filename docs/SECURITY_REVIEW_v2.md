@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Scope | `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol` |
+| Scope | `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol`, `contracts/v2/EPKRegistry.sol` (upgrade mechanism: second round, §1b) |
 | Date | 2026-11-06 |
 | Method | Internal review by a separate AI agent (code reading + Foundry proof-of-concept tests), fixes by the developer, regression tests for every finding |
 | Status | All high / medium findings fixed. **Not an independent audit.** |
@@ -31,6 +31,30 @@
 | I-6 | Info | Signature did not bind the agent; re-activating a revoked policy revived queued signatures | **Fixed** — `agent` is part of the signed data; `revokePolicy` bumps the nonce | `test_signatureBoundToAgent`, `test_revokePolicyKillsQueuedSignatures` |
 | I-7 | Info | No ERC-721/1155 receiver hooks; `transferFrom` into the vault is refused | **Documented** | — |
 | I-8 | Info | Validators get no vault argument; an external validator's owner can change its rules outside the vault timelock | **Documented** — validators must key state by `msg.sender` (the vault); prefer immutable validators | — |
+
+### 1b. Upgrade mechanism — second review round
+
+Scope: proxy/UUPS refactor of `EPKVault`, `EPKRegistry`, `EPKVaultFactory`. No critical or high findings.
+
+| ID | Severity | Finding | Status | Regression test |
+|---|---|---|---|---|
+| F1 | Medium | Admin could swap the registry (`setRegistry`, 1× delay) for an attacker registry and then install any code | **Fixed** — `setRegistry` removed; the registry is fixed per vault | (function no longer exists) |
+| F2 | Medium | Migration functions written with only `reinitializer(n)` were callable by anyone | **Fixed** — upgrades can attach only the release's own `migrate()`, which must also require `msg.sender == address(this)`; `migrate` cannot be scheduled generically | `test_migrationOnlyByTheVaultItself` |
+| F3 | Low | Registry version not tied to the code's `vaultVersion()` (allowed downgrades) | **Fixed** — the registry reads the version from the implementation | `test_registryRules` |
+| F4 | Low | Factory kept deploying a revoked implementation | **Fixed** — factory requires `registry.isApproved(implementation)` | `test_factoryRefusesRevokedImplementation` |
+| F5 | Low | "2× delay" could be shortened by lowering the delay first | **Fixed** — `UPGRADE_DELAY_FLOOR = 2 days` | `test_upgradeDelayFloorAfterLoweringDelay`, `invariant_upgradeNeverFasterThanTheFloor` |
+| F6 | Low | Upgrade `data` was a general "call as the vault" channel (nested upgrades, recovery change) | **Fixed** — `scheduleUpgrade(impl, bool withMigration, salt)`: payload is empty or `migrate()` only | `test_upgradeOperationDataMatchesHelper` |
+| F7 | Low | Proxy could not receive native coins via 2300-gas `transfer`/`send` in a cold transaction | **Fixed** — `EPKVaultProxy.receive()` | `test_vaultAcceptsStipendTransfers` |
+| F8 | Low | A compromised registry owner could exhaust the version space | **Fixed** — `MAX_VERSION_STEP = 10_000` per release | `test_registryRules` |
+| I1 | Info | Storage snapshot missing; contract size margin small | **Fixed / documented** — `docs/storage-layout/EPKVault-2.0.0.txt`, `extra_output = ["storageLayout"]`; size budget in release rules | — |
+| I2 | Info | Codehash pin does not cover EIP-7702 delegated code | **Fixed** — registry rejects code starting with `0xEF` | `test_registryRejectsDelegatedCode` |
+| I3 | Info | Compromised admin + approved-but-buggy release = compromise; no rollback | **Documented** (audit, 7-day window, revocation, guardian veto) | — |
+| I4 | Info | Pending operations survive upgrades | **Documented** — releases that change scheduling rules bump `epoch` in `migrate()` | — |
+| I5 | Info | `initialize` did not reject the vault itself as guardian/recovery | **Fixed** | — |
+| I6 | Info | `factory.isVault` is not a trust signal | **Documented** in code and docs | — |
+| I7 | Info | Recovery key could execute any ready admin operation | **Fixed** — recovery executes only its own recovery operations | `test_recoveryCannotExecuteAdminOperations` |
+| I8 | Info | EIP-712 version fixed; no ERC-5267 | **Documented** (release rule; future work) | — |
+| I9 | Info | Upgrade invariant handler lacked delay/migration actions | **Fixed** — handler now lowers the delay, uses migrations and generic scheduling | invariants |
 
 ## 2. Verified as sound by the review
 
@@ -66,8 +90,9 @@ forge coverage --ir-minimum --match-path "test/v2/*" --report summary
 
 Results on 2026-11-06:
 
-- Whole repository: **261 / 261 tests passing** (v1: 202, v2: 59).
+- Whole repository: **283 / 283 tests passing** (v1: 202, v2: 81).
 - v2 unit + fuzz: 55 passing; fuzz tests at 257 runs each, including `testFuzz_compromisedOperatorCannotDrain` (operator signer, agent and co-signer all compromised).
+- v2 upgrade mechanism: 20 unit/fuzz + 2 stateful invariants (`test/v2/EPKVault.upgrade.t.sol`), see [EPK_V2_UPGRADE_ARCHITECTURE.md §10](EPK_V2_UPGRADE_ARCHITECTURE.md#10-test-evidence).
 - v2 stateful invariants: 4 passing, 64 runs × depth 60 (3 840 attacker actions each), with a check that the attacker achieved successful executions in every run:
   - `invariant_outflowNeverExceedsTheLimit`
   - `invariant_noAllowanceSurvives`
@@ -81,8 +106,9 @@ Results on 2026-11-06:
 
 | File | Lines | Statements | Branches | Functions |
 |---|---|---|---|---|
-| `contracts/v2/EPKVault.sol` | 96.74% (386/399) | 93.15% (517/555) | 80.56% (87/108) | 100% (68/68) |
-| `contracts/v2/EPKVaultFactory.sol` | 100% (10/10) | 100% (10/10) | — | 100% (3/3) |
+| `contracts/v2/EPKVault.sol` | 96.71% (412/426) | 93.28% (555/595) | 80.87% (93/115) | 100% (76/76) |
+| `contracts/v2/EPKRegistry.sol` | 93.75% (45/48) | 90.91% (50/55) | 81.82% (9/11) | 100% (9/9) |
+| `contracts/v2/EPKVaultFactory.sol` | 100% (17/17) | 95.00% (19/20) | 50.00% (1/2) | 100% (5/5) |
 
 With via-IR + `--ir-minimum`, Foundry's source maps under-report some branches (same artifact as noted for v1); the uncovered remainder is mostly defensive `revert` paths (e.g. zero-address and malformed-calldata checks).
 
