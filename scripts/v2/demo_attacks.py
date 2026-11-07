@@ -6,7 +6,9 @@ Usage (from the repo root):
 For every entry `<name>` / `<name>_from` in the JSON it:
   1. simulates the call (eth_call) from that sender and decodes the EPKVault custom error;
   2. sends it anyway with a fixed gas limit (no gas estimation), so the rejection is mined;
-  3. records tx hash, status and error in `<input>-results.json`.
+  3. right after a rejection, stores the tx's execution trace (debug_traceTransaction, callTracer) in
+     deployments/bsc-testnet/traces/ — strict proof of the revert reason (public nodes keep it briefly);
+  4. records tx hash, status and error in `<input>-results.json`.
 Private keys are read from .env and passed to the local `cast` process (--private-key);
 they are never printed or written anywhere.
 """
@@ -15,8 +17,11 @@ import os
 import re
 import subprocess
 import sys
+import urllib.request
+from datetime import datetime, timezone
 
 KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian2": "V2_GUARDIAN2_PRIVATE_KEY"}
+TRACES = "deployments/bsc-testnet/traces"
 
 
 def load_env(path=".env"):
@@ -34,6 +39,27 @@ def run(args, extra_env=None):
     if extra_env:
         e.update(extra_env)
     return subprocess.run(args, capture_output=True, text=True, env=e)
+
+
+def save_trace(rpc, tx):
+    """Store the execution trace (callTracer) of a rejected tx as strict evidence of its revert reason."""
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "debug_traceTransaction",
+                       "params": [tx, {"tracer": "callTracer"}]}).encode()
+    try:
+        req = urllib.request.Request(rpc, body, {"Content-Type": "application/json", "User-Agent": "epk-demo/1.0"})
+        out = json.load(urllib.request.urlopen(req, timeout=30))
+    except OSError as e:
+        print(f"  (no trace: {e})")
+        return
+    if "result" not in out:
+        print(f"  (no trace: {out.get('error')})")
+        return
+    os.makedirs(TRACES, exist_ok=True)
+    path = f"{TRACES}/{tx.lower()}.json"
+    json.dump({"tx": tx, "node": rpc, "tracer": "callTracer",
+               "capturedAt": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"), "trace": out["result"]},
+              open(path, "w", encoding="utf-8"), indent=2)
+    print(f"  execution trace saved: {path} (revert data {out['result'].get('output', '')[:10]})")
 
 
 def error_table():
@@ -69,6 +95,8 @@ def main():
             tx, status = receipt.get("transactionHash"), int(receipt.get("status", "0x0"), 16)
         except (json.JSONDecodeError, ValueError):
             tx, status = None, None
+        if tx and status == 0:
+            save_trace(rpc, tx)  # right away: public nodes keep the state needed for traces only briefly
         results.append({"attack": name, "from": sender_role, "sender": sender, "error": observed,
                         "tx": tx, "status": "rejected" if status == 0 else ("SUCCEEDED" if status == 1 else "not sent")})
         print(f"{name:<28} {sender_role:<10} -> {observed:<28} tx {tx} [{results[-1]['status']}]")

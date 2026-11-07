@@ -5,6 +5,7 @@
     "implementation_2_0_0": {
       "address": "0x312455Ed8cAD53B86C21B1aCeD275457cb3F8A1f",
       "label": "EPKVault 2.0.0 implementation",
+      "codeHash": "0x2c1083b706912e23b7497f7f74382dcef826261164a165b9c1560807cd78efe7",
       "artifact": "out/EPKVault.sol/EPKVault.json",
       "pinnedInRegistry": true,
       "vaultVersion": 20000
@@ -12,16 +13,19 @@
     "registry": {
       "address": "0x8Eee1F0565241f0C98c8f0cF8754F18E43052b8d",
       "label": "EPKRegistry",
+      "codeHash": "0xe3a0a21310a727ad85110ab556cab0543cb74ca8c6d39d643ee22262e3669cf1",
       "artifact": "out/EPKRegistry.sol/EPKRegistry.json"
     },
     "factory": {
       "address": "0xa549314e5036912B812BDAE9E938f478eF7A0e48",
       "label": "EPKVaultFactory",
+      "codeHash": "0xc44b7b4d02b83dd1350323a63edbd794d08a6f4f1aa18a848c88803c0a361db5",
       "artifact": "out/EPKVaultFactory.sol/EPKVaultFactory.json"
     },
     "release_2_0_1": {
       "address": "0x6f3AFE980F6f0510581d85907e9a276D5996961b",
       "label": "EPKVault 2.0.1 demo release",
+      "codeHash": "0x8d5f6111f3bdf0e82a7512b6dddb03211a53be47a65880c359770a9de8a88a27",
       "artifact": "out/EPKVaultDemoRelease.sol/EPKVaultDemoRelease.json",
       "pinnedInRegistry": true,
       "vaultVersion": 20001
@@ -29,11 +33,13 @@
     "token": {
       "address": "0x84649B8cb58A572a9DA6F00b24D1Dc6412443d8b",
       "label": "EPK Demo USD (eUSD) test token",
+      "codeHash": "0x68724c5bdcefd3acc796b2a88ae111701eb10c530ce56c7d0e678c97f05d87b0",
       "artifact": "out/EPKDemoToken.sol/EPKDemoToken.v2-size.json"
     },
     "vault": {
       "address": "0xB2166241D29C50F4678aebb5061504ee562FA340",
       "label": "Demo vault (customer proxy)",
+      "codeHash": "0x9cc1a19c72e91a360d2e4cb825a7780a1c29cef1e8c0595a4e0f6c8fed401538",
       "artifact": "out/EPKVaultFactory.sol/EPKVaultProxy.json",
       "proxyImplementation": "implementation_2_0_0"
     }
@@ -51,90 +57,245 @@
   },
   "transactions": [
     {
-      "step": "1", "what": "registry proposes release 2.0.1 (7-day window starts)",
+      "step": "1",
+      "what": "registry proposes release 2.0.1 (7-day window starts)",
       "tx": "0xa759a0cf4edc51f1e120a10f47d5f09df7231666482551f217342399d3b2e502",
-      "from": "admin", "to": "registry", "expect": "success",
-      "events": [{"emitter": "registry", "event": "ReleaseProposed(address,uint64,uint64,bytes32)", "indexed": ["release_2_0_1"], "codehashOf": "release_2_0_1"}]
+      "from": "admin",
+      "to": "registry",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "registry",
+          "event": "ReleaseProposed(address,uint64,uint64,bytes32)",
+          "indexed": [
+            "release_2_0_1"
+          ],
+          "codehashOf": "release_2_0_1"
+        }
+      ]
     },
     {
-      "step": "2", "what": "factory creates the demo vault",
+      "step": "2",
+      "what": "factory creates the demo vault",
       "tx": "0x13328f1198ca830fdd9f2323976be85046803099ab42e56a22d8f88453ef2dda",
-      "from": "admin", "to": "factory", "expect": "success",
-      "events": [{"emitter": "factory", "event": "VaultCreated(address,address,uint256,address)", "indexed": ["vault", "admin"]}]
+      "from": "admin",
+      "to": "factory",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "factory",
+          "event": "VaultCreated(address,address,uint256,address)",
+          "indexed": [
+            "vault",
+            "admin"
+          ]
+        }
+      ]
     },
     {
-      "step": "2", "what": "setup finalized (limits, allowlist, envelope)",
+      "step": "2",
+      "what": "setup finalized (limits, allowlist, envelope)",
       "tx": "0x574d075987d33742d3ac1ecd11b50bfe594cb821bbb3ac0a5536550ab620b8ee",
-      "from": "admin", "to": "vault", "expect": "success",
-      "events": [{"emitter": "vault", "event": "SetupFinalized()"}]
+      "from": "admin",
+      "to": "vault",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "vault",
+          "event": "SetupFinalized()"
+        }
+      ]
     },
     {
-      "step": "3", "what": "session manager opens an agent session (3 days)",
+      "step": "3",
+      "what": "session manager opens an agent session (3 days)",
       "tx": "0xbee05da382d51894ad707f6cb45dadb00bc1944d780caac54ed823a99794309d",
-      "from": "sessionManager", "to": "vault", "expect": "success",
-      "events": [{"emitter": "vault", "event": "SessionOpened(uint256,uint256,address,address,uint48)", "indexed": ["session:day0", "uint:1", "agent"]}]
+      "from": "sessionManager",
+      "to": "vault",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "vault",
+          "event": "SessionOpened(uint256,uint256,address,address,uint48)",
+          "indexed": [
+            "session:day0",
+            "uint:1",
+            "agent"
+          ]
+        }
+      ]
     },
     {
-      "step": "3", "what": "agent pays 50 eUSD to the treasury on its own",
+      "step": "3",
+      "what": "agent pays 50 eUSD to the treasury on its own",
       "tx": "0x28221368b6ac7ea9ef71b6449156fc23259d6b015f56f9f4fa67691c2e9475ae",
-      "from": "agent", "to": "vault", "expect": "success",
+      "from": "agent",
+      "to": "vault",
+      "expect": "success",
       "events": [
-        {"emitter": "vault", "event": "Executed(uint256,address,address,uint256,uint256)", "indexed": ["session:day0", "agent", "agent"]},
-        {"emitter": "vault", "event": "Outflow(address,uint256,uint256)", "indexed": ["token"], "data": ["50", "950"]},
-        {"emitter": "token", "event": "Transfer(address,address,uint256)", "indexed": ["vault", "admin"], "data": ["50"]}
+        {
+          "emitter": "vault",
+          "event": "Executed(uint256,address,address,uint256,uint256)",
+          "indexed": [
+            "session:day0",
+            "agent",
+            "agent"
+          ]
+        },
+        {
+          "emitter": "vault",
+          "event": "Outflow(address,uint256,uint256)",
+          "indexed": [
+            "token"
+          ],
+          "data": [
+            "50",
+            "950"
+          ]
+        },
+        {
+          "emitter": "token",
+          "event": "Transfer(address,address,uint256)",
+          "indexed": [
+            "vault",
+            "admin"
+          ],
+          "data": [
+            "50"
+          ]
+        }
       ]
     },
     {
-      "step": "4a", "what": "agent pays 60 eUSD with 50 left in its budget",
+      "step": "4a",
+      "what": "agent pays 60 eUSD with 50 left in its budget",
       "tx": "0x1f894a8062d3f67336a3789180f8dacbcf7400d20d1674744ef0ec5fb4c4b78b",
-      "from": "agent", "to": "vault", "expect": "reverted", "error": "BudgetExceeded(address,uint256,uint256)"
+      "from": "agent",
+      "to": "vault",
+      "expect": "reverted",
+      "error": "BudgetExceeded(address,uint256,uint256)"
     },
     {
-      "step": "4b", "what": "agent pays to a non-allowlisted address",
+      "step": "4b",
+      "what": "agent pays to a non-allowlisted address",
       "tx": "0xba1d5b687f29a4128f1393fc53754e9990750a15e0a80a7dea79bf5007a76e12",
-      "from": "agent", "to": "vault", "expect": "reverted", "error": "DestinationNotAllowed(address)"
+      "from": "agent",
+      "to": "vault",
+      "expect": "reverted",
+      "error": "DestinationNotAllowed(address)"
     },
     {
-      "step": "4c", "what": "agent calls approve (not in its envelope)",
+      "step": "4c",
+      "what": "agent calls approve (not in its envelope)",
       "tx": "0x806b001fd66db317114bd895f9a5c1a798fc50aa075f8b906c5ab338d645c49e",
-      "from": "agent", "to": "vault", "expect": "reverted", "error": "CallNotAllowed()"
+      "from": "agent",
+      "to": "vault",
+      "expect": "reverted",
+      "error": "CallNotAllowed()"
     },
     {
-      "step": "4d", "what": "batch signed by a key that is not the session key",
+      "step": "4d",
+      "what": "batch signed by a key that is not the session key",
       "tx": "0xc301be1bdac7993d932d0ff3ec3363a0193b2764c795d83f2ad39cf06bbb1477",
-      "from": "agent", "to": "vault", "expect": "reverted", "error": "BadSignature()"
+      "from": "agent",
+      "to": "vault",
+      "expect": "reverted",
+      "error": "BadSignature()"
     },
     {
-      "step": "4e", "what": "a stranger submits the agent's valid signature",
+      "step": "4e",
+      "what": "a stranger submits the agent's valid signature",
       "tx": "0x746c76f1f772785726b0f5b79512b2f84dbb480a8d750ef2b1a2a9adf3834ce3",
-      "from": "guardian2", "to": "vault", "expect": "reverted", "error": "AgentNotAllowed()"
+      "from": "guardian2",
+      "to": "vault",
+      "expect": "reverted",
+      "error": "AgentNotAllowed()"
     },
     {
-      "step": "5", "what": "guardian presses panic",
+      "step": "5",
+      "what": "guardian presses panic",
       "tx": "0xe459a04d459bf5d12d80c4a4e858673af8f5cd42cb88e77a34aa1f9fbd3d0939",
-      "from": "guardian1", "to": "vault", "expect": "success",
+      "from": "guardian1",
+      "to": "vault",
+      "expect": "success",
       "events": [
-        {"emitter": "vault", "event": "Paused(address)", "indexed": ["guardian1"]},
-        {"emitter": "vault", "event": "EpochBumped(uint64,address)", "indexed": ["guardian1"]}
+        {
+          "emitter": "vault",
+          "event": "Paused(address)",
+          "indexed": [
+            "guardian1"
+          ]
+        },
+        {
+          "emitter": "vault",
+          "event": "EpochBumped(uint64,address)",
+          "indexed": [
+            "guardian1"
+          ]
+        }
       ]
     },
     {
-      "step": "5", "what": "admin schedules unpause through the timelock (+1 h)",
+      "step": "5",
+      "what": "admin schedules unpause through the timelock (+1 h)",
       "tx": "0x35439ba3f6c0223682cfd73ddae01c949c63c5f0c4ab7572af757e71635c5b38",
-      "from": "admin", "to": "vault", "expect": "success",
-      "events": [{"emitter": "vault", "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)"}]
+      "from": "admin",
+      "to": "vault",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "vault",
+          "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)"
+        }
+      ]
     }
   ],
   "checkpoints": [
-    {"label": "day 0: vault funded, setup done", "block": 141338495,
-     "paused": false, "implementation": "implementation_2_0_0", "eUSD": "10000", "vaultLimitLeft": "1000"},
-    {"label": "day 0: right after the agent's 50 eUSD payment", "block": 141338825,
-     "paused": false, "implementation": "implementation_2_0_0", "eUSD": "9950", "vaultLimitLeft": "950",
-     "sessionBudgetLeft": {"session": "day0", "value": "50"}},
-    {"label": "day 0: after all 5 attacks (nothing moved)", "block": 141338889,
-     "paused": false, "implementation": "implementation_2_0_0", "eUSD": "9950"},
-    {"label": "day 0: one block before panic", "block": 141338926, "paused": false},
-    {"label": "day 0: panic block", "block": 141338927,
-     "paused": true, "implementation": "implementation_2_0_0", "eUSD": "9950"}
+    {
+      "label": "day 0: vault funded, setup done",
+      "block": 141338495,
+      "paused": false,
+      "implementation": "implementation_2_0_0",
+      "eUSD": "10000",
+      "vaultLimitLeft": "1000"
+    },
+    {
+      "label": "day 0: right after the agent's 50 eUSD payment",
+      "block": 141338825,
+      "paused": false,
+      "implementation": "implementation_2_0_0",
+      "eUSD": "9950",
+      "vaultLimitLeft": "950",
+      "sessionBudgetLeft": {
+        "session": "day0",
+        "value": "50"
+      }
+    },
+    {
+      "label": "day 0: after all 5 attacks (nothing moved)",
+      "block": 141338889,
+      "paused": false,
+      "implementation": "implementation_2_0_0",
+      "eUSD": "9950"
+    },
+    {
+      "label": "day 0: one block before panic",
+      "block": 141338926,
+      "paused": false
+    },
+    {
+      "label": "day 0: panic block",
+      "block": 141338927,
+      "paused": true,
+      "implementation": "implementation_2_0_0",
+      "eUSD": "9950"
+    }
+  ],
+  "attackWindows": [
+    {
+      "label": "day 0: attacks 4a-4e",
+      "fromBlock": 141338825,
+      "toBlock": 141338889
+    }
   ]
 }

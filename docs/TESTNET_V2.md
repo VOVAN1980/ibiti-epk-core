@@ -104,8 +104,18 @@ python scripts/v2/verify_evidence.py            # add --build after `forge build
 | Code | every contract has code; its keccak256 hash is printed; vault implementations must match the hash **pinned in EPKRegistry**; the release event's hash must equal the deployed code; the vault's EIP-1967 slot must point to the claimed implementation; with `--build` the on-chain bytecode must equal this repository's compiled bytecode (immutables masked) |
 | Who did what | every transaction was sent by the claimed role to the claimed contract |
 | Successful steps | the claimed events were emitted by the claimed contract, with the claimed indexed values and amounts (e.g. `Transfer` of exactly 50 eUSD from the vault to the treasury) |
-| Rejected steps | failed by revert, not by running out of gas; replaying each one against the chain state right before its block returns **exactly the claimed custom error**, with its arguments |
+| Rejected steps | failed by revert, not by running out of gas, and the claimed custom error is proven in the strongest available way — the report labels which: **STRICT** = read from the execution trace of that exact transaction (live, or a trace saved in `deployments/bsc-testnet/traces/` whose sender, target and input match the transaction); **REPLAY** = the same transaction replayed against the chain state right before its block, plus a check that no earlier transaction in that block was sent to the vault or the token. A replay is strong evidence but not a trace: internal calls from other contracts in the same block cannot be ruled out without one |
+| Money | for each attack window, the vault balance before the first attack equals the balance after the last one (nothing moved) |
 | History | fixed block-number checkpoints (paused, implementation, balance, limits left) — Day 0 stays reproducible after later upgrades; needs a node with historical state (the default, publicnode, has it) |
+| Code hashes | recorded in the evidence file for every contract, including both vault implementations (2.0.0 now, 2.0.1 after the upgrade) |
+
+Why some reasons are REPLAY: free public BSC Testnet nodes do not keep traces of old transactions.
+Binance's own node traces only roughly the last 120 blocks (about 1.5 minutes), so from the
+recovery step on, `demo_attacks.py` captures each attack's trace immediately after sending it.
+The Day 0 attacks (4a–4e) were sent before this was in place, so their reasons are proven by replay.
+
+The same checks also run in any browser, with no installation: [`proof/index.html`](../proof/index.html)
+("EPK Proof of Security") loads the evidence file and checks it live against the chain.
 
 Exit code 0 = everything matches, 1 = a mismatch, 2 = something could not be checked. A test with
 four planted false claims (an attack "succeeded", a wrong rejection reason, a wrong balance, a wrong

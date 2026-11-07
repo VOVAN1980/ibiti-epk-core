@@ -15,16 +15,25 @@ A public BSC Testnet node is then asked:
                 bytecode compiled from this repository (immutable values masked);
   transactions  each tx exists, was sent by the claimed role to the claimed contract, and:
                 - successful ones emitted the claimed events (emitter, indexed args, amounts);
-                - rejected ones failed by revert (not out of gas), and replaying them against the
-                  state right before their block returns exactly the claimed custom error;
+                - rejected ones failed by revert (not out of gas), and the claimed custom error is
+                  proven in the strongest way available, and the report says which one:
+                    STRICT  execution trace of the original tx (live from --trace-rpc, or a trace saved
+                            in deployments/bsc-testnet/traces/ whose from/to/input/gas match the tx);
+                    REPLAY  eth_call of the same tx against the state right before its block, plus a
+                            check that no earlier tx in that block was sent to the vault or the token
+                            (a replay is not a trace: internal calls from other contracts in the same
+                            block cannot be ruled out without one);
   checkpoints   historical state at fixed block numbers (paused, implementation, balance,
                 limits left) — stays reproducible after later upgrades;
   now           the vault's current implementation, version, balance and pause state.
 
-The default node (publicnode) keeps historical state, which checkpoints and replays need.
+The default node (publicnode) keeps historical state, which checkpoints and replays need. Free
+public nodes do not keep traces of old transactions; Binance's own node traces recent ones, so
+right after an attack is sent, `--save-traces` stores its trace for later strict checks.
 Exit code 0 = everything matches, 1 = a mismatch, 2 = something could not be checked.
 """
 import json
+import os
 import re
 import sys
 import urllib.request
@@ -32,6 +41,8 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 RPC = "https://bsc-testnet-rpc.publicnode.com"
+TRACE_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545"  # traces recent transactions only
+TRACES = "deployments/bsc-testnet/traces"
 EVIDENCE = "deployments/bsc-testnet/epk-v2-evidence.json"
 DOC = "docs/TESTNET_V2.md"
 IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"  # EIP-1967
@@ -158,14 +169,25 @@ class Report:
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
     url = sys.argv[sys.argv.index("--rpc-url") + 1] if "--rpc-url" in sys.argv else RPC
-    build = "--build" in sys.argv
+    trace_url = sys.argv[sys.argv.index("--trace-rpc") + 1] if "--trace-rpc" in sys.argv else TRACE_RPC
+    build, save_traces = "--build" in sys.argv, "--save-traces" in sys.argv
+    methods = {"STRICT": 0, "REPLAY": 0}
     ev = json.load(open(EVIDENCE, encoding="utf-8"))
     doc = open(DOC, encoding="utf-8").read()
     C = {k: v["address"] for k, v in ev["contracts"].items()}
     roles = ev["roles"]
     sessions = {k: int(v) for k, v in ev.get("sessions", {}).items()}
     names = {a.lower(): k for k, a in {**C, **roles}.items()}
-    chain, rep = Chain(url), Report()
+    chain, tracer, rep = Chain(url), Chain(trace_url), Report()
+
+    def show_error(sig, data):
+        types = [] if sig.endswith("()") else sig[sig.index("(") + 1:-1].split(",")
+        args = []
+        for i, ty in enumerate(types):
+            word = data[10 + 64 * i:74 + 64 * i] or "0"
+            args.append(who("0x" + word[-40:]) if ty == "address" else
+                        (f"{eusd(int(word, 16))} eUSD" if int(word, 16) >= 10 ** 15 else str(int(word, 16))))
+        return sig.split("(")[0] + f"({', '.join(args)})"
 
     def resolve(ref):
         if ref.startswith("session:"):
@@ -204,7 +226,10 @@ def main():
             continue
         h = "0x" + keccak(bytes.fromhex(code[2:])).hex()
         codehash[key] = h
-        print(f"         code hash {h}")
+        if c.get("codeHash"):
+            rep.line(h == c["codeHash"].lower(), f"code hash {h} = recorded {c['codeHash'][:12]}...")
+        else:
+            print(f"         code hash {h} (not recorded in the evidence file)")
         if c.get("pinnedInRegistry"):
             r = chain.call(C["registry"], selector("releases(address)") + w(c["address"]))[2:]
             version, active_at, revoked, pinned = int(r[0:64], 16), int(r[64:128], 16), int(r[128:192], 16), "0x" + r[192:256]
@@ -265,25 +290,51 @@ def main():
             gas_used, gas_limit = int(rc["gasUsed"], 16), int(tx["gas"], 16)
             rep.line(status == 0 and gas_used < gas_limit,
                      f"rejected on-chain by revert, not out of gas (gas used {gas_used:,} of {gas_limit:,})")
+            want = selector(t["error"])
+            # 1) STRICT: the execution trace of the original transaction
+            trace, source, path = None, "", f"{TRACES}/{t['tx'].lower()}.json"
+            try:
+                trace, source = tracer("debug_traceTransaction", t["tx"], {"tracer": "callTracer"}), f"live trace from {trace_url}"
+                if save_traces and not os.path.exists(path):
+                    os.makedirs(TRACES, exist_ok=True)
+                    json.dump({"tx": t["tx"], "node": trace_url, "tracer": "callTracer",
+                               "capturedAt": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"), "trace": trace},
+                              open(path, "w", encoding="utf-8"), indent=2)
+                    print(f"         trace saved to {path}")
+            except (RpcError, OSError):
+                if os.path.exists(path):
+                    saved = json.load(open(path, encoding="utf-8"))
+                    trace, source = saved["trace"], f"saved trace ({saved['node']}, {saved['capturedAt']})"
+            if trace is not None:
+                bound = (trace.get("from", "").lower() == tx["from"].lower() and trace.get("to", "").lower() == tx["to"].lower()
+                         and trace.get("input", "").lower() == tx["input"].lower() and int(trace.get("gasUsed", "0x0"), 16) <= gas_used)
+                out = trace.get("output", "") or ""
+                ok_ = bound and out[:10] == want
+                methods["STRICT"] += ok_
+                rep.line(ok_, f"STRICT  {source}: this exact tx reverted with {show_error(t['error'], out)}"
+                         + ("" if ok_ else f" — NO: trace {'is for another tx' if not bound else 'shows ' + (out[:10] or 'no revert data')}"))
+                continue
+            # 2) REPLAY: the same call against the state right before the block
             try:
                 chain("eth_call", {"from": tx["from"], "to": tx["to"], "data": tx["input"], "gas": tx["gas"],
                                    "value": tx.get("value", "0x0")}, hex(block - 1))
-                rep.line(False, "replay did NOT revert")
+                rep.line(False, "REPLAY  did NOT revert")
+                continue
             except RpcError as err:
                 data = err.data if isinstance(err.data, str) else ""
                 if not data and no_history(err):
-                    rep.line(None, f"replay needs historical state; this node has none ({err})")
+                    rep.line(None, f"REPLAY  needs historical state; this node has none ({err})")
                     continue
-                types = t["error"][t["error"].index("(") + 1:-1].split(",") if "()" not in t["error"] else []
-                args = []
-                for i, ty in enumerate(types):
-                    word = data[10 + 64 * i:74 + 64 * i]
-                    args.append(who("0x" + word[-40:]) if ty == "address" else
-                                (f"{eusd(int(word, 16))} eUSD" if int(word, 16) >= 10 ** 15 else str(int(word, 16))))
-                shown = t["error"].split("(")[0] + (f"({', '.join(args)})" if args else "()")
-                same = data[:10] == selector(t["error"])
-                rep.line(same, f"replay against the state before block {block} reverts with {shown}"
-                         + ("" if same else f" — NO: chain returned selector {data[:10] or 'none'}"))
+            same = data[:10] == want
+            methods["REPLAY"] += same
+            rep.line(same, f"REPLAY  against the state before block {block}: reverts with {show_error(t['error'], data)}"
+                     + ("" if same else f" — NO: chain returned selector {data[:10] or 'none'}"))
+            full = chain("eth_getBlockByNumber", hex(block), True)
+            idx = int(rc["transactionIndex"], 16)
+            touched = [x for x in full["transactions"][:idx] if (x.get("to") or "").lower() in (C["vault"].lower(), C["token"].lower())]
+            rep.line(True if not touched else None,
+                     f"REPLAY  no earlier tx in block {block} was sent to the vault or the token (this tx is #{idx} of {len(full['transactions'])})"
+                     if not touched else f"REPLAY  {len(touched)} earlier tx(s) in block {block} touched the vault or token — replay is indicative only")
 
     # ---- historical checkpoints ----------------------------------------------------------------
     print("\nCheckpoints (historical state at fixed blocks)")
@@ -314,6 +365,17 @@ def main():
             else:
                 raise
 
+    # ---- money moved while the attacks ran ---------------------------------------------------
+    if ev.get("attackWindows"):
+        print("\nAttack windows (vault balance before the first and after the last attack)")
+        for aw in ev["attackWindows"]:
+            try:
+                bal = [int(chain.call(tok, selector("balanceOf(address)") + w(v), hex(b)), 16) for b in (aw["fromBlock"], aw["toBlock"])]
+                rep.line(bal[0] == bal[1], f"{aw['label']}: blocks {aw['fromBlock']}..{aw['toBlock']}, "
+                                           f"{eusd(bal[0])} -> {eusd(bal[1])} eUSD, moved by attacks: {eusd(bal[0] - bal[1])}")
+            except RpcError as err:
+                rep.line(None, f"{aw['label']}: needs historical state ({err})")
+
     # ---- now ---------------------------------------------------------------------------------
     print("\nDemo vault now")
     impl = "0x" + chain("eth_getStorageAt", v, IMPL_SLOT, "latest")[-40:]
@@ -321,7 +383,9 @@ def main():
     print(f"  paused: {bool(int(chain.call(v, selector('paused()')), 16))}")
     print(f"  eUSD balance: {eusd(int(chain.call(tok, selector('balanceOf(address)') + w(v)), 16))}")
 
-    print(f"\nRESULT: {rep.ok} checks OK, {rep.bad} mismatches, {rep.skip} not checkable — "
+    print(f"\nRejection reasons proven by execution trace (STRICT): {methods['STRICT']}, "
+          f"by historical replay (REPLAY): {methods['REPLAY']}")
+    print(f"RESULT: {rep.ok} checks OK, {rep.bad} mismatches, {rep.skip} not checkable — "
           + ("everything matches the evidence" if rep.bad == rep.skip == 0 else
              "MISMATCH, see BAD lines" if rep.bad else "incomplete, see SKIP lines"))
     sys.exit(1 if rep.bad else 2 if rep.skip else 0)

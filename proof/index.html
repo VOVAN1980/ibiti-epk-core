@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPK Proof of Security</title>
+<meta name="description" content="EPK v2 by IBITI Labs: every security claim checked live against BSC Testnet in your browser.">
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--dim:#8b949e;--ok:#3fb950;--bad:#f85149;--warn:#d29922;--brand:#f0b90b;--link:#58a6ff}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#ffffff;--panel:#f6f8fa;--line:#d0d7de;--text:#1f2328;--dim:#59636e;--ok:#1a7f37;--bad:#cf222e;--warn:#9a6700;--brand:#d4a106;--link:#0969da}}
+:root[data-theme="light"]{--bg:#ffffff;--panel:#f6f8fa;--line:#d0d7de;--text:#1f2328;--dim:#59636e;--ok:#1a7f37;--bad:#cf222e;--warn:#9a6700;--brand:#d4a106;--link:#0969da}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+a{color:var(--link)}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 60px}
+header{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.badge{background:var(--brand);color:#0d1117;font-weight:800;border-radius:8px;padding:5px 11px}
+h1{font-size:30px;margin:0}
+h2{font-size:21px;margin:0 0 6px}
+.lead{color:var(--dim);margin:8px 0 18px;max-width:820px}
+.note{border:1px solid var(--warn);border-radius:10px;padding:12px 14px;margin:0 0 22px;font-size:15px}
+.note b{color:var(--warn)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 22px}
+@media (max-width:420px){.tile{padding:12px}.tile .n{font-size:26px}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.tile .n{font-size:30px;font-weight:700}
+.tile .l{color:var(--dim);font-size:14px}
+.run{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 10px}
+button{background:var(--brand);color:#0d1117;border:0;border-radius:10px;padding:11px 18px;font-weight:700;font-size:16px;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+.status{color:var(--dim);font-size:15px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+section p{margin:6px 0 12px;color:var(--dim)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-weight:600;border-top:0}
+code,.mono{font-family:Consolas,"SF Mono",monospace;font-size:13px}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;border:1px solid currentColor;white-space:nowrap}
+.claim{color:var(--dim)} .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+#log{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;max-height:340px;overflow:auto;font:13px/1.5 Consolas,monospace;white-space:pre-wrap;word-break:break-word;margin:0}
+.cmd{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:13px Consolas,monospace;overflow-x:auto;white-space:pre}
+footer{color:var(--dim);font-size:14px;margin-top:26px}
+details summary{cursor:pointer;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><span class="badge">EPK v2</span><h1>Proof of Security</h1></header>
+<p class="lead">EPK gives every customer their own on-chain vault. Even if the server or AI agent holding a key is
+hacked, the vault itself enforces limits, allowed destinations, agent budgets, a panic button and timelocked
+upgrades. This page does not ask you to trust us: press the button and your browser checks every claim below
+directly against BSC Testnet.</p>
+
+<div class="note"><b>What this is and is not.</b> These are verified test scenarios on BSC Testnet with a test token
+(eUSD). They prove that the listed protections worked in these scenarios. They are not a guarantee that no
+vulnerabilities exist. EPK v2 has not yet been independently audited; nothing goes to mainnet before an audit.</div>
+
+<div class="tiles">
+  <div class="tile"><div class="n" id="t-attacks">–</div><div class="l">attacks rejected on-chain</div></div>
+  <div class="tile"><div class="n" id="t-stolen">–</div><div class="l">eUSD moved by attacks</div></div>
+  <div class="tile"><div class="n" id="t-contracts">–</div><div class="l">contracts: code hash checked</div></div>
+  <div class="tile"><div class="n" id="t-checks">–</div><div class="l">checks passed in your browser</div></div>
+</div>
+
+<div class="run"><button id="go">Run the check in my browser</button><span class="status" id="status">Not run yet. Values below are claims until checked.</span></div>
+<details><summary>Live log</summary><pre id="log"></pre></details>
+
+<section id="s-attacks">
+  <h2>Rejected attacks</h2>
+  <p>What a hacked agent or a stranger would try. Each attempt was really sent to the vault and failed on-chain.
+  <b>STRICT</b> = the reason is read from the execution trace of that exact transaction.
+  <b>REPLAY</b> = the transaction is replayed against the chain state right before its block, and no earlier
+  transaction in that block touched the vault or the token (a replay is strong evidence, not a trace).</p>
+  <div class="scroll"><table id="tbl-attacks"><thead><tr><th>Step</th><th>Attempt</th><th>Vault's answer</th><th>Proof</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="s-flow">
+  <h2>Real transactions on BSC Testnet</h2>
+  <p>The whole lifecycle: deploy, a customer's vault, an AI agent paying on its own, panic, recovery, upgrade.</p>
+  <div class="scroll"><table id="tbl-tx"><thead><tr><th>Step</th><th>What</th><th>From</th><th>Result</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="s-state">
+  <h2>Vault state at fixed blocks</h2>
+  <p>Historical state read directly from the chain at the listed block numbers — reproducible forever, even after upgrades.</p>
+  <div class="scroll"><table id="tbl-cp"><thead><tr><th>Block</th><th>Moment</th><th>Claims</th><th>Result</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="s-code">
+  <h2>Code and upgrades without moving funds</h2>
+  <p>Each contract's bytecode hash is checked. Vault implementations must match the hash pinned in the public
+  EPKRegistry. A new release can only be used after a 7-day public window, and a vault opts in through its own
+  timelock (at least 2 days) — same address, same funds.</p>
+  <div class="scroll"><table id="tbl-code"><thead><tr><th>Contract</th><th>Address</th><th>Code hash</th><th>Result</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="s-self">
+  <h2>Run it yourself, without this page</h2>
+  <p>Same checks from the command line (Python 3 only, no keys). With <code>--build</code> it also proves the on-chain
+  bytecode equals the bytecode compiled from the open-source repository.</p>
+  <div class="cmd">git clone https://github.com/VOVAN1980/ibiti-epk-core && cd ibiti-epk-core && git checkout feature/epk-v2
+python scripts/v2/verify_evidence.py
+forge build && python scripts/v2/verify_evidence.py --build</div>
+  <p>Evidence file: <a id="ev-link" href="#">epk-v2-evidence.json</a> · Runbook and tables:
+  <a href="https://github.com/VOVAN1980/ibiti-epk-core/blob/feature/epk-v2/docs/TESTNET_V2.md">docs/TESTNET_V2.md</a> ·
+  Source: <a href="https://github.com/VOVAN1980/ibiti-epk-core/tree/feature/epk-v2/contracts/v2">contracts/v2</a></p>
+  <details><summary>Use another RPC node</summary>
+    <p>Checkpoints and replays need a node with historical state. <input id="rpc" class="mono" style="width:100%;max-width:520px" value="https://bsc-testnet-rpc.publicnode.com"></p>
+  </details>
+</section>
+
+<footer>EPK v2 © IBITI Labs (Volodymyr Podkorytov) · Business Source License 1.1 — use in production by agreement ·
+Test network only, test token only.</footer>
+</div>
+
+<script>
+"use strict";
+// ---------- where the evidence lives ----------
+const REPO_RAW = "https://raw.githubusercontent.com/VOVAN1980/ibiti-epk-core/feature/epk-v2/";
+const EV_PATH = "deployments/bsc-testnet/epk-v2-evidence.json";
+const TRACE_DIR = "deployments/bsc-testnet/traces/";
+const EXPLORER = "https://testnet.bscscan.com";
+const IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+
+// ---------- keccak256 (pure JS, BigInt) ----------
+const RC = ["0x1","0x8082","0x800000000000808a","0x8000000080008000","0x808b","0x80000001","0x8000000080008081","0x8000000000008009","0x8a","0x88","0x80008009","0x8000000a","0x8000808b","0x800000000000008b","0x8000000000008089","0x8000000000008003","0x8000000000008002","0x8000000000000080","0x800a","0x800000008000000a","0x8000000080008081","0x8000000000008080","0x80000001","0x8000000080008008"].map(BigInt);
+const ROT = [[0,36,3,41,18],[1,44,10,45,2],[62,6,43,15,61],[28,55,25,21,56],[27,20,39,8,14]];
+const M64 = (1n << 64n) - 1n;
+const rol = (v, n) => ((v << BigInt(n)) | (v >> BigInt(64 - n))) & M64;
+function keccakF(s) {
+  for (const rc of RC) {
+    const c = [0,1,2,3,4].map(x => s[x] ^ s[x+5] ^ s[x+10] ^ s[x+15] ^ s[x+20]);
+    const d = [0,1,2,3,4].map(x => c[(x+4)%5] ^ rol(c[(x+1)%5], 1));
+    for (let i = 0; i < 25; i++) s[i] ^= d[i%5];
+    const b = new Array(25);
+    for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) b[y + 5*((2*x+3*y)%5)] = rol(s[x+5*y], ROT[x][y]);
+    for (let i = 0; i < 25; i++) { const r = 5*Math.floor(i/5); s[i] = b[i] ^ ((~b[(i+1)%5 + r] & M64) & b[(i+2)%5 + r]); }
+    s[0] ^= rc;
+  }
+}
+function keccak(bytes) {
+  const rate = 136, len = bytes.length + 1, padded = new Uint8Array(len + ((rate - len % rate) % rate));
+  padded.set(bytes); padded[bytes.length] = 1; padded[padded.length - 1] |= 0x80;
+  const s = new Array(25).fill(0n);
+  for (let off = 0; off < padded.length; off += rate) {
+    for (let i = 0; i < rate / 8; i++) { let v = 0n; for (let k = 7; k >= 0; k--) v = (v << 8n) | BigInt(padded[off + 8*i + k]); s[i] ^= v; }
+    keccakF(s);
+  }
+  let hex = ""; for (let i = 0; i < 4; i++) for (let k = 0; k < 8; k++) hex += Number((s[i] >> BigInt(8*k)) & 0xffn).toString(16).padStart(2, "0");
+  return "0x" + hex;
+}
+const utf8 = s => new TextEncoder().encode(s);
+const fromHex = h => { h = h.replace(/^0x/, ""); const a = new Uint8Array(h.length / 2); for (let i = 0; i < a.length; i++) a[i] = parseInt(h.substr(2*i, 2), 16); return a; };
+const selector = sig => keccak(utf8(sig)).slice(0, 10);
+const topic0 = sig => keccak(utf8(sig));
+if (keccak(new Uint8Array()) !== "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" || selector("transfer(address,uint256)") !== "0xa9059cbb") throw new Error("keccak self-test failed");
+
+// ---------- helpers ----------
+const word = v => BigInt(v).toString(16).padStart(64, "0");
+const wei = a => { const [i, f = ""] = String(a).split("."); return BigInt(i) * 10n**18n + BigInt((f + "0".repeat(18)).slice(0, 18)); };
+const eusd = v => { v = BigInt(v); const i = v / 10n**18n, f = (v % 10n**18n).toString().padStart(18, "0").slice(0, 4).replace(/0+$/, ""); return i.toLocaleString("en-US") + (f ? "." + f : ""); };
+const short = h => h.slice(0, 10) + "…" + h.slice(-4);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pill = (cls, text) => `<span class="pill ${cls}">${esc(text)}</span>`;
+let rpcUrl = "";
+async function rpc(method, ...params) {
+  const r = await fetch(rpcUrl, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params})});
+  const j = await r.json();
+  if (j.error) { const e = new Error(j.error.message); e.data = j.error.data; throw e; }
+  return j.result;
+}
+const call = (to, data, block = "latest") => rpc("eth_call", {to, data}, block);
+async function getJson(path) {
+  for (const base of ["../", REPO_RAW]) {
+    try { const r = await fetch(base + path, {cache: "no-store"}); if (r.ok) return {json: await r.json(), url: new URL(base + path, location.href).href}; } catch (e) {}
+  }
+  return null;
+}
+
+// ---------- page ----------
+const $ = id => document.getElementById(id);
+const logEl = $("log");
+let counts;
+function log(kind, text) {
+  if (kind === "ok") counts.ok++; else if (kind === "bad") counts.bad++; else if (kind === "skip") counts.skip++;
+  const tag = {ok: "OK  ", bad: "BAD ", skip: "SKIP", info: "    "}[kind];
+  const span = document.createElement("span"); span.className = {ok: "ok", bad: "bad", skip: "warn", info: ""}[kind];
+  span.textContent = `${tag} ${text}\n`; logEl.appendChild(span); logEl.scrollTop = logEl.scrollHeight;
+  return kind === "ok";
+}
+const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+
+let EV;
+function renderClaims(ev) {
+  const C = ev.contracts, attacks = ev.transactions.filter(t => t.expect === "reverted");
+  $("t-attacks").textContent = `${attacks.length}`; $("t-stolen").textContent = "?";
+  $("t-contracts").textContent = `${Object.keys(C).length}`;
+  $("tbl-attacks").tBodies[0].innerHTML = attacks.map(t => `<tr><td>${esc(t.step)}</td><td>${esc(t.what)}</td>
+    <td class="mono">${esc(t.error.split("(")[0])}</td><td id="a-${t.tx}">${pill("claim", "claimed")}</td>
+    <td><a class="mono" href="${EXPLORER}/tx/${t.tx}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
+  $("tbl-tx").tBodies[0].innerHTML = ev.transactions.map(t => `<tr><td>${esc(t.step)}</td><td>${esc(t.what)}</td><td>${esc(t.from)}</td>
+    <td id="x-${t.tx}">${pill("claim", t.expect === "success" ? "success (claimed)" : "rejected (claimed)")}</td>
+    <td><a class="mono" href="${EXPLORER}/tx/${t.tx}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
+  $("tbl-cp").tBodies[0].innerHTML = ev.checkpoints.map((c, i) => {
+    const claims = [];
+    if ("paused" in c) claims.push(`paused ${c.paused}`);
+    if ("implementation" in c) claims.push(`runs ${c.implementation}`);
+    if ("eUSD" in c) claims.push(`balance ${c.eUSD} eUSD`);
+    if ("vaultLimitLeft" in c) claims.push(`vault limit left ${c.vaultLimitLeft}`);
+    if (c.sessionBudgetLeft) claims.push(`session budget left ${c.sessionBudgetLeft.value}`);
+    return `<tr><td class="mono"><a href="${EXPLORER}/block/${c.block}" target="_blank" rel="noopener">${c.block}</a></td><td>${esc(c.label)}</td><td>${esc(claims.join(" · "))}</td><td id="c-${i}">${pill("claim", "claimed")}</td></tr>`;
+  }).join("");
+  $("tbl-code").tBodies[0].innerHTML = Object.entries(C).map(([k, c]) => `<tr><td>${esc(c.label)}</td>
+    <td><a class="mono" href="${EXPLORER}/address/${c.address}#code" target="_blank" rel="noopener">${short(c.address)}</a></td>
+    <td class="mono">${c.codeHash ? short(c.codeHash) : "–"}</td><td id="k-${k}">${pill("claim", "claimed")}</td></tr>`).join("");
+}
+
+async function verify() {
+  counts = {ok: 0, bad: 0, skip: 0}; logEl.textContent = ""; rpcUrl = $("rpc").value.trim();
+  const ev = EV, C = Object.fromEntries(Object.entries(ev.contracts).map(([k, v]) => [k, v.address]));
+  const roles = ev.roles, sessions = ev.sessions || {};
+  const names = {}; for (const [k, a] of Object.entries({...C, ...roles})) names[a.toLowerCase()] = k;
+  const who = a => names[a.toLowerCase()] || a;
+  const resolve = r => r.startsWith("session:") ? BigInt(sessions[r.slice(8)]) : r.startsWith("uint:") ? BigInt(r.slice(5)) : (C[r] || roles[r]);
+  const showError = (sig, data) => {
+    const types = sig.endsWith("()") ? [] : sig.slice(sig.indexOf("(") + 1, -1).split(",");
+    const args = types.map((ty, i) => { const w = data.slice(10 + 64*i, 74 + 64*i) || "0"; const v = BigInt("0x" + w);
+      return ty === "address" ? who("0x" + w.slice(-40)) : (v >= 10n**15n ? eusd(v) + " eUSD" : v.toString()); });
+    return sig.split("(")[0] + "(" + args.join(", ") + ")";
+  };
+
+  log("info", `node ${rpcUrl}`);
+  const cid = parseInt(await rpc("eth_chainId"), 16);
+  if (!log(cid === ev.chainId ? "ok" : "bad", `chainId ${cid} (expected ${ev.chainId}, BSC Testnet)`)) return;
+
+  // code
+  const codehash = {}; let codeOk = 0;
+  for (const [k, c] of Object.entries(ev.contracts)) {
+    $("status").textContent = `Checking code of ${c.label}…`;
+    const code = await rpc("eth_getCode", c.address, "latest");
+    const h = code.length > 2 ? keccak(fromHex(code)) : null; codehash[k] = h;
+    let good = log(h ? "ok" : "bad", `${c.label}: ${h ? (code.length - 2) / 2 + " bytes of code" : "NO CODE"}`);
+    if (h && c.codeHash) good = log(h === c.codeHash.toLowerCase() ? "ok" : "bad", `  code hash ${h} = recorded`) && good;
+    if (h && c.pinnedInRegistry) {
+      const r = (await call(C.registry, selector("releases(address)") + word(c.address))).slice(2);
+      const pinned = "0x" + r.slice(192, 256), revoked = BigInt("0x" + r.slice(128, 192)) !== 0n;
+      good = log(pinned === h && !revoked ? "ok" : "bad", `  registry pins this exact code hash (version ${BigInt("0x" + r.slice(0, 64))})`) && good;
+    }
+    if (c.proxyImplementation) {
+      const impl = "0x" + (await rpc("eth_getStorageAt", c.address, IMPL_SLOT, "latest")).slice(-40);
+      good = log(impl.toLowerCase() === C[c.proxyImplementation].toLowerCase() ? "ok" : "bad", `  vault runs ${who(impl)}`) && good;
+    }
+    codeOk += good; set("k-" + k, pill(good ? "ok" : "bad", good ? "verified" : "mismatch"));
+  }
+  $("t-contracts").textContent = `${codeOk}/${Object.keys(ev.contracts).length}`;
+
+  // transactions
+  let rejected = 0;
+  for (const t of ev.transactions) {
+    $("status").textContent = `Checking step ${t.step}: ${t.what}…`;
+    const [tx, rc] = await Promise.all([rpc("eth_getTransactionByHash", t.tx), rpc("eth_getTransactionReceipt", t.tx)]);
+    log("info", `step ${t.step}  ${t.what}`);
+    if (!tx || !rc) { log("bad", "  not found on chain"); set("x-" + t.tx, pill("bad", "not found")); continue; }
+    const block = parseInt(rc.blockNumber, 16), status = parseInt(rc.status, 16);
+    let good = log(tx.from.toLowerCase() === roles[t.from].toLowerCase() && (tx.to || "").toLowerCase() === C[t.to].toLowerCase() ? "ok" : "bad",
+      `  sent by ${t.from} to ${t.to}, block ${block}`);
+    if (t.expect === "success") {
+      good = log(status === 1 ? "ok" : "bad", "  succeeded on-chain") && good;
+      for (const e of t.events || []) {
+        let c = rc.logs.filter(l => l.address.toLowerCase() === C[e.emitter].toLowerCase() && l.topics[0] === topic0(e.event));
+        (e.indexed || []).forEach((r, i) => { const want = "0x" + word(resolve(r)); c = c.filter(l => l.topics[i + 1] === want); });
+        (e.data || []).forEach((a, i) => { c = c.filter(l => BigInt("0x" + (l.data.slice(2 + 64*i, 66 + 64*i) || "0")) === wei(a)); });
+        if (e.codehashOf) c = c.filter(l => "0x" + l.data.slice(-64) === codehash[e.codehashOf]);
+        good = log(c.length === 1 ? "ok" : "bad", `  event ${e.event.split("(")[0]} from ${e.emitter}${e.data ? ", amounts " + e.data.join(" / ") + " eUSD" : ""}`) && good;
+      }
+      set("x-" + t.tx, pill(good ? "ok" : "bad", good ? "success ✓" : "mismatch"));
+      continue;
+    }
+    const gasUsed = parseInt(rc.gasUsed, 16), gasLimit = parseInt(tx.gas, 16);
+    good = log(status === 0 && gasUsed < gasLimit ? "ok" : "bad", `  rejected by revert, not out of gas (${gasUsed.toLocaleString()} of ${gasLimit.toLocaleString()} gas)`) && good;
+    const want = selector(t.error); let method = "", detail = "";
+    const saved = await getJson(TRACE_DIR + t.tx.toLowerCase() + ".json");
+    if (saved) {
+      const tr = saved.json.trace, out = tr.output || "";
+      const bound = tr.from.toLowerCase() === tx.from.toLowerCase() && tr.to.toLowerCase() === tx.to.toLowerCase() && tr.input.toLowerCase() === tx.input.toLowerCase();
+      method = "STRICT"; detail = showError(t.error, out);
+      good = log(bound && out.slice(0, 10) === want ? "ok" : "bad", `  STRICT saved execution trace (${saved.json.node}, ${saved.json.capturedAt}): ${detail}`) && good;
+    } else {
+      method = "REPLAY";
+      try { await rpc("eth_call", {from: tx.from, to: tx.to, data: tx.input, gas: tx.gas}, "0x" + (block - 1).toString(16)); good = log("bad", "  REPLAY did not revert") && false; }
+      catch (err) {
+        const data = typeof err.data === "string" ? err.data : "";
+        if (!data) { log("skip", `  REPLAY needs a node with historical state (${err.message})`); good = false; }
+        else {
+          detail = showError(t.error, data);
+          good = log(data.slice(0, 10) === want ? "ok" : "bad", `  REPLAY against the state before block ${block}: ${detail}`) && good;
+          const full = await rpc("eth_getBlockByNumber", "0x" + block.toString(16), true), idx = parseInt(rc.transactionIndex, 16);
+          const touched = full.transactions.slice(0, idx).filter(x => [C.vault, C.token].map(a => a.toLowerCase()).includes((x.to || "").toLowerCase()));
+          good = log(touched.length ? "skip" : "ok", touched.length ? "  REPLAY earlier txs in this block touched the vault — indicative only" : `  REPLAY no earlier tx in block ${block} touched the vault or the token`) && good;
+        }
+      }
+    }
+    rejected += good;
+    set("a-" + t.tx, pill(good ? "ok" : "bad", good ? `${method} ✓` : "mismatch"));
+    set("x-" + t.tx, pill(good ? "ok" : "bad", good ? "rejected ✓" : "mismatch"));
+  }
+  $("t-attacks").textContent = `${rejected}/${ev.transactions.filter(t => t.expect === "reverted").length}`;
+
+  // checkpoints
+  const v = C.vault, tok = C.token;
+  for (const [i, cp] of ev.checkpoints.entries()) {
+    $("status").textContent = `Reading the vault at block ${cp.block}…`;
+    const b = "0x" + cp.block.toString(16); let good = true; log("info", `block ${cp.block}: ${cp.label}`);
+    try {
+      if ("paused" in cp) { const p = BigInt(await call(v, selector("paused()"), b)) !== 0n; good = log(p === cp.paused ? "ok" : "bad", `  paused = ${p}`) && good; }
+      if ("implementation" in cp) { const impl = "0x" + (await rpc("eth_getStorageAt", v, IMPL_SLOT, b)).slice(-40); good = log(impl.toLowerCase() === C[cp.implementation].toLowerCase() ? "ok" : "bad", `  implementation = ${who(impl)}`) && good; }
+      if ("eUSD" in cp) { const bal = BigInt(await call(tok, selector("balanceOf(address)") + word(v), b)); good = log(bal === wei(cp.eUSD) ? "ok" : "bad", `  balance = ${eusd(bal)} eUSD`) && good; }
+      if ("vaultLimitLeft" in cp) { const l = BigInt(await call(v, selector("availableToSpend(address)") + word(tok), b)); good = log(l === wei(cp.vaultLimitLeft) ? "ok" : "bad", `  vault limit left = ${eusd(l)} eUSD`) && good; }
+      if (cp.sessionBudgetLeft) { const s = cp.sessionBudgetLeft; const l = BigInt(await call(v, selector("budgetAvailable(uint256,address)") + word(sessions[s.session]) + word(tok), b)); good = log(l === wei(s.value) ? "ok" : "bad", `  session budget left = ${eusd(l)} eUSD`) && good; }
+    } catch (err) { log("skip", `  needs a node with historical state (${err.message})`); good = false; }
+    set("c-" + i, pill(good ? "ok" : "bad", good ? "verified" : "not verified"));
+  }
+
+  // money moved while the attacks ran: vault balance before the first and after the last attack
+  let moved = 0n, windowsOk = true;
+  for (const aw of ev.attackWindows || []) {
+    try {
+      const [a, b] = await Promise.all([aw.fromBlock, aw.toBlock].map(n => call(tok, selector("balanceOf(address)") + word(v), "0x" + n.toString(16))));
+      const d = BigInt(a) - BigInt(b); moved += d;
+      log(d === 0n ? "ok" : "bad", `${aw.label}: ${eusd(BigInt(a))} -> ${eusd(BigInt(b))} eUSD between blocks ${aw.fromBlock} and ${aw.toBlock}`);
+    } catch (err) { windowsOk = false; log("skip", `${aw.label}: needs a node with historical state`); }
+  }
+  $("t-stolen").textContent = windowsOk ? eusd(moved) : "?";
+  const bal = BigInt(await call(tok, selector("balanceOf(address)") + word(v)));
+  log("info", `vault now: ${eusd(bal)} eUSD`);
+  $("t-checks").textContent = `${counts.ok}/${counts.ok + counts.bad + counts.skip}`;
+  $("status").innerHTML = counts.bad || counts.skip
+    ? `<span class="bad">${counts.bad} mismatches, ${counts.skip} not checkable — see the live log.</span>`
+    : `<span class="ok">All ${counts.ok} checks passed against BSC Testnet, in your browser, just now.</span>`;
+}
+
+(async () => {
+  const got = await getJson(EV_PATH);
+  if (!got) { $("status").textContent = "Could not load the evidence file."; $("go").disabled = true; return; }
+  EV = got.json; $("ev-link").href = got.url; renderClaims(EV);
+  $("go").onclick = async () => {
+    $("go").disabled = true;
+    try { await verify(); } catch (e) { log("bad", "error: " + e.message); $("status").textContent = "Check stopped: " + e.message; }
+    $("go").disabled = false;
+  };
+})();
+</script>
+</body>
+</html>
