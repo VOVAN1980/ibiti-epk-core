@@ -46,3 +46,9 @@ jobs:
           npm ci
           npm run typecheck
           npm run test:v2
+
+      - name: SDK package installs in a clean outside project
+        working-directory: sdk
+        env:
+          LIVE: "0"
+        run: npm run check:package

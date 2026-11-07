@@ -6,6 +6,18 @@ Testnet** with `@ibiti/epk-sdk/v2` (`sdk/` in this repository). EPK is **not aud
 production use of the contracts needs a commercial license (BUSL-1.1, see [`LICENSING.md`](../LICENSING.md)).
 The SDK itself is MIT.
 
+**Install.** The SDK is not on npm yet (a preview release comes after this round of checks). Until then,
+build the package from this repository and install the file into your project:
+
+```bash
+git clone https://github.com/VOVAN1980/ibiti-epk-core && cd ibiti-epk-core && git checkout feature/epk-v2.1
+cd sdk && npm ci && npm run build && npm pack          # -> ibiti-epk-sdk-<version>.tgz
+cd /your/project && npm install /path/to/ibiti-epk-sdk-<version>.tgz viem
+```
+
+`npm run check:package` (in `sdk/`) proves exactly this: it packs the SDK, installs it into a clean empty
+project, type-checks a TypeScript file against it and reads BSC Testnet through it.
+
 **Fastest start:** `sdk/examples/v2-quickstart.ts` creates your own vault from zero with one funded testnet
 key, configures it, lets a bot pay, and shows what a stolen bot key gets back — about 40 seconds
 ([real run](../deployments/bsc-testnet/v2.1/2026-11-07-sdk-quickstart.log)):
