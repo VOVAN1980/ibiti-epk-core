@@ -1,163 +1,180 @@
-# Eternal Permission Kernel (EPK) — v1 Reference Implementation
+# EPK v2 — Secure On-Chain Vaults for Autonomous AI Agents
 
-![CI](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml/badge.svg)](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml)
+[![Security](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml/badge.svg)](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml)
 
-EPK is an **immutable execution kernel** with **capability-based delegation** and **instant revocation**.  
-It enables safe delegated execution for agents **without implicit approve(∞)**.
+**Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.**
 
----
+EPK (Eternal Permission Kernel) by IBITI Labs gives every customer their own on-chain vault. AI
+agents, trading bots and servers pay from it — but only within limits, only to addresses approved
+in advance, and only through short-lived sessions. If an agent, the server or the operator key is
+compromised, the attacker is still held to those limits and that allowlist and cannot quietly
+change the rules: every loosening waits in a timelock that guardians — and the automatic
+Watchtower — can cancel. What it does not cover is listed openly [below](#limits).
 
-## Docs
-
-- [Spec (v1)](docs/SPEC.md)
-- [Integration](docs/INTEGRATION.md)
-- [Threat model](docs/THREAT_MODEL.md)
-- [Testnet deployment + smoke evidence](docs/TESTNET_ADDRESSES_UPDATED.md)
-- [TypeScript SDK](sdk/README.md)
-- [Labs (demo + docs mirror)](https://www.ibiticoin.com/ibiti-web/labs/index.html)
-
----
-
-## What EPK solves
-
-Most agent frameworks still rely on long-lived approvals (approve/permit) or broad delegations.  
-EPK replaces that with a **Policy** (capability) strictly scoped by:
-
-- agent allowlist
-- call allowlist (**target + selector**)
-- per-call native value cap
-- TTL / deadline
-- optional modular validators (spend limits, threat feeds, etc.)
+[Website](https://vovan1980.github.io/ibiti-epk-core/) ·
+[Proof of Security](https://vovan1980.github.io/ibiti-epk-core/proof/) ·
+[Testnet evidence](docs/TESTNET_V2.md) ·
+[Roadmap](docs/ROADMAP.md) ·
+[Pilot & licensing](https://vovan1980.github.io/ibiti-epk-core/pilot.html)
 
 ---
 
-## Key properties
+## Status
 
-- **Immutable kernel** (no upgrade hooks)
-- **Capability-based delegation** (`policyId` instead of approvals)
-- **Instant revoke**: `setPolicyActive(false)`
-- **Panic button**: `emergencyNonceBump()` invalidates queued signatures
-- **Modular validators** (pluggable safety logic)
+| Component | State |
+|---|---|
+| **EPK v2** — `EPKVault` | **Live on BSC Testnet** since 2026-11-07. Four internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
+| **EPK Watchtower** | Automatic guardian, working on BSC Testnet. BUSL-1.1. |
 
----
-
-## Minimal flow (policy → execute → revoke)
-
-Goal: show the real “owner signs → agent executes → owner can instantly revoke”.
-
-1) **Create a Policy**
-   - allow agents: `setAgent(policyId, agent, true, ttl)`
-   - allow calls: `setCall(policyId, target, selector, true)`
-   - set caps: `maxValuePerCall`, optional `validUntil`, optional `validator`
-
-2) **Execute**
-   - owner signs EIP-712 `Execute(policyId, target, value, dataHash, nonce, deadline)`
-   - agent/relayer submits `execute(...)`
-   - kernel verifies:
-     - policy exists + active
-     - agent is allowed (+ TTL)
-     - call is allowed (target + selector)
-     - nonce matches, deadline fresh
-     - optional validator passes
-   - kernel performs the call
-
-3) **Revoke**
-   - `setPolicyActive(policyId, false)` disables policy instantly
-   - `emergencyNonceBump(policyId, newNonce)` kills pending signatures
+What comes next, and in which order, is in the [roadmap](docs/ROADMAP.md) — the single source of
+truth for this README, the website and DoraHacks.
 
 ---
 
-## Validator statefulness (v1)
+## Proven on BSC Testnet
 
-In this v1 reference, `IPolicyValidator.validate(...)` is **NOT** `view`.  
-Validators may update internal state during validation (e.g., rolling spend windows).
+One vault at one address from start to finish
+([`0xB2166241…2FA340`](https://testnet.bscscan.com/address/0xB2166241D29C50F4678aebb5061504ee562FA340)),
+every step a real transaction:
+
+| What happened | Result |
+|---|---|
+| The AI agent opens a session and pays the treasury 50 eUSD on its own | ✅ paid |
+| 5 attacks: over budget, unknown destination, forbidden call, forged signature, not the agent | ❌ all rejected on-chain |
+| A guardian calls `panic()` | everything stops in one transaction |
+| Recovery: unpause through the timelock, new agent session | ✅ service restored; the old session stays dead (`PolicyInactive`) |
+| A **stolen admin key** schedules a new withdrawal address | 🛡 the Watchtower cancelled it **5 blocks later**; executing it anyway was rejected (`UnknownOperation`) |
+
+**7 of 7** attack transactions rejected · **0 eUSD** left the vault during the attacks.
+Next on testnet: the upgrade 2.0.0 → 2.0.1 at the same address through the timelock
+(scheduled from 2026-11-14).
+
+### Check it yourself
+
+No need to trust this page. One command — Python 3 only, no Foundry, no keys, no packages —
+re-checks every claim in [`deployments/bsc-testnet/epk-v2-evidence.json`](deployments/bsc-testnet/epk-v2-evidence.json)
+against a public BSC Testnet node: chain id, bytecode hashes, who sent what, emitted events, revert
+reasons, balances and historical checkpoints.
+
+```bash
+python scripts/v2/verify_evidence.py
+```
+
+The report labels how each fact was proven (**STRICT** execution trace, **REPLAY**, **STATE** or
+**EVENTS**) and never marks something as passed when the node can no longer prove it. Details:
+[docs/TESTNET_V2.md](docs/TESTNET_V2.md).
 
 ---
 
-## Signing (EIP-712)
+## How EPK v2 protects the money
 
-Domain:
-- name: `Eternal Permission Kernel`
-- version: `1`
-- includes `chainId` and `verifyingContract`
+- **One isolated vault per customer** (factory, CREATE2, permanent address) — nobody else's policy can reach your funds.
+- **Separate roles**: operator signer, admin, ≥ 2 guardians (can only stop, never move funds), recovery key, session manager.
+- **Outflow limits per asset**, measured on real balance changes (token bucket).
+- **Destination allowlist** for transfers, approvals and native value.
+- **Signed batches**; token allowances can never outlive the batch that created them.
+- **Optional independent co-signer** for large outflows.
+- **Agent sessions**: AI agents get instant, short-lived sessions with their own budgets — only inside envelopes the owner approved through the timelock; one switch stops every session of an envelope.
+- **Tighten instantly, loosen only through a timelock** that guardians can veto.
+- **`panic()`**: one call pauses the vault and invalidates every policy, session and pending change.
+- **Upgrades only by the owner's decision**: registry of reviewed releases (7-day public window), ≥ 2-day per-vault timelock, guardian veto; nobody — including IBITI — can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)).
 
-Typed data:
-`Execute(policyId, target, value, dataHash, nonce, deadline)`
+### Watchtower — the automatic guardian
+
+[`watchtower/`](watchtower/README.md) watches the vault's timelock and holds a guardian key. It
+knows which changes the owner actually planned; anything else scheduled on the vault is cancelled
+automatically, and repeated surprises trigger `panic()`. A guardian can only stop — it can never
+move funds.
+
+```bash
+python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json --dry-run   # decide only, send nothing
+```
 
 ---
 
-## Quickstart (Foundry)
+## Repository layout
 
-### Build + tests
+| Path | What | License |
+|---|---|---|
+| `contracts/v2/` | `EPKVault`, `EPKVaultFactory` (with the proxy), `EPKRegistry`, interfaces | BUSL-1.1 |
+| `test/v2/` | v2 tests: unit, sessions, upgrades, reentrancy, fuzz and stateful invariants | BUSL-1.1 |
+| `scripts/v2/` | testnet deployment and demo scripts, evidence verifier, upgrade preflight | BUSL-1.1 |
+| `watchtower/` | automatic guardian and its tests | BUSL-1.1 |
+| `deployments/bsc-testnet/` | evidence: addresses, transactions, saved traces, verification reports | MIT |
+| `docs/` | specifications, security review, roadmap; the website (GitHub Pages) | MIT |
+| `contracts/epk/`, `contracts/validators/`, `contracts/mocks/`, `test/*.sol`, `scripts/` (outside `v2/`) | EPK v1 | MIT |
+| `sdk/` | TypeScript SDK for v1 (SDK v2 is on the roadmap) | MIT |
+
+## Build and test
+
+Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
+
 ```bash
 forge build
-forge test -vv
-forge coverage --ir-minimum --report summary --report lcov
+forge test                                               # 322 contract tests: 120 for v2, 202 for v1
+python -m unittest discover -s watchtower -p "test_*.py" # 12 Watchtower tests, no network
 ```
 
-### Scripts
+Every push runs the tests in [CI](.github/workflows/ci.yml); pull requests and `master` also run
+Slither in the [security workflow](.github/workflows/security.yml). Every Slither finding is fixed or
+justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 
-| Script | Purpose | Env vars |
-|---|---|---|
-| `scripts/Deploy.s.sol` | Deploy kernel + composite + validators | `OWNER`, `PRIVATE_KEY`, optional `DEPLOY_THREATFEED`, `THREAT_ROOT`, `THREAT_EPOCH` |
-| `scripts/SmokeTest.s.sol` | On-chain smoke: policy → execute → revoke | `PRIVATE_KEY`, `EPKERNEL` |
-| `scripts/coverage.ps1` | Coverage helper (Windows) | — |
-| `scripts/update-site-stats.ps1` | Run coverage and update test stats on the Labs site | — |
+## Documentation
 
-Copy `.env.example` to `.env` and fill in your values. `.env` is git-ignored — **never commit real keys**.
-
-### Smoke test on BSC testnet (policy → execute → revoke)
-
-The on-chain evidence (tx hashes + verified contracts) is maintained in
-[docs/TESTNET_ADDRESSES_UPDATED.md](docs/TESTNET_ADDRESSES_UPDATED.md).
-
-Windows PowerShell (reads RPC from `.env`, exports vars so `vm.env*` works):
-
-```powershell
-cd D:\ibiti-epk-core
-
-# export .env -> process env (so vm.envAddress/vm.envUint can read it)
-Get-Content .\.env | ForEach-Object {
-  if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)\s*$') {
-    [Environment]::SetEnvironmentVariable($matches[1], $matches[2].Trim(), "Process")
-  }
-}
-
-# rpc strictly from .env
-$rpc = (Select-String -Path .\.env -Pattern '^BSC_RPC_URL=').Line.Split('=')[1].Trim()
-
-# broadcast
-forge script .\scripts\SmokeTest.s.sol:SmokeTest --rpc-url $rpc --broadcast -vvvv
-```
-
-Artifacts produced by Foundry:
-
-- `broadcast/SmokeTest.s.sol/97/run-latest.json`
-- `cache/SmokeTest.s.sol/97/run-latest.json`
+- [Specification — EPK v2 (EPKVault)](docs/SPEC_v2.md)
+- [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
+- [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
+- [BSC Testnet demo and evidence](docs/TESTNET_V2.md)
+- [Roadmap](docs/ROADMAP.md)
 
 ---
 
-## Testnet deployment (BSC testnet, chainId 97)
+## EPK v1 — legacy reference (MIT)
 
-Verified contract addresses + deployment tx hashes + smoke-test evidence:
-[docs/TESTNET_ADDRESSES_UPDATED.md](docs/TESTNET_ADDRESSES_UPDATED.md)
+EPK v1 (`v1.0.0`, frozen) is the original **immutable execution kernel** with capability-based delegation: an owner
+creates a policy (allowed agents with TTL, allowed `target + selector` calls, a native value cap,
+optional validators), signs an EIP-712 `Execute(policyId, target, value, dataHash, nonce, deadline)`,
+and an agent submits it; `setPolicyActive(false)` revokes instantly and `emergencyNonceBump()`
+kills queued signatures.
 
----
+> ⚠️ `EPKernel` is a **shared executor**. Never `approve` tokens to it or send tokens to it —
+> see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md). EPK v2 exists because of this: there every
+> customer has their own vault.
 
-## Tests & coverage
-
-- Functional: **202/202 passing** (100%)
-- Line: 94.21% • Statement: 95.11%
-- Branch: 58.33% (viaIR source-map limitations; may be underreported)
-- Invariants: 2 passed (nonce monotonicity + revoked policy safety) — 256 runs / 128k calls
-
-Notes:
-
-- `via_ir` + `--ir-minimum` is used to avoid “stack too deep” → branch % can look lower than reality.
-- Ground truth: 100% functional pass + explicit branch-hit tests.
+- Specification: [docs/SPEC.md](docs/SPEC.md) · [Integration](docs/INTEGRATION.md) · [Threat model](docs/THREAT_MODEL.md) · old website pages: [docs/v1/](docs/v1/)
+- BSC Testnet addresses and smoke test: [docs/TESTNET_ADDRESSES_UPDATED.md](docs/TESTNET_ADDRESSES_UPDATED.md)
+- Scripts: `scripts/Deploy.s.sol` (kernel + validators), `scripts/SmokeTest.s.sol` (policy → execute → revoke)
+- Tests: 202 passing, including invariants (nonce monotonicity, a revoked policy can never execute)
 
 ---
+
+## Limits
+
+EPK v2 narrows what a compromised key can do; it does not make loss impossible. In particular:
+
+- Inside its limits, a compromised operator or agent can still spend — up to the configured limit
+  per window, and only to allowlisted addresses.
+- If the admin key is stolen and no guardian vetoes in time, a timelocked change goes through after
+  the delay. Guardians and the Watchtower must run on independent infrastructure.
+- Calls other than plain token transfers and approvals are not inspected inside their arguments —
+  allowlist swaps, lending or bridges only together with a validator that checks them.
+
+The full list is in the [internal security review, §3](docs/SECURITY_REVIEW_v2.md#3-residual-risks-and-design-limitations).
+
+## Security
+
+EPK v2 has **not** been independently audited yet; do not use it to protect real funds. Please
+report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+Configuration lives in `.env` (copy `.env.example`); `.env` is git-ignored — **never commit real keys**.
 
 ## License
 
-MIT (see [LICENSE](LICENSE))
+- **EPK v2** — `contracts/v2/`, `test/v2/`, `scripts/v2/`, `watchtower/`: **Business Source License 1.1**
+  ([LICENSE-BUSL-1.1](LICENSE-BUSL-1.1)). Free for study, audits, test networks, hackathons,
+  education and research; production use with real assets requires a commercial license. Each
+  version becomes MIT no later than 2030-11-06.
+- **Everything else** — EPK v1, the SDK, documentation and the website: **MIT** ([LICENSE](LICENSE)).
+
+Details and commercial licensing: [LICENSING.md](LICENSING.md) · info@ibiticoin.com
