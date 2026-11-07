@@ -77,6 +77,16 @@ vulnerabilities exist. EPK v2 has not yet been independently audited; nothing go
   <div class="scroll"><table id="tbl-attacks"><thead><tr><th>Step</th><th>Attempt</th><th>Vault's answer</th><th>Proof</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
 </section>
 
+<section id="s-watchtower">
+  <h2>A stolen admin key, stopped by the Watchtower</h2>
+  <p>The worst case: an attacker holds the vault's real admin key. Every change that could let money out has to
+  wait in the vault's timelock, and any guardian may cancel it while it waits. The EPK Watchtower is a guardian
+  that never sleeps. In steps <b>W1–W3</b> the attacker scheduled "allow payments to my address"; the Watchtower
+  cancelled it 5 blocks later, and the attacker's attempt to push it through anyway was rejected with
+  <code>UnknownOperation</code> — the change no longer existed. All three transactions are checked in the tables
+  on this page. <a data-tree="watchtower">How the Watchtower works</a>.</p>
+</section>
+
 <section id="s-flow">
   <h2>Real transactions on BSC Testnet</h2>
   <p>The whole lifecycle: deploy, a customer's vault, an AI agent paying on its own, panic, recovery, upgrade.</p>
@@ -129,7 +139,7 @@ Test network only, test token only.</footer>
 { const th = new URLSearchParams(location.search).get("theme"); if (th === "dark" || th === "light") document.documentElement.dataset.theme = th; }
 // ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
 const REPO = "VOVAN1980/ibiti-epk-core";
-const EVIDENCE_COMMIT = "3517e7d30a4b9e4227ce69842303eb0f6f11eb67";
+const EVIDENCE_COMMIT = "bd3cf198a361d3bc7780806e9cdd54f2be1a0f59";
 const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
 const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
 const EV_PATH = "deployments/bsc-testnet/epk-v2-evidence.json";
@@ -235,7 +245,7 @@ async function verify() {
   const roles = ev.roles, sessions = ev.sessions || {};
   const names = {}; for (const [k, a] of Object.entries({...C, ...roles})) names[a.toLowerCase()] = k;
   const who = a => names[a.toLowerCase()] || a;
-  const resolve = r => r.startsWith("session:") ? BigInt(sessions[r.slice(8)]) : r.startsWith("uint:") ? BigInt(r.slice(5)) : (C[r] || roles[r]);
+  const resolve = r => r.startsWith("0x") ? BigInt(r) : r.startsWith("session:") ? BigInt(sessions[r.slice(8)]) : r.startsWith("uint:") ? BigInt(r.slice(5)) : (C[r] || roles[r]);
   const showError = (sig, data) => {
     const types = sig.endsWith("()") ? [] : sig.slice(sig.indexOf("(") + 1, -1).split(",");
     const args = types.map((ty, i) => { const w = data.slice(10 + 64*i, 74 + 64*i) || "0"; const v = BigInt("0x" + w);
