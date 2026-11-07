@@ -110,6 +110,7 @@ TIMELOCKED = {
     "setEnvelope(uint256,bool,uint48,uint128)": "change an agent envelope",
     "setEnvelopeCall(uint256,address,bytes4,bool)": "allow or forbid an agent call",
     "setEnvelopeBudgetCap(uint256,address,uint128)": "change an agent budget",
+    "setEnvelopeGuard(uint256,address)": "change the guard of agent sessions (vault 2.1+)",
     "setPolicyActive(uint256,bool)": "switch a policy on or off",
     "setAgent(uint256,address,bool,uint40)": "allow or forbid an agent",
     "setCall(uint256,address,bytes4,bool)": "allow or forbid a policy call",

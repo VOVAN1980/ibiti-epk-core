@@ -101,8 +101,9 @@ contract ThreatFeedGuard is IEPKGuard {
         }
     }
 
-    // slither-disable-start timestamp
+    // slither-disable-start timestamp,incorrect-equality
     // timestamp: the unblock delay is hours to days; a few seconds of validator skew are irrelevant.
+    // incorrect-equality: `readyAt == 0` compares with the "nothing scheduled" sentinel, not a balance.
     /// @notice Finish unblocks whose delay has passed (anyone may call: the decision was the owner's).
     function executeUnblock(address[] calldata accounts) external {
         if (accounts.length > MAX_BATCH) revert TooMany();
@@ -116,7 +117,7 @@ contract ThreatFeedGuard is IEPKGuard {
             emit Unblocked(a);
         }
     }
-    // slither-disable-end timestamp
+    // slither-disable-end timestamp,incorrect-equality
 
     /// @notice Blockers are fast responders: they can block and veto unblocks, nothing else.
     function setBlocker(address blocker, bool enabled) external onlyOwner {

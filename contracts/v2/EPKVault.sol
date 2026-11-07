@@ -665,10 +665,10 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
 
     /// @notice Guard (IEPKGuard) for every session of the envelope, applied live to open sessions.
-    ///         Adding one where there was none is instant (it can only reject); replacing or removing one
-    ///         is a loosening and goes through the timelock.
-    function setEnvelopeGuard(uint256 envelopeId, address guard) external {
-        _checkChange(envelopeGuard[envelopeId] != address(0));
+    ///         Every change is timelocked: removing a guard drops its checks, and adding one to an
+    ///         unguarded envelope unlocks calls the vault cannot inspect (see `_checkCalls`), so a
+    ///         permissive guard installed with a stolen guardian key would be a hidden loosening.
+    function setEnvelopeGuard(uint256 envelopeId, address guard) external onlyTimelocked {
         if (guard == address(this)) revert BadRole(guard);
         envelopeGuard[envelopeId] = guard;
         emit EnvelopeGuardSet(envelopeId, guard);

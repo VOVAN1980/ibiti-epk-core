@@ -22,19 +22,19 @@ contract CompositeGuard is IEPKGuard {
     error BadChildren();
     error NotVault();
 
-    /// @param children guard / validator addresses, run in this order
-    /// @param legacy   true for a validator that implements only `IPolicyValidator.validate`
-    constructor(address[] memory children, bool[] memory legacy) {
-        uint256 n = children.length;
-        if (n == 0 || n > MAX_CHILDREN || legacy.length != n) revert BadChildren();
+    /// @param guards_ guard / validator addresses, run in this order
+    /// @param legacy_ true for a validator that implements only `IPolicyValidator.validate`
+    constructor(address[] memory guards_, bool[] memory legacy_) {
+        uint256 n = guards_.length;
+        if (n == 0 || n > MAX_CHILDREN || legacy_.length != n) revert BadChildren();
         for (uint256 i = 0; i < n; i++) {
-            address c = children[i];
+            address c = guards_[i];
             if (c == address(0) || c == address(this) || c.code.length == 0) revert BadChildren();
             for (uint256 j = 0; j < i; j++) {
-                if (children[j] == c) revert BadChildren();
+                if (guards_[j] == c) revert BadChildren();
             }
             _children.push(c);
-            _legacy.push(legacy[i]);
+            _legacy.push(legacy_[i]);
         }
     }
 

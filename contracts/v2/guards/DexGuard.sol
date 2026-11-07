@@ -187,6 +187,9 @@ contract DexGuard is IEPKGuard {
     error BadPrice(address token);
     error BalanceCheckFailed(address asset, int256 actual, int256 required);
 
+    // slither-disable-start missing-zero-check,calls-loop
+    // missing-zero-check: wrappedNative_ = 0 is a valid setting (no native swaps; they are then refused).
+    // calls-loop: decimals are read once per configured token at deployment.
     constructor(
         address wrappedNative_,
         uint256 maxSlippageBps_,
@@ -225,6 +228,7 @@ contract DexGuard is IEPKGuard {
         // native swaps are priced through the wrapped native token
         if (wrappedNative_ != address(0) && _tokens[wrappedNative_].feed == address(0)) revert BadConfig();
     }
+    // slither-disable-end missing-zero-check,calls-loop
 
     // ------------------------------------------------------------------ views
 
@@ -328,8 +332,9 @@ contract DexGuard is IEPKGuard {
         return Math.mulDiv(value, 10 ** _tokens[tokenOut].tokenDecimals, _price(tokenOut));
     }
 
-    // slither-disable-start timestamp
+    // slither-disable-start timestamp,unused-return
     // timestamp: feed staleness is measured in minutes to hours.
+    // unused-return: latestRoundData's startedAt is not needed; updatedAt bounds staleness.
     function _price(address token) internal view returns (uint256) {
         TokenConfig memory t = _tokens[token];
         if (t.feed == address(0)) revert TokenNotAllowed(token);
@@ -344,16 +349,19 @@ contract DexGuard is IEPKGuard {
         if (p < t.minPrice || p > t.maxPrice) revert BadPrice(token);
         return p * 10 ** (18 - t.feedDecimals);
     }
-    // slither-disable-end timestamp
+    // slither-disable-end timestamp,unused-return
 
     // ------------------------------------------------------------------ decoding
 
+    // slither-disable-start cyclomatic-complexity
+    // cyclomatic-complexity: one branch per supported V2 function, kept flat on purpose so each
+    // function's decoding can be read side by side.
     function _decodeV2(address router, uint256 value, bytes calldata data) internal view returns (Swap memory s) {
         if (data.length < 4) revert UnsupportedCall(router, bytes4(0));
         bytes4 sel = bytes4(data[:4]);
-        address[] memory path;
-        bool nativeIn;
-        bool nativeOut;
+        address[] memory path = new address[](0);
+        bool nativeIn = false;
+        bool nativeOut = false;
         if (sel == SWAP_EXACT_TOKENS_FOR_TOKENS || sel == SWAP_EXACT_TOKENS_FOR_ETH) {
             (s.amount, s.limit, path, s.recipient, s.deadline) =
                 abi.decode(data[4:], (uint256, uint256, address[], address, uint256));
@@ -395,6 +403,7 @@ contract DexGuard is IEPKGuard {
             s.assetOut = NATIVE;
         }
     }
+    // slither-disable-end cyclomatic-complexity
 
     function _decodeV3(address router, uint256 value, bytes calldata data) internal view returns (Swap memory s) {
         if (data.length < 4) revert UnsupportedCall(router, bytes4(0));
@@ -442,12 +451,15 @@ contract DexGuard is IEPKGuard {
         }
     }
 
+    // slither-disable-start assembly
+    // assembly: a read-only, memory-safe 20-byte load; offset + 20 <= b.length is guaranteed by the
+    // caller's length check (proof: test_v3_rules, testFuzz in DexGuard.t.sol).
     function _addressAt(bytes memory b, uint256 offset) internal pure returns (address a) {
-        // offset + 20 <= b.length is guaranteed by the caller's length check
         assembly ("memory-safe") {
             a := shr(96, mload(add(add(b, 32), offset)))
         }
     }
+    // slither-disable-end assembly
 
     function _requireListed(address token) internal view {
         if (_tokens[token].feed == address(0)) revert TokenNotAllowed(token);

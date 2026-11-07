@@ -353,29 +353,41 @@ contract DexGuardVaultTest is GuardBase {
         assertEq(friend.balance, 0.1 ether);
     }
 
-    function test_session_guardAppliesLiveAndRemovalIsTimelocked() public {
-        uint256 sid = _openSession(ENV_NOGUARD);
-        // a guardian adds a guard instantly (tightening) and it applies to the open session at once
+    /// Every change of a session guard waits in the timelock — adding one too: on an unguarded
+    /// envelope a permissive guard would unlock router calls (a hidden loosening).
+    function test_session_guardChangesAreTimelocked() public {
         vm.prank(guardian);
+        vm.expectRevert(EPKVault.NotTimelocked.selector);
         vault.setEnvelopeGuard(ENV_NOGUARD, address(guard));
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.NotTimelocked.selector);
+        vault.setEnvelopeGuard(ENV_NOGUARD, address(guard));
+
+        // scheduled, a guardian (or the Watchtower) can veto it ...
+        bytes memory op = abi.encodeCall(EPKVault.setEnvelopeGuard, (ENV_NOGUARD, address(guard)));
+        vm.prank(admin);
+        bytes32 id = vault.schedule(op, bytes32("add guard"));
+        vm.prank(guardian2);
+        vault.cancel(id);
+
+        // ... or, after the delay, it applies to the envelope's sessions
+        vm.prank(admin);
+        vault.schedule(op, bytes32("add guard again"));
+        vm.warp(_now() + DELAY);
+        usdtFeed.set(1e8);
+        wbnbFeed.set(600e8);
+        cakeFeed.set(2e18);
+        vm.prank(admin);
+        vault.executeScheduled(op, bytes32("add guard again"));
+        assertEq(vault.envelopeGuard(ENV_NOGUARD), address(guard));
+        uint256 sid = _openSession(ENV_NOGUARD);
         uint256 minOut = guard.minimumOut(address(usdt), address(wbnb), 600e6);
         _exec(sid, AGENT_PK, _v2ExactIn(address(usdt), address(wbnb), 600e6, minOut, address(vault)));
 
-        // removing (or replacing) it is a loosening: only through the timelock
-        vm.prank(admin);
-        vm.expectRevert(EPKVault.NotTimelocked.selector);
-        vault.setEnvelopeGuard(ENV_NOGUARD, address(0));
+        // removing it is timelocked as well
         vm.prank(guardian);
         vm.expectRevert(EPKVault.NotTimelocked.selector);
         vault.setEnvelopeGuard(ENV_NOGUARD, address(0));
-
-        bytes memory op = abi.encodeCall(EPKVault.setEnvelopeGuard, (ENV_NOGUARD, address(0)));
-        vm.prank(admin);
-        bytes32 id = vault.schedule(op, bytes32("remove guard"));
-        // ... which guardians (or the Watchtower) can veto
-        vm.prank(guardian2);
-        vault.cancel(id);
-        assertEq(vault.envelopeGuard(ENV_NOGUARD), address(guard));
     }
 
     function test_version() public view {

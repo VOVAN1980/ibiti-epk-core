@@ -1,0 +1,20 @@
+# DexGuard on a local fork of BSC Testnet — 2026-11-07T17:22Z
+# command: BSC_TESTNET_FORK_RPC=https://bsc-testnet-rpc.publicnode.com forge test --match-path test/v2/guards/DexGuard.fork.t.sol -vv
+# commit base: 8d92745 (feature/epk-v2.1, uncommitted test edits included)
+Compiler run successful!
+Ran 3 tests for test/v2/guards/DexGuard.fork.t.sol:DexGuardForkTest
+[PASS] test_fork_attacksOnRealRouterAreRefused() (gas: 327018)
+[PASS] test_fork_fairPoolSwapsWork() (gas: 621594)
+Logs:
+  BNB -> fUSD through PancakeSwap, received: 345952939561168976680
+[PASS] test_fork_mispricedRealPoolIsRefused() (gas: 400836)
+Logs:
+  BSC Testnet fork block    : 141380688
+  Chainlink BNB/USD (8 dec) : 69363841699
+  pool pays BUSD for 0.1 BNB: 42745248388572226983
+  fair BUSD for 0.1 BNB     : 69402697493218553338
+  pool keeps (bps of fair)   : 6159
+  unguarded wallet received : 42745248388572226983
+  unguarded loss vs fair (bps): 3841
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 2.58s (1.17s CPU time)
+Ran 1 test suite in 2.58s (2.58s CPU time): 3 tests passed, 0 failed, 0 skipped (3 total tests)

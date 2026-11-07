@@ -1,7 +1,11 @@
 # EPK v2 — next stage: guards, SDK v2, Watchtower (design draft)
 
 Status: design, 2026-11-07. Order and status live in [ROADMAP.md](ROADMAP.md); this page explains
-*how* the next milestones will work. Goal of the stage: EPK that outside developers can integrate
+*how* the next milestones will work.
+
+**Update 2026-11-07:** steps 1 and 3 below — DexGuard, ThreatFeed V2, CompositeGuard and vault release
+2.1.0 with guards for agent sessions — are built and tested on the branch `feature/epk-v2.1`. What they
+block, what they do not cover and how to connect them: [GUARDS_v2.md](GUARDS_v2.md). Goal of the stage: EPK that outside developers can integrate
 and that trading-bot and AI-agent companies will pay to run with real money.
 
 ## 1. Why guards come first
