@@ -32,8 +32,16 @@ Run from the repo root (Foundry loads `.env` automatically; `$BSC_RPC_URL` comes
 | 4 | day 0 | `python scripts/v2/demo_attacks.py deployments/bsc-testnet/epk-v2-attacks.json` | 5 attacks rejected on-chain: over budget, unknown destination, forbidden call, forged signature, not the agent |
 | 5 | day 0 | `forge script scripts/v2/DemoPanic.s.sol:DemoPanic --sig "panicAndScheduleUnpause()" --rpc-url $BSC_RPC_URL --broadcast` | a guardian stops everything instantly; unpausing goes through the timelock |
 | 6 | day 0 + 1 h | `forge script scripts/v2/DemoPanic.s.sol:DemoPanic --sig "recover()" --rpc-url $BSC_RPC_URL --broadcast` then `python scripts/v2/demo_attacks.py deployments/bsc-testnet/epk-v2-after-panic.json` | service restored with a new session; the pre-panic session stays dead |
-| 7 | day 7 | `forge script scripts/v2/DemoUpgrade.s.sol:DemoUpgrade --sig "schedule()" --rpc-url $BSC_RPC_URL --broadcast` | the vault opts into the approved 2.0.1 release (timelocked, guardians could veto) |
-| 8 | day 9 | `forge script scripts/v2/DemoUpgrade.s.sol:DemoUpgrade --sig "execute()" --rpc-url $BSC_RPC_URL --broadcast` | upgraded to 2.0.1 at the **same address**, funds and settings unchanged |
+| 7 | day 7 (from 2026-11-14 12:04:02 UTC by block time) | `python scripts/v2/upgrade_preflight.py schedule` → only if READY and the owner confirms: `forge script scripts/v2/DemoUpgrade.s.sol:DemoUpgrade --sig "schedule()" --rpc-url $BSC_RPC_URL --broadcast` | the vault opts into the approved 2.0.1 release (timelocked, guardians could veto); preflight saves a snapshot of all 29 public vault settings |
+| 8 | day 9 (2 days after step 7, by block time) | `python scripts/v2/upgrade_preflight.py execute` → only if READY and the owner confirms: `forge script scripts/v2/DemoUpgrade.s.sol:DemoUpgrade --sig "execute()" --rpc-url $BSC_RPC_URL --broadcast` → `python scripts/v2/upgrade_preflight.py after` | upgraded to 2.0.1 at the **same address**; all 29 settings, both balances and the vault's own code byte-for-byte unchanged |
+
+`upgrade_preflight.py` signs nothing. It decides only by block timestamps, checks the registry
+approval, the release's code hash (= registry pin = evidence file), the vault state, a dry run of the
+exact call, and, for `execute`/`after`, that no vault setting changed. Signing stays a separate, manual
+step after the owner's confirmation. Rehearsed in full on a local fork of BSC Testnet on 2026-11-07
+(time moved to 14 and 16 November): READY on day 7, refused one day later with `OperationNotReady()`,
+READY on day 9, then `UPGRADE VERIFIED` — same address, version 20001, 29/29 settings and 9,940 eUSD
+unchanged.
 
 Cost of the whole demo at current testnet gas prices: about 0.02–0.03 tBNB (including 0.01 tBNB
 sent to the role keys for gas).
