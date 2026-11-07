@@ -56,7 +56,7 @@
     "url": "git+https://github.com/VOVAN1980/ibiti-epk-core.git",
     "directory": "sdk"
   },
-  "homepage": "https://github.com/VOVAN1980/ibiti-epk-core/blob/feature/epk-v2.1/docs/INTEGRATION_v2.md",
+  "homepage": "https://github.com/VOVAN1980/ibiti-epk-core/blob/master/docs/INTEGRATION_v2.md",
   "keywords": [
     "epk",
     "vault",

@@ -5,6 +5,10 @@
 
 **Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.**
 
+> **Status: EPK 2.1 preview — BSC Testnet only. Not independently audited, not on any mainnet; do not use it
+> with real funds.** TypeScript SDK: `npm install @ibiti/epk-sdk@preview viem` ·
+> [developer guide](docs/INTEGRATION_v2.md)
+
 EPK (Eternal Permission Kernel) by IBITI Labs gives every customer their own on-chain vault. AI
 agents, trading bots and servers pay from it — but only within limits, only to addresses approved
 in advance, and only through short-lived sessions. If an agent, the server or the operator key is

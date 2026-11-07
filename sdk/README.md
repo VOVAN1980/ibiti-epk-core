@@ -5,7 +5,7 @@
 > is missing: info@ibiticoin.com · https://github.com/VOVAN1980/ibiti-epk-core
 >
 > `npm install @ibiti/epk-sdk@preview viem` · developer guide:
-> [INTEGRATION_v2.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/feature/epk-v2.1/docs/INTEGRATION_v2.md) ·
+> [INTEGRATION_v2.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/master/docs/INTEGRATION_v2.md) ·
 > licence: SDK code MIT; bundled EPK v2 contract bytecode BUSL-1.1 (see `LICENSE`).
 
 TypeScript SDK for **EPK** (IBITI Labs) built on **viem**.

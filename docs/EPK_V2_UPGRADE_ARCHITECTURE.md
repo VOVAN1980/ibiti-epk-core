@@ -1,6 +1,6 @@
 # EPK v2 — Upgrade Architecture
 
-Status: **implemented on `feature/epk-v2`, internally reviewed (3 rounds), not audited, not deployed anywhere.**
+Status: **implemented (EPK 2.0 and 2.1), internally reviewed (3 rounds), not audited; live on BSC Testnet only, not on any mainnet.**
 Contracts: `contracts/v2/EPKVault.sol`, `contracts/v2/EPKRegistry.sol`, `contracts/v2/EPKVaultFactory.sol` (incl. `EPKVaultProxy`).
 Tests: `test/v2/EPKVault.upgrade.t.sol`. Storage snapshot: `docs/storage-layout/EPKVault-2.0.0.txt`.
 

@@ -11,7 +11,7 @@ Last updated: 2026-11-07.
 | Component | Status |
 |---|---|
 | **EPK v1** — `EPKernel` + validators | Released (`v1.0.0`, MIT), deployed on BSC testnet. Reference kernel; **not for holding real funds** (shared executor, see `docs/THREAT_MODEL.md`). |
-| **EPK v2** — `EPKVault` | In active development on `feature/epk-v2` (draft PR #1), BUSL-1.1. Not audited. **Live on BSC Testnet** since 2026-11-07 with an end-to-end demo anyone can re-check (`docs/TESTNET_V2.md`, `docs/proof/`); not on mainnet. |
+| **EPK v2** — `EPKVault` | The main version of this repository: 2.1 preview, BUSL-1.1, TypeScript SDK `@ibiti/epk-sdk@preview` on npm. Not audited. **Live on BSC Testnet** since 2026-11-07 with an end-to-end demo anyone can re-check (`docs/TESTNET_V2.md`, `docs/proof/`); not on mainnet. |
 | **EPK Watchtower** | Automatic guardian (`watchtower/`, BUSL-1.1). Working on BSC Testnet: cancelled a change scheduled with the stolen admin key 5 blocks after it appeared. |
 
 EPK v2 today:
@@ -28,7 +28,7 @@ EPK v2 today:
 
 | # | Milestone | What it delivers | Status |
 |---|---|---|---|
-| 1 | **Guard modules** | DEX Guard (swap recipient, token list, deadline and oracle-based slippage checks for V2/V3 routers), ThreatFeed V2 (shared blocklist; blocking instant, unblocking delayed), CompositeGuard — validators that plug into policies without changing the vault; agent sessions get guards with vault release 2.1.0. Design: [`docs/NEXT_STAGE_v2.md`](NEXT_STAGE_v2.md) | **built and tested** on `feature/epk-v2.1` with vault release 2.1.0 (2026-11-07): attack, fuzz, invariant and fork tests ([`docs/GUARDS_v2.md`](GUARDS_v2.md)); **live on BSC Testnet on a separate demo vault** — 11 attacks rejected on-chain, real PancakeSwap + Chainlink ([`docs/TESTNET_V21.md`](TESTNET_V21.md)); not audited |
+| 1 | **Guard modules** | DEX Guard (swap recipient, token list, deadline and oracle-based slippage checks for V2/V3 routers), ThreatFeed V2 (shared blocklist; blocking instant, unblocking delayed), CompositeGuard — validators that plug into policies without changing the vault; agent sessions get guards with vault release 2.1.0. Design: [`docs/NEXT_STAGE_v2.md`](NEXT_STAGE_v2.md) | **built and tested** with vault release 2.1.0 (2026-11-07): attack, fuzz, invariant and fork tests ([`docs/GUARDS_v2.md`](GUARDS_v2.md)); **live on BSC Testnet on a separate demo vault** — 11 attacks rejected on-chain, real PancakeSwap + Chainlink ([`docs/TESTNET_V21.md`](TESTNET_V21.md)); not audited |
 | 2 | **SDK v2** | TypeScript (viem): create vaults, sign batches and co-signatures, open sessions, schedule changes and upgrades, read limits and budgets | planned |
 | 3 | **Watchtower** | Monitoring bot that acts as a guardian: vetoes unexpected scheduled changes, pauses on anomalies, alerts the owner | **working on testnet** (2026-11-07); next: always-on hosting, more alert channels, owner-signed approvals |
 | 4 | **Testnet end-to-end** | Public BSC testnet deployment: create vault → deposit → open agent session → allowed payment → blocked attack → upgrade through the timelock → `panic` → recovery, all on the same vault address | **done on testnet** (2026-11-07): steps 1–6 and the Watchtower demo on the 2.0 vault; the opt-in upgrade at the same address was shown on EPK 2.1 in 5 minutes ([`TESTNET_V21_FAST_UPGRADE.md`](TESTNET_V21_FAST_UPGRADE.md)) — the 2.0 → 2.0.1 test planned for 14–16 Nov was cancelled as no longer needed |
