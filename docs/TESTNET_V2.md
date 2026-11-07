@@ -6,8 +6,10 @@ https://testnet.bscscan.com
 
 Status: **live on BSC Testnet since 2026-11-07** — steps 1–6 done (deploy, vault, agent payment,
 5 attacks rejected on-chain, panic, recovery with a new session; the pre-panic session stays
-dead). Steps 7–8 (upgrade to 2.0.1) follow the 7-day release window: schedule on 2026-11-14,
-execute on 2026-11-16. Evidence (addresses, tx hashes) is in `deployments/bsc-testnet/` and
+dead), plus the **Watchtower demo** (W1–W3: a change scheduled with the stolen admin key was
+cancelled automatically 5 blocks later; see [`watchtower/README.md`](../watchtower/README.md)).
+Steps 7–8 (upgrade to 2.0.1) follow the 7-day release window: schedule from 2026-11-14,
+execute 2 days later. Evidence (addresses, tx hashes) is in `deployments/bsc-testnet/` and
 summarised below.
 
 ## Roles (testnet keys in the local `.env`, never committed)
@@ -97,6 +99,9 @@ timelock delay 1 hour.
 | 6 | session manager opens a **new** agent session | [0x24f9fdd1…](https://testnet.bscscan.com/tx/0x24f9fdd1c32850ea4dabc20a1f7b17879ee57071367e970f71cc30f19c19a955) | success |
 | 6 | agent pays 10 eUSD through the new session | [0xf6230b91…](https://testnet.bscscan.com/tx/0xf6230b91efc20c1e03ff92a22109896671fbf97118253b0a9c6b4de29ac88573) | success |
 | 6f | agent tries to pay through the **old** (pre-panic) session | [0x7310bcc7…](https://testnet.bscscan.com/tx/0x7310bcc7d20efa8396e7eb61c55b3b3738a8e0e484728955b5bbf373542648d0) | **rejected**: `PolicyInactive` |
+| W1 | attacker with the **stolen admin key** schedules `addDestination(0xBAD1)` | [0x7aa83e7b…](https://testnet.bscscan.com/tx/0x7aa83e7bf27bcb13b6a6f28f2a211dfa77b828d86dd956788537e366c4230218) | success (the change waits in the 1-hour timelock) |
+| W2 | **Watchtower** (guardian2 key) cancels it, 5 blocks later | [0x6b0875eb…](https://testnet.bscscan.com/tx/0x6b0875eba8f33b562ea4d0fbd2853eda20b87b3e4901e8a79c745b32f4211714) | success |
+| W3 | attacker tries to execute the change anyway | [0x3c6846b8…](https://testnet.bscscan.com/tx/0x3c6846b88003723f973912493a364a6f3c1797e983b6ad5e09e937c23ca29f1a) | **rejected**: `UnknownOperation` |
 
 Machine-readable copies: `deployments/bsc-testnet/epk-v2.json`, `epk-v2-vault.json`,
 `epk-v2-attacks.json`, `epk-v2-attacks-results.json`.

@@ -20,7 +20,7 @@ import sys
 import urllib.request
 from datetime import datetime, timezone
 
-KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian2": "V2_GUARDIAN2_PRIVATE_KEY"}
+KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian2": "V2_GUARDIAN2_PRIVATE_KEY", "admin": "PRIVATE_KEY"}
 TRACES = "deployments/bsc-testnet/traces"
 
 
@@ -78,7 +78,8 @@ def main():
     errors = error_table()
     results = []
 
-    for name in sorted(k for k in attacks if isinstance(attacks[k], str) and attacks[k].startswith("0x") and not k.endswith("_from")):
+    for name in sorted(k for k in attacks if re.match(r"^[a-z]_[A-Za-z]", k) and not k.endswith("_from")
+                       and isinstance(attacks[k], str) and attacks[k].startswith("0x")):
         sender_role = attacks.get(f"{name}_from", "agent")
         pk = env[KEY_FOR[sender_role]]
         sender = run(["cast", "wallet", "address", "--private-key", pk]).stdout.strip()

@@ -31,3 +31,6 @@ jobs:
 
       - name: Forge test
         run: forge test -vvv
+
+      - name: Watchtower unit tests
+        run: python3 -m unittest discover -s watchtower -p "test_*.py" -v

@@ -336,6 +336,51 @@
       "to": "vault",
       "expect": "reverted",
       "error": "PolicyInactive()"
+    },
+    {
+      "step": "W1",
+      "what": "attacker with the stolen admin key schedules addDestination(0xBAD1)",
+      "tx": "0x7aa83e7bf27bcb13b6a6f28f2a211dfa77b828d86dd956788537e366c4230218",
+      "from": "admin",
+      "to": "vault",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "vault",
+          "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)",
+          "indexed": [
+            "0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6",
+            "admin"
+          ]
+        }
+      ]
+    },
+    {
+      "step": "W2",
+      "what": "Watchtower (guardian2 key) cancels it, 5 blocks later",
+      "tx": "0x6b0875eba8f33b562ea4d0fbd2853eda20b87b3e4901e8a79c745b32f4211714",
+      "from": "guardian2",
+      "to": "vault",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "vault",
+          "event": "OperationCancelled(bytes32,address)",
+          "indexed": [
+            "0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6",
+            "guardian2"
+          ]
+        }
+      ]
+    },
+    {
+      "step": "W3",
+      "what": "attacker tries to execute the change anyway",
+      "tx": "0x3c6846b88003723f973912493a364a6f3c1797e983b6ad5e09e937c23ca29f1a",
+      "from": "admin",
+      "to": "vault",
+      "expect": "reverted",
+      "error": "UnknownOperation()"
     }
   ],
   "checkpoints": [
@@ -404,6 +449,13 @@
       "label": "recovery: after the old session's attempt (nothing moved)",
       "block": 141347140,
       "eUSD": "9940"
+    },
+    {
+      "label": "watchtower: after the attacker's attempt (nothing moved, still unpaused)",
+      "block": 141354372,
+      "paused": false,
+      "implementation": "implementation_2_0_0",
+      "eUSD": "9940"
     }
   ],
   "attackWindows": [
@@ -416,6 +468,11 @@
       "label": "after recovery: old-session attempt 6f",
       "fromBlock": 141347132,
       "toBlock": 141347140
+    },
+    {
+      "label": "watchtower: stolen admin key W1-W3",
+      "fromBlock": 141354342,
+      "toBlock": 141354372
     }
   ]
 }

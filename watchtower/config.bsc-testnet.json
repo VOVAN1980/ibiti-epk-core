@@ -1,0 +1,26 @@
+{
+  "about": "EPK Watchtower for the BSC Testnet demo vault. No secrets here: the guardian key is read from the environment variable or .env entry named in guardianKeyEnv.",
+  "rpc": "https://bsc-testnet-rpc.publicnode.com",
+  "chainId": 97,
+  "vault": "0xB2166241D29C50F4678aebb5061504ee562FA340",
+  "startBlock": "latest",
+  "pollSeconds": 3,
+  "guardianKeyEnv": "V2_GUARDIAN2_PRIVATE_KEY",
+  "envFile": ".env",
+  "policy": {
+    "panicAfterUnexpectedPerHour": 3
+  },
+  "expected": [
+    {
+      "label": "opt-in upgrade to release 2.0.1 (runbook step 7)",
+      "upgradeTo": "0x6f3AFE980F6f0510581d85907e9a276D5996961b",
+      "salt": "EPK demo: upgrade to 2.0.1"
+    }
+  ],
+  "alerts": {
+    "logFile": "watchtower/alerts.log",
+    "telegramTokenEnv": "TELEGRAM_BOT_TOKEN",
+    "telegramChatEnv": "TELEGRAM_CHAT_ID"
+  },
+  "stateFile": "watchtower/state.json"
+}

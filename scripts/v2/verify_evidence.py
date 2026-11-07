@@ -250,6 +250,8 @@ def main():
         return sig.split("(")[0] + f"({', '.join(args)})"
 
     def resolve(ref):
+        if ref.startswith("0x"):
+            return ref  # a raw 32-byte value, e.g. an operation id
         if ref.startswith("session:"):
             return sessions[ref[8:]]
         if ref.startswith("uint:"):

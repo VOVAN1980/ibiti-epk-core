@@ -22,6 +22,7 @@ refers to the same rights holder.
 | Documentation | `docs/`, `README.md`, other top-level `*.md` | MIT |
 | **EPK v2** — EPKVault, EPKVaultProxy, EPKVaultFactory, EPKRegistry | `contracts/v2/` | **BUSL-1.1** ([`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)) |
 | EPK v2 tests and mocks | `test/v2/` | **BUSL-1.1** |
+| EPK Watchtower (automatic guardian) | `watchtower/` | **BUSL-1.1** |
 | Third-party libraries | `lib/` (e.g. OpenZeppelin Contracts) | their own licenses (OpenZeppelin: MIT) — not relicensed |
 
 Each Solidity file states its license in the `SPDX-License-Identifier` header.

@@ -11,7 +11,8 @@ Last updated: 2026-11-07.
 | Component | Status |
 |---|---|
 | **EPK v1** — `EPKernel` + validators | Released (`v1.0.0`, MIT), deployed on BSC testnet. Reference kernel; **not for holding real funds** (shared executor, see `docs/THREAT_MODEL.md`). |
-| **EPK v2** — `EPKVault` | In active development on `feature/epk-v2` (draft PR #1), BUSL-1.1. Not audited, not deployed. |
+| **EPK v2** — `EPKVault` | In active development on `feature/epk-v2` (draft PR #1), BUSL-1.1. Not audited. **Live on BSC Testnet** since 2026-11-07 with an end-to-end demo anyone can re-check (`docs/TESTNET_V2.md`, `proof/`); not on mainnet. |
+| **EPK Watchtower** | Automatic guardian (`watchtower/`, BUSL-1.1). Working on BSC Testnet: cancelled a change scheduled with the stolen admin key 5 blocks after it appeared. |
 
 EPK v2 today:
 
@@ -25,15 +26,15 @@ EPK v2 today:
 
 ## Next milestones
 
-| # | Milestone | What it delivers |
-|---|---|---|
-| 1 | **Guard modules** | DEX Guard (swap recipient / slippage checks for routers), ThreatFeed V2 (Merkle blocklist of malicious contracts/addresses) as validators that plug into policies and sessions without changing the vault |
-| 2 | **SDK v2** | TypeScript (viem): create vaults, sign batches and co-signatures, open sessions, schedule changes and upgrades, read limits and budgets |
-| 3 | **Watchtower** | Monitoring bot that acts as a guardian: vetoes unexpected scheduled changes, pauses on anomalies, alerts the owner |
-| 4 | **Testnet end-to-end** | Public BSC testnet deployment: create vault → deposit → open agent session → allowed payment → blocked attack → upgrade through the timelock → `panic` → recovery, all on the same vault address |
-| 5 | **Publication** | Merge to `master`, release tag, updated README, DoraHacks page and IBITI Labs website describing exactly this state |
-| 6 | **Independent audit** | Professional audit of the vault, sessions and upgrade path; public bug bounty |
-| 7 | **Mainnet** | Only after the audit; commercial licenses for production use (BUSL-1.1, see `LICENSING.md`) |
+| # | Milestone | What it delivers | Status |
+|---|---|---|---|
+| 1 | **Guard modules** | DEX Guard (swap recipient / slippage checks for routers), ThreatFeed V2 (Merkle blocklist of malicious contracts/addresses) as validators that plug into policies and sessions without changing the vault | planned |
+| 2 | **SDK v2** | TypeScript (viem): create vaults, sign batches and co-signatures, open sessions, schedule changes and upgrades, read limits and budgets | planned |
+| 3 | **Watchtower** | Monitoring bot that acts as a guardian: vetoes unexpected scheduled changes, pauses on anomalies, alerts the owner | **working on testnet** (2026-11-07); next: always-on hosting, more alert channels, owner-signed approvals |
+| 4 | **Testnet end-to-end** | Public BSC testnet deployment: create vault → deposit → open agent session → allowed payment → blocked attack → upgrade through the timelock → `panic` → recovery, all on the same vault address | **in progress on testnet**: steps 1–6 and the Watchtower demo completed 2026-11-07; upgrade 2.0.0 → 2.0.1 on 2026-11-14 / 16 |
+| 5 | **Publication** | Merge to `master`, release tag, updated README, DoraHacks page and IBITI Labs website describing exactly this state | after the upgrade, by the owner's decision |
+| 6 | **Independent audit** | Professional audit of the vault, sessions and upgrade path; public bug bounty | planned |
+| 7 | **Mainnet** | Only after the audit; commercial licenses for production use (BUSL-1.1, see `LICENSING.md`) | after the audit |
 
 Later: ERC-4337 / ERC-7579 smart-account integration, agent identity (ERC-8004), multi-chain deployments, B2B API.
 

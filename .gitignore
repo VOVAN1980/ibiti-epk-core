@@ -34,3 +34,8 @@ ibiticoin.github.io/
 
 # Local video/presentation material (screenshots for the hackathon video)
 media/
+
+# Watchtower runtime files (local alert log and state)
+watchtower/alerts.log
+watchtower/state.json
+watchtower/__pycache__/
