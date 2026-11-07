@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPK Guards — live proof</title>
+<meta name="description" content="EPK 2.1 guards by IBITI Labs: protected swaps for trading bots and AI agents, every claim checked live against BSC Testnet in your browser.">
+<meta name="theme-color" content="#020204">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/epk.css">
+<style>
+.proof { padding: 120px 0 30px; }
+.proof .page-head h1 { font-size: clamp(38px, 6.4vw, 72px); line-height: 1.04; font-weight: 800; margin-top: 18px; text-shadow: 0 0 30px rgba(59,130,246,.35); }
+.proof .note { padding: 16px 18px; border-radius: 14px; border: 1px solid rgba(251,191,36,.35); background: rgba(251,191,36,.05); color: var(--muted); font-size: 14.5px; margin: 26px 0 22px; }
+.proof .note b { color: var(--gold); }
+.proof .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0 0 22px; }
+.proof .tile { background: var(--glass); border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius); padding: 20px; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.proof .tile .n { font: 800 clamp(28px, 3.4vw, 42px)/1 var(--font-display); }
+.proof .tile .l { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.proof .run { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin: 0 0 12px; }
+.proof #go { background: #fff; color: #050507; border: 0; border-radius: 14px; padding: 15px 24px; font: 700 16px/1 var(--font-display); cursor: pointer; box-shadow: 0 0 30px rgba(255,255,255,.15); transition: transform .25s, box-shadow .25s; }
+.proof #go:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(255,255,255,.3); }
+.proof #go:disabled { opacity: .6; cursor: wait; transform: none; }
+.proof .status { color: var(--muted); font-size: 15px; }
+.proof section { background: var(--glass); border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius); padding: 26px; margin: 16px 0; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.proof section h2 { font-size: 24px; margin: 0 0 8px; }
+.proof section p { margin: 6px 0 14px; color: var(--muted); }
+.proof .scroll { overflow-x: auto; }
+.proof table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.proof th, .proof td { text-align: left; padding: 10px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+.proof th { color: var(--dim); border-top: 0; font: 500 11px/1.2 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.proof code, .proof .mono { font-family: var(--font-mono); font-size: 12.5px; }
+.proof a { color: var(--primary-soft); }
+.proof .claim { color: var(--dim); } .proof .ok { color: var(--safe-soft); } .proof .bad { color: var(--danger-soft); } .proof .warn { color: var(--gold); }
+.proof #log { background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 12px; padding: 14px; max-height: 360px; overflow: auto; font: 12.5px/1.6 var(--font-mono); white-space: pre-wrap; word-break: break-word; margin: 0; }
+.proof details summary { cursor: pointer; color: var(--muted); margin: 6px 0; }
+.proof #rpc { background: rgba(0,0,0,.4); border: 1px solid var(--line); color: #fff; border-radius: 8px; padding: 8px 10px; }
+@media (max-width: 860px) { .proof .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .proof section { padding: 18px; } .proof #go { width: 100%; } }
+</style>
+</head>
+<body>
+<canvas id="universe" aria-hidden="true"></canvas>
+<div class="aurora a1" aria-hidden="true"></div>
+<div class="aurora a2" aria-hidden="true"></div>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="../" aria-label="EPK by IBITI Labs — home">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>
+      <span>EPK <small>by IBITI Labs</small></span>
+      <span class="tag">V2 · TESTNET</span>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="../#attacks">Attacks</a>
+      <a href="../#watchtower">Watchtower</a>
+      <a href="../#how">How it works</a>
+      <a href="./" aria-current="page">Proof</a>
+      <a href="../pilot.html">Pilot &amp; licensing</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="chip fx" data-fx type="button" aria-pressed="true"><span class="dot"></span>FX: ON</button>
+      <button class="icon-btn menu-btn" data-menu type="button" aria-label="Menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<main class="proof">
+<div class="wrap">
+<div class="page-head">
+  <span class="badge"><span class="dot"></span>Live check · BSC Testnet · EPK 2.1 (in development)</span>
+  <h1>Protected <span class="grad">swaps</span></h1>
+</div>
+<p class="lead">DexGuard, ThreatFeed V2 and CompositeGuard on a separate EPKVault 2.1.0, trading through the real
+PancakeSwap V2 testnet router with real Chainlink price feeds. A compromised operator key and an AI agent tried to
+steal or waste the vault's money; every attempt was sent on-chain and rejected, while fair trades went through.
+Press the button and your browser checks every claim below directly against BSC Testnet.</p>
+
+<div class="note"><b>What this is and is not.</b> Verified test scenarios on BSC Testnet, with test funds, on a
+separate demo vault (the EPK v2 demo vault on the <a href="./">main proof page</a> is not involved). They prove that
+the listed protections worked in these scenarios — not that no other attack exists; what the guards do not cover is
+listed in <a data-blob="docs/GUARDS_v2.md">GUARDS_v2.md</a>. EPK 2.1 is in development and not yet independently
+audited; nothing goes to mainnet before an audit.</div>
+
+<div class="tiles">
+  <div class="tile"><div class="n" id="t-attacks">–</div><div class="l">attacks rejected on-chain</div></div>
+  <div class="tile"><div class="n" id="t-stolen">–</div><div class="l">tUSD moved by attacks</div></div>
+  <div class="tile"><div class="n" id="t-contracts">–</div><div class="l">contracts: code hash checked</div></div>
+  <div class="tile"><div class="n" id="t-checks">–</div><div class="l">checks passed in your browser</div></div>
+</div>
+
+<div class="run"><button id="go">Run the check in my browser</button><span class="status" id="status">Not run yet. Values below are claims until checked.</span></div>
+<details><summary>Live log</summary><pre id="log"></pre></details>
+
+<section id="s-attacks">
+  <h2>Rejected attacks</h2>
+  <p>What a compromised operator key or AI agent would try. Each attempt was really sent to the vault and failed on-chain.
+  <b>STRICT</b> = the reason is read from the execution trace of that exact transaction.
+  <b>REPLAY</b> = the transaction is replayed against the chain state right before its block, and no earlier
+  transaction in that block touched the vault or the token (a replay is strong evidence, not a trace).
+  <b>Archived</b> = free public nodes no longer keep that old state; the rejection itself is still checked on-chain,
+  and its reason was replayed while nodes still had the state (reports archived in the repository).</p>
+  <div class="scroll"><table id="tbl-attacks"><thead><tr><th>Step</th><th>Attempt</th><th>Vault's answer</th><th>Proof</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="s-pool">
+  <h2>A real pool 38 % below the market</h2>
+  <p>The real WBNB/BUSD pool on BSC Testnet pays far less than the Chainlink BNB price. In step <b>C1</b> a plain
+  wallet with no EPK makes a 0.0001 BNB trade there and receives about 0.043 BUSD instead of about 0.070 — it loses
+  roughly 38 %. In step <b>A3</b> the operator key asks the guarded vault for the same trade at that pool's own
+  quote; DexGuard compares it with Chainlink and the vault refuses with <code>PriceTooLow</code>. Fair trades on a
+  pool at the Chainlink price (steps S1, S2, S6) go through. Both transactions are checked in the tables on this
+  page.</p>
+</section>
+
+<section id="s-flow">
+  <h2>Real transactions on BSC Testnet</h2>
+  <p>Setup, allowed trades (operator policy and AI-agent session), the plain-wallet control trade, the ThreatFeed
+  block, and every rejected attack.</p>
+  <div class="scroll"><table id="tbl-tx"><thead><tr><th>Step</th><th>What</th><th>From</th><th>Result</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="s-code">
+  <h2>Contracts</h2>
+  <p>Each contract's bytecode hash is checked; the vault's 2.1.0 implementation must be the one pinned in the demo's
+  EPKRegistry, and the vault proxy must point to it. Source code of every contract deployed for this demo is
+  verified on Sourcify. PancakeSwap, BUSD and the Chainlink feeds are third-party contracts on BSC Testnet.</p>
+  <div class="scroll"><table id="tbl-code"><thead><tr><th>Contract</th><th>Address</th><th>Code hash</th><th>Result</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="s-self">
+  <h2>Run it yourself, without this page</h2>
+  <p>Everything on this page comes from one fixed public Git commit,
+  <a class="mono" id="commit-link" href="#">–</a>. A commit cannot be changed afterwards, so the claims you check here
+  are exactly the claims that were published.</p>
+  <p><b>This page and the command line run the same checks:</b> network, the document vs the evidence file, code
+  hashes and the registry pin, every transaction with its events or rejection reason, and the attack window. The
+  command line with <code>--build</code> also compiles the open-source contracts and compares them byte for byte
+  with the code on chain — a browser cannot compile Solidity. A detail whose history the node no longer keeps is
+  reported as <i>archived</i> instead of being checked, never as passed.</p>
+  <div class="cmd" id="cmds"></div>
+  <p>Evidence file: <a data-blob="deployments/bsc-testnet/epk-v2.1-evidence.json">epk-v2.1-evidence.json</a> · Runbook and tables:
+  <a data-blob="docs/TESTNET_V21.md">docs/TESTNET_V21.md</a> ·
+  Source: <a data-tree="contracts/v2/guards">contracts/v2/guards</a></p>
+  <details><summary>Use another RPC node</summary>
+    <p>Checkpoints and replays need a node with historical state. <input id="rpc" class="mono" style="width:100%;max-width:520px" value="https://bsc-testnet-rpc.publicnode.com"></p>
+  </details>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="../"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span>EPK <small>by IBITI Labs</small></span></a>
+        <p class="fine">© 2026 IBITI Labs (Volodymyr Podkorytov). EPK v2 is licensed under BUSL-1.1 — use in production by agreement.
+          Test network only, test token only.</p>
+      </div>
+      <nav aria-label="Footer"><a href="../">Home</a><a href="../pilot.html">Pilot &amp; licensing</a><a href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" rel="noopener">GitHub</a><a href="../v1/">EPK v1 archive</a></nav>
+    </div>
+  </div>
+</footer>
+<script src="../assets/epk.js"></script>
+<script>
+"use strict";
+// ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
+const REPO = "VOVAN1980/ibiti-epk-core";
+const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT_V21) || "5f0984c9514d782603ffc55f82a913c70ef7f8d4";
+const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
+const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
+const EV_PATH = "deployments/bsc-testnet/epk-v2.1-evidence.json";
+const DOC_PATH = "docs/TESTNET_V21.md";
+const TRACE_DIR = "deployments/bsc-testnet/traces/";
+const EXPLORER = "https://testnet.bscscan.com";
+const IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+
+// ---------- keccak256 (pure JS, BigInt) ----------
+const RC = ["0x1","0x8082","0x800000000000808a","0x8000000080008000","0x808b","0x80000001","0x8000000080008081","0x8000000000008009","0x8a","0x88","0x80008009","0x8000000a","0x8000808b","0x800000000000008b","0x8000000000008089","0x8000000000008003","0x8000000000008002","0x8000000000000080","0x800a","0x800000008000000a","0x8000000080008081","0x8000000000008080","0x80000001","0x8000000080008008"].map(BigInt);
+const ROT = [[0,36,3,41,18],[1,44,10,45,2],[62,6,43,15,61],[28,55,25,21,56],[27,20,39,8,14]];
+const M64 = (1n << 64n) - 1n;
+const rol = (v, n) => ((v << BigInt(n)) | (v >> BigInt(64 - n))) & M64;
+function keccakF(s) {
+  for (const rc of RC) {
+    const c = [0,1,2,3,4].map(x => s[x] ^ s[x+5] ^ s[x+10] ^ s[x+15] ^ s[x+20]);
+    const d = [0,1,2,3,4].map(x => c[(x+4)%5] ^ rol(c[(x+1)%5], 1));
+    for (let i = 0; i < 25; i++) s[i] ^= d[i%5];
+    const b = new Array(25);
+    for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) b[y + 5*((2*x+3*y)%5)] = rol(s[x+5*y], ROT[x][y]);
+    for (let i = 0; i < 25; i++) { const r = 5*Math.floor(i/5); s[i] = b[i] ^ ((~b[(i+1)%5 + r] & M64) & b[(i+2)%5 + r]); }
+    s[0] ^= rc;
+  }
+}
+function keccak(bytes) {
+  const rate = 136, len = bytes.length + 1, padded = new Uint8Array(len + ((rate - len % rate) % rate));
+  padded.set(bytes); padded[bytes.length] = 1; padded[padded.length - 1] |= 0x80;
+  const s = new Array(25).fill(0n);
+  for (let off = 0; off < padded.length; off += rate) {
+    for (let i = 0; i < rate / 8; i++) { let v = 0n; for (let k = 7; k >= 0; k--) v = (v << 8n) | BigInt(padded[off + 8*i + k]); s[i] ^= v; }
+    keccakF(s);
+  }
+  let hex = ""; for (let i = 0; i < 4; i++) for (let k = 0; k < 8; k++) hex += Number((s[i] >> BigInt(8*k)) & 0xffn).toString(16).padStart(2, "0");
+  return "0x" + hex;
+}
+const utf8 = s => new TextEncoder().encode(s);
+const fromHex = h => { h = h.replace(/^0x/, ""); const a = new Uint8Array(h.length / 2); for (let i = 0; i < a.length; i++) a[i] = parseInt(h.substr(2*i, 2), 16); return a; };
+const selector = sig => keccak(utf8(sig)).slice(0, 10);
+const topic0 = sig => keccak(utf8(sig));
+if (keccak(new Uint8Array()) !== "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" || selector("transfer(address,uint256)") !== "0xa9059cbb") throw new Error("keccak self-test failed");
+
+// ---------- helpers ----------
+const word = v => BigInt(v).toString(16).padStart(64, "0");
+const wei = a => { const [i, f = ""] = String(a).split("."); return BigInt(i) * 10n**18n + BigInt((f + "0".repeat(18)).slice(0, 18)); };
+const eusd = v => { v = BigInt(v); const i = v / 10n**18n, f = (v % 10n**18n).toString().padStart(18, "0").slice(0, 4).replace(/0+$/, ""); return i.toLocaleString("en-US") + (f ? "." + f : ""); };
+const short = h => h.slice(0, 10) + "…" + h.slice(-4);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pill = (cls, text) => `<span class="pill ${cls}">${esc(text)}</span>`;
+let rpcUrl = "";
+async function rpc(method, ...params) {
+  const r = await fetch(rpcUrl, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params})});
+  const j = await r.json();
+  if (j.error) { const e = new Error(j.error.message); e.data = j.error.data; throw e; }
+  return j.result;
+}
+const call = (to, data, block = "latest") => rpc("eth_call", {to, data}, block);
+async function getFile(path, asJson = true) {
+  try { const r = await fetch(REPO_RAW + path, {cache: "no-store"}); if (r.ok) return asJson ? await r.json() : await r.text(); } catch (e) {}
+  return null;
+}
+
+// ---------- page ----------
+const $ = id => document.getElementById(id);
+const logEl = $("log");
+let counts;
+function log(kind, text) {
+  if (kind in counts) counts[kind]++;
+  const tag = {ok: "OK  ", bad: "BAD ", skip: "SKIP", old: "OLD ", info: "    "}[kind];
+  const span = document.createElement("span"); span.className = {ok: "ok", bad: "bad", skip: "warn", old: "warn", info: ""}[kind];
+  span.textContent = `${tag} ${text}\n`; logEl.appendChild(span); logEl.scrollTop = logEl.scrollHeight;
+  return kind === "ok";
+}
+const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+
+let EV;
+function renderClaims(ev) {
+  const C = ev.contracts, attacks = ev.transactions.filter(t => t.expect === "reverted");
+  $("t-attacks").textContent = `${attacks.length}`; $("t-stolen").textContent = "?";
+  $("t-contracts").textContent = `${Object.keys(C).length}`;
+  $("tbl-attacks").tBodies[0].innerHTML = attacks.map(t => `<tr><td>${esc(t.step)}</td><td>${esc(t.what)}</td>
+    <td class="mono">${esc(t.error.split("(")[0])}</td><td id="a-${t.tx}">${pill("claim", "claimed")}</td>
+    <td><a class="mono" href="${EXPLORER}/tx/${t.tx}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
+  $("tbl-tx").tBodies[0].innerHTML = ev.transactions.map(t => `<tr><td>${esc(t.step)}</td><td>${esc(t.what)}</td><td>${esc(t.from)}</td>
+    <td id="x-${t.tx}">${pill("claim", t.expect === "success" ? "success (claimed)" : "rejected (claimed)")}</td>
+    <td><a class="mono" href="${EXPLORER}/tx/${t.tx}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
+  if ($("tbl-cp")) $("tbl-cp").tBodies[0].innerHTML = ev.checkpoints.map((c, i) => {
+    const claims = [];
+    if ("paused" in c) claims.push(`paused ${c.paused}`);
+    if ("implementation" in c) claims.push(`runs ${c.implementation}`);
+    if ("eUSD" in c) claims.push(`balance ${c.eUSD} eUSD`);
+    if ("vaultLimitLeft" in c) claims.push(`vault limit left ${c.vaultLimitLeft}`);
+    if (c.sessionBudgetLeft) claims.push(`session budget left ${c.sessionBudgetLeft.value}`);
+    return `<tr><td class="mono"><a href="${EXPLORER}/block/${c.block}" target="_blank" rel="noopener">${c.block}</a></td><td>${esc(c.label)}</td><td>${esc(claims.join(" · "))}</td><td id="c-${i}">${pill("claim", "claimed")}</td></tr>`;
+  }).join("");
+  $("tbl-code").tBodies[0].innerHTML = Object.entries(C).map(([k, c]) => `<tr><td>${esc(c.label)}</td>
+    <td><a class="mono" href="${EXPLORER}/address/${c.address}#code" target="_blank" rel="noopener">${short(c.address)}</a></td>
+    <td class="mono">${c.codeHash ? short(c.codeHash) : "–"}</td><td id="k-${k}">${pill("claim", "claimed")}</td></tr>`).join("");
+}
+
+async function verify() {
+  counts = {ok: 0, bad: 0, skip: 0, old: 0}; logEl.textContent = ""; rpcUrl = $("rpc").value.trim(); HIST = null;
+  const ev = EV, C = Object.fromEntries(Object.entries(ev.contracts).map(([k, v]) => [k, v.address]));
+  const sym = ev.tokenSymbol || "eUSD";
+  const roles = ev.roles, sessions = ev.sessions || {};
+  const names = {}; for (const [k, a] of Object.entries({...C, ...roles})) names[a.toLowerCase()] = k;
+  const who = a => names[a.toLowerCase()] || a;
+  const resolve = r => r.startsWith("0x") ? BigInt(r) : r.startsWith("session:") ? BigInt(sessions[r.slice(8)]) : r.startsWith("uint:") ? BigInt(r.slice(5)) : (C[r] || roles[r]);
+  const showError = (sig, data) => {
+    const types = sig.endsWith("()") ? [] : sig.slice(sig.indexOf("(") + 1, -1).split(",");
+    const args = types.map((ty, i) => { const w = data.slice(10 + 64*i, 74 + 64*i) || "0"; const v = BigInt("0x" + w);
+      return ty === "address" ? who("0x" + w.slice(-40)) : (v >= 10n**15n ? eusd(v) + " " + sym : v.toString()); });
+    return sig.split("(")[0] + "(" + args.join(", ") + ")";
+  };
+
+  log("info", `node ${rpcUrl}`);
+  const cid = parseInt(await rpc("eth_chainId"), 16);
+  if (!log(cid === ev.chainId ? "ok" : "bad", `chainId ${cid} (expected ${ev.chainId}, BSC Testnet)`)) return;
+
+  // the human document and the evidence file (same commit) say the same thing
+  const doc = await getFile(DOC_PATH, false);
+  if (doc === null) { log("skip", `could not load ${DOC_PATH} from commit ${EVIDENCE_COMMIT.slice(0, 7)}`); log("skip", "document links not compared"); }
+  else {
+    const docTx = new Set([...doc.matchAll(/\/tx\/(0x[0-9a-fA-F]{64})/g)].map(m => m[1].toLowerCase()));
+    const evTx = new Set(ev.transactions.map(t => t.tx.toLowerCase()));
+    log(docTx.size === evTx.size && [...evTx].every(x => docTx.has(x)) ? "ok" : "bad", `${DOC_PATH} and the evidence file list the same ${evTx.size} transactions`);
+    const addrs = new Set(Object.values(C).map(a => a.toLowerCase()));
+    log([...doc.matchAll(/\/address\/(0x[0-9a-fA-F]{40})/g)].every(m => addrs.has(m[1].toLowerCase())) ? "ok" : "bad", "every contract linked in the document is in the evidence file");
+  }
+
+  // code
+  const codehash = {}; let codeOk = 0;
+  for (const [k, c] of Object.entries(ev.contracts)) {
+    $("status").textContent = `Checking code of ${c.label}…`;
+    const code = await rpc("eth_getCode", c.address, "latest");
+    const h = code.length > 2 ? keccak(fromHex(code)) : null; codehash[k] = h;
+    let good = log(h ? "ok" : "bad", `${c.label}: ${h ? (code.length - 2) / 2 + " bytes of code" : "NO CODE"}`);
+    if (h && c.codeHash) good = log(h === c.codeHash.toLowerCase() ? "ok" : "bad", `  code hash ${h} = recorded`) && good;
+    if (h && c.pinnedInRegistry) {
+      const r = (await call(C.registry, selector("releases(address)") + word(c.address))).slice(2);
+      const pinned = "0x" + r.slice(192, 256), revoked = BigInt("0x" + r.slice(128, 192)) !== 0n;
+      const version = Number(BigInt("0x" + r.slice(0, 64)));
+      good = log(pinned === h && !revoked ? "ok" : "bad", `  registry pins this exact code hash (version ${version})`) && good;
+      const vv = Number(BigInt(await call(c.address, selector("vaultVersion()"))));
+      good = log(vv === c.vaultVersion && vv === version ? "ok" : "bad", `  vaultVersion() = ${vv} (claimed ${c.vaultVersion})`) && good;
+    }
+    if (c.proxyImplementation) {
+      const impl = "0x" + (await rpc("eth_getStorageAt", c.address, IMPL_SLOT, "latest")).slice(-40);
+      good = log(impl.toLowerCase() === C[c.proxyImplementation].toLowerCase() ? "ok" : "bad", `  vault runs ${who(impl)}`) && good;
+    }
+    codeOk += good; set("k-" + k, pill(good ? "ok" : "bad", good ? "verified" : "mismatch"));
+  }
+  $("t-contracts").textContent = `${codeOk}/${Object.keys(ev.contracts).length}`;
+
+  // transactions
+  let rejected = 0;
+  for (const t of ev.transactions) {
+    $("status").textContent = `Checking step ${t.step}: ${t.what}…`;
+    const [tx, rc] = await Promise.all([rpc("eth_getTransactionByHash", t.tx), rpc("eth_getTransactionReceipt", t.tx)]);
+    log("info", `step ${t.step}  ${t.what}`);
+    if (!tx || !rc) { log("bad", "  not found on chain"); set("x-" + t.tx, pill("bad", "not found")); continue; }
+    const block = parseInt(rc.blockNumber, 16), status = parseInt(rc.status, 16);
+    let good = log(tx.from.toLowerCase() === roles[t.from].toLowerCase() && (tx.to || "").toLowerCase() === C[t.to].toLowerCase() ? "ok" : "bad",
+      `  sent by ${t.from} to ${t.to}, block ${block}`);
+    if (t.expect === "success") {
+      good = log(status === 1 ? "ok" : "bad", "  succeeded on-chain") && good;
+      for (const e of t.events || []) {
+        let c = rc.logs.filter(l => l.address.toLowerCase() === C[e.emitter].toLowerCase() && l.topics[0] === topic0(e.event));
+        (e.indexed || []).forEach((r, i) => { const want = "0x" + word(resolve(r)); c = c.filter(l => l.topics[i + 1] === want); });
+        (e.data || []).forEach((a, i) => { c = c.filter(l => BigInt("0x" + (l.data.slice(2 + 64*i, 66 + 64*i) || "0")) === wei(a)); });
+        if (e.codehashOf) c = c.filter(l => "0x" + l.data.slice(-64) === codehash[e.codehashOf]);
+        good = log(c.length === 1 ? "ok" : "bad", `  event ${e.event.split("(")[0]} from ${e.emitter}${e.data ? ", amounts " + e.data.join(" / ") + " " + (e.unit || sym) : ""}`) && good;
+      }
+      set("x-" + t.tx, pill(good ? "ok" : "bad", good ? "success ✓" : "mismatch"));
+      continue;
+    }
+    const gasUsed = parseInt(rc.gasUsed, 16), gasLimit = parseInt(tx.gas, 16);
+    good = log(status === 0 && gasUsed < gasLimit ? "ok" : "bad", `  rejected by revert, not out of gas (${gasUsed.toLocaleString()} of ${gasLimit.toLocaleString()} gas)`) && good;
+    const want = selector(t.error); let method = "", detail = "";
+    const saved = await getFile(TRACE_DIR + t.tx.toLowerCase() + ".json");
+    if (saved) {
+      const tr = saved.trace, out = tr.output || "";
+      const bound = tr.from.toLowerCase() === tx.from.toLowerCase() && tr.to.toLowerCase() === tx.to.toLowerCase() && tr.input.toLowerCase() === tx.input.toLowerCase();
+      method = "STRICT"; detail = showError(t.error, out);
+      good = log(bound && out.slice(0, 10) === want ? "ok" : "bad", `  STRICT saved execution trace (${saved.node}, ${saved.capturedAt}): ${detail}`) && good;
+    } else {
+      method = "REPLAY";
+      try { await rpc("eth_call", {from: tx.from, to: tx.to, data: tx.input, gas: tx.gas}, "0x" + (block - 1).toString(16)); good = log("bad", "  REPLAY did not revert") && false; }
+      catch (err) {
+        const data = typeof err.data === "string" ? err.data : "";
+        if (!data && isOld(err)) { log("old", `  REPLAY the node no longer keeps block ${block - 1}'s state — the reason was replayed while it did (archived reports) and can be re-checked with an archive node`); method = "ARCHIVED"; }
+        else if (!data) { log("skip", `  REPLAY failed (${err.message})`); good = false; }
+        else {
+          detail = showError(t.error, data);
+          good = log(data.slice(0, 10) === want ? "ok" : "bad", `  REPLAY against the state before block ${block}: ${detail}`) && good;
+          const full = await rpc("eth_getBlockByNumber", "0x" + block.toString(16), true), idx = parseInt(rc.transactionIndex, 16);
+          const touched = full.transactions.slice(0, idx).filter(x => [C.vault, C.token].map(a => a.toLowerCase()).includes((x.to || "").toLowerCase()));
+          good = log(touched.length ? "skip" : "ok", touched.length ? "  REPLAY earlier txs in this block touched the vault — indicative only" : `  REPLAY no earlier tx in block ${block} touched the vault or the token`) && good;
+        }
+      }
+    }
+    rejected += good;
+    set("a-" + t.tx, good ? (method === "ARCHIVED" ? pill("warn", "REPLAY · archived") : pill("ok", `${method} ✓`)) : pill("bad", "mismatch"));
+    set("x-" + t.tx, pill(good ? "ok" : "bad", good ? "rejected ✓" : "mismatch"));
+  }
+  $("t-attacks").textContent = `${rejected}/${ev.transactions.filter(t => t.expect === "reverted").length}`;
+
+  // checkpoints: historical STATE if the node still keeps it, otherwise derived from permanent EVENTS
+  const v = C.vault, tok = C.token;
+  const atBlock = async (n, stateFn, eventFn) => {
+    try { return {val: await stateFn("0x" + n.toString(16)), how: "STATE"}; } catch (err) { if (!isOld(err)) throw err; }
+    if (!eventFn) return {how: null};
+    const val = eventFn(await history(v, tok, ev.contracts.vault.createdAtBlock), n);
+    return val === null || val === undefined ? {how: null} : {val, how: "EVENTS"};
+  };
+  for (const [i, cp] of ev.checkpoints.entries()) {
+    $("status").textContent = `Reading the vault at block ${cp.block}…`;
+    let good = true, old = 0; const n = cp.block; log("info", `block ${n}: ${cp.label}`);
+    const check = async (label, stateFn, eventFn, expect, show) => {
+      const r = await atBlock(n, stateFn, eventFn);
+      if (!r.how) { old++; log("old", `  ${label}: the node no longer keeps this block's state and it cannot be derived from events (archived reports)`); return; }
+      good = log(r.val === expect ? "ok" : "bad", `  ${r.how} ${label} = ${show(r.val)}`) && good;
+    };
+    if ("paused" in cp) await check("paused", async b => BigInt(await call(v, selector("paused()"), b)) !== 0n, (h, n) => h.paused(n), cp.paused, String);
+    if ("implementation" in cp) await check("implementation", async b => ("0x" + (await rpc("eth_getStorageAt", v, IMPL_SLOT, b)).slice(-40)).toLowerCase(), (h, n) => h.implementation(n), C[cp.implementation].toLowerCase(), who);
+    if ("eUSD" in cp) await check("balance (eUSD)", async b => BigInt(await call(tok, selector("balanceOf(address)") + word(v), b)), (h, n) => h.balance(n), wei(cp.eUSD), eusd);
+    if ("vaultLimitLeft" in cp) await check("vault limit left (eUSD)", async b => BigInt(await call(v, selector("availableToSpend(address)") + word(tok), b)), (h, n) => h.limitLeft(n), wei(cp.vaultLimitLeft), eusd);
+    if (cp.sessionBudgetLeft) { const s = cp.sessionBudgetLeft; await check("session budget left (eUSD)", async b => BigInt(await call(v, selector("budgetAvailable(uint256,address)") + word(sessions[s.session]) + word(tok), b)), null, wei(s.value), eusd); }
+    set("c-" + i, !good ? pill("bad", "mismatch") : old ? pill("warn", `verified · ${old} archived`) : pill("ok", "verified"));
+  }
+
+  // money moved while the attacks ran: vault balance before the first and after the last attack
+  let moved = 0n;
+  for (const aw of ev.attackWindows || []) {
+    let a, b, d, how = "STATE";
+    try {
+      [a, b] = (await Promise.all([aw.fromBlock, aw.toBlock].map(n => call(tok, selector("balanceOf(address)") + word(v), "0x" + n.toString(16))))).map(BigInt); d = a - b;
+    } catch (err) {
+      if (!isOld(err)) throw err;
+      const h = await history(v, tok, ev.contracts.vault.createdAtBlock); how = "EVENTS";
+      a = h.balance(aw.fromBlock); b = h.balance(aw.toBlock); d = h.movedOut(aw.fromBlock, aw.toBlock);
+    }
+    moved += d;
+    log(d === 0n && a === b ? "ok" : "bad", `${how} ${aw.label}: ${eusd(a)} -> ${eusd(b)} ${sym} between blocks ${aw.fromBlock} and ${aw.toBlock}`);
+  }
+  $("t-stolen").textContent = eusd(moved);
+  const bal = BigInt(await call(tok, selector("balanceOf(address)") + word(v)));
+  log("info", `vault now: ${eusd(bal)} ${sym}`);
+  $("t-checks").textContent = `${counts.ok}/${counts.ok + counts.bad + counts.skip}`;
+  const oldNote = counts.old ? ` ${counts.old} older details need a full-history node; they were checked while public nodes still had them (archived).` : "";
+  $("status").innerHTML = counts.bad || counts.skip
+    ? `<span class="bad">${counts.bad} mismatches, ${counts.skip} not checkable — see the live log.</span>`
+    : `<span class="ok">All ${counts.ok} checks passed against BSC Testnet, in your browser, just now.</span><span class="warn">${esc(oldNote)}</span>`;
+}
+
+// ---------- history from event logs (full nodes keep logs; free nodes prune old state after a few hours) ----------
+const isOld = e => /pruned|missing trie node|unknown state|historical state|not available/i.test((e && e.message) || "");
+let HIST = null;
+async function history(v, tok, start) {
+  if (HIST) return HIST;
+  const latest = parseInt(await rpc("eth_blockNumber"), 16);
+  const logs = async (address, topics) => {
+    let out = [];
+    for (let b = start; b <= latest; b += 10000)
+      out = out.concat(await rpc("eth_getLogs", {address, topics, fromBlock: "0x" + b.toString(16), toBlock: "0x" + Math.min(b + 9999, latest).toString(16)}));
+    return out.sort((x, y) => (parseInt(x.blockNumber, 16) - parseInt(y.blockNumber, 16)) || (parseInt(x.logIndex, 16) - parseInt(y.logIndex, 16)));
+  };
+  const TR = topic0("Transfer(address,address,uint256)"), vw = "0x" + word(v), PAUSED = topic0("Paused(address)");
+  const [tin, tout, pause, upg, outflow] = await Promise.all([
+    logs(tok, [TR, null, vw]), logs(tok, [TR, vw, null]), logs(v, [[PAUSED, topic0("Unpaused()")]]),
+    logs(v, [topic0("Upgraded(address)")]), logs(v, [topic0("Outflow(address,uint256,uint256)"), "0x" + word(tok)])]);
+  const upto = (L, n, after = -1) => L.filter(l => { const b = parseInt(l.blockNumber, 16); return b > after && b <= n; });
+  const sum = L => L.reduce((s, l) => s + BigInt(l.data), 0n);
+  HIST = {
+    paused: n => { const e = upto(pause, n); return e.length > 0 && e[e.length - 1].topics[0] === PAUSED; },
+    implementation: n => { const e = upto(upg, n); return e.length ? ("0x" + e[e.length - 1].topics[1].slice(-40)).toLowerCase() : null; },
+    balance: n => sum(upto(tin, n)) - sum(upto(tout, n)),
+    movedOut: (a, b) => sum(upto(tout, b, a)),
+    limitLeft: n => { const e = outflow.filter(l => parseInt(l.blockNumber, 16) === n); return e.length ? BigInt("0x" + e[e.length - 1].data.slice(66, 130)) : null; },
+  };
+  return HIST;
+}
+
+(async () => {
+  // every link points at the same fixed commit
+  for (const a of document.querySelectorAll("a[data-blob]")) a.href = REPO_BLOB + a.dataset.blob;
+  for (const a of document.querySelectorAll("a[data-tree]")) a.href = `https://github.com/${REPO}/tree/${EVIDENCE_COMMIT}/${a.dataset.tree}`;
+  const cl = $("commit-link"); cl.textContent = EVIDENCE_COMMIT.slice(0, 12); cl.href = `https://github.com/${REPO}/commit/${EVIDENCE_COMMIT}`;
+  $("cmds").textContent = `git clone https://github.com/${REPO} && cd ibiti-epk-core && git checkout ${EVIDENCE_COMMIT}\n`
+    + "python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.1-evidence.json --doc docs/TESTNET_V21.md\n"
+    + "forge build && python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.1-evidence.json --doc docs/TESTNET_V21.md --build";
+  EV = await getFile(EV_PATH);
+  if (!EV) { $("status").textContent = `Could not load the evidence file from GitHub (commit ${EVIDENCE_COMMIT.slice(0, 7)}).`; $("go").disabled = true; return; }
+  renderClaims(EV);
+  $("go").onclick = async () => {
+    $("go").disabled = true; document.body.dataset.state = "running";
+    try { await verify(); } catch (e) { log("bad", "error: " + e.message); $("status").textContent = "Check stopped: " + e.message; }
+    $("go").disabled = false; document.body.dataset.state = "done";
+  };
+  if (new URLSearchParams(location.search).has("run")) $("go").click(); // shareable link: ?run=1 checks on open
+})();
+</script>
+</body>
+</html>
