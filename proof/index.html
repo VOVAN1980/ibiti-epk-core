@@ -116,6 +116,7 @@ Test network only, test token only.</footer>
 
 <script>
 "use strict";
+{ const th = new URLSearchParams(location.search).get("theme"); if (th === "dark" || th === "light") document.documentElement.dataset.theme = th; }
 // ---------- where the evidence lives ----------
 const REPO_RAW = "https://raw.githubusercontent.com/VOVAN1980/ibiti-epk-core/feature/epk-v2/";
 const EV_PATH = "deployments/bsc-testnet/epk-v2-evidence.json";
@@ -345,10 +346,11 @@ async function verify() {
   if (!got) { $("status").textContent = "Could not load the evidence file."; $("go").disabled = true; return; }
   EV = got.json; $("ev-link").href = got.url; renderClaims(EV);
   $("go").onclick = async () => {
-    $("go").disabled = true;
+    $("go").disabled = true; document.body.dataset.state = "running";
     try { await verify(); } catch (e) { log("bad", "error: " + e.message); $("status").textContent = "Check stopped: " + e.message; }
-    $("go").disabled = false;
+    $("go").disabled = false; document.body.dataset.state = "done";
   };
+  if (new URLSearchParams(location.search).has("run")) $("go").click(); // shareable link: ?run=1 checks on open
 })();
 </script>
 </body>
