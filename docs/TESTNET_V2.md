@@ -86,3 +86,20 @@ timelock delay 1 hour.
 
 Machine-readable copies: `deployments/bsc-testnet/epk-v2.json`, `epk-v2-vault.json`,
 `epk-v2-attacks.json`, `epk-v2-attacks-results.json`.
+
+### Check it yourself
+
+No need to trust this page. One command (Python 3 only — no Foundry, no keys) asks a public BSC
+Testnet node about every link above: each contract must have code, each transaction must exist
+and its status must match this table (rows marked "rejected" must have failed on-chain), and it
+prints which implementation the demo vault runs, its balance and pause state:
+
+```bash
+python scripts/v2/verify_evidence.py
+```
+
+Last run 2026-11-07: 6/6 contracts, 12/12 transactions match; vault on 2.0.0, paused, 9,950 eUSD.
+
+About the pause: lifting it is never automatic. Only the admin can schedule `unpause`, it waits
+out the timelock (1 hour in this demo), the admin then executes it, and during the wait the
+guardians or the recovery key can cancel it. Another `panic` invalidates it as well.
