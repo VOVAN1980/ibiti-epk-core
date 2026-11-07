@@ -124,6 +124,9 @@ all in the guards (none in `EPKVault`).
 
 Slither again reports `0 result(s) found` on `contracts/v2/` (40 contracts, 102 detectors).
 
+After test-network delays and parallel upgrade clocks (`EPKChains`, commit `c6fbaf4`): still `0 result(s) found`
+(41 contracts, 102 detectors, clean build), no new suppressions.
+
 Note for Windows: if Python or an editor rewrites a `.sol` file with CRLF line endings, Slither's line
 numbers shift and inline suppressions stop matching. Keep the working copy of `contracts/` in LF and run
 `forge clean` before the check.
