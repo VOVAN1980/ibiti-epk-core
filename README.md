@@ -1,15 +1,16 @@
-# EPK — Eternal Permission Kernel
+# EPK v2 — Secure On-Chain Vaults for Autonomous AI Agents
 
 [![CI](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml/badge.svg)](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml)
 [![Security](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml/badge.svg)](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml)
 
-**A vault for AI agents and bots that even a stolen key can't drain.**
+**Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.**
 
-EPK v2 gives every customer their own on-chain vault. AI agents, trading bots and servers pay from
-it — but only within limits, only to addresses approved in advance, and only through short-lived
-sessions. If the server, the operator key or the AI agent is compromised, the attacker still cannot
-take more than the limit, cannot send funds anywhere new, and cannot quietly change the rules:
-every loosening waits in a timelock that guardians — and the automatic Watchtower — can cancel.
+EPK (Eternal Permission Kernel) by IBITI Labs gives every customer their own on-chain vault. AI
+agents, trading bots and servers pay from it — but only within limits, only to addresses approved
+in advance, and only through short-lived sessions. If an agent, the server or the operator key is
+compromised, the attacker is still held to those limits and that allowlist and cannot quietly
+change the rules: every loosening waits in a timelock that guardians — and the automatic
+Watchtower — can cancel. What it does not cover is listed openly [below](#limits).
 
 [Website](https://vovan1980.github.io/ibiti-epk-core/) ·
 [Proof of Security](https://vovan1980.github.io/ibiti-epk-core/proof/) ·
@@ -25,7 +26,6 @@ every loosening waits in a timelock that guardians — and the automatic Watchto
 |---|---|
 | **EPK v2** — `EPKVault` | **Live on BSC Testnet** since 2026-11-07. Four internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
 | **EPK Watchtower** | Automatic guardian, working on BSC Testnet. BUSL-1.1. |
-| **EPK v1** — `EPKernel` | Released `v1.0.0`, frozen, MIT. Reference kernel — **not for holding real funds** ([why](docs/THREAT_MODEL.md)). |
 
 What comes next, and in which order, is in the [roadmap](docs/ROADMAP.md) — the single source of
 truth for this README, the website and DoraHacks.
@@ -127,13 +127,12 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
 - [BSC Testnet demo and evidence](docs/TESTNET_V2.md)
 - [Roadmap](docs/ROADMAP.md)
-- [Threat model](docs/THREAT_MODEL.md) · [Integration (v1)](docs/INTEGRATION.md) · [Specification — v1](docs/SPEC.md)
 
 ---
 
-## EPK v1 (MIT, frozen)
+## EPK v1 — legacy reference (MIT)
 
-EPK v1 is the original **immutable execution kernel** with capability-based delegation: an owner
+EPK v1 (`v1.0.0`, frozen) is the original **immutable execution kernel** with capability-based delegation: an owner
 creates a policy (allowed agents with TTL, allowed `target + selector` calls, a native value cap,
 optional validators), signs an EIP-712 `Execute(policyId, target, value, dataHash, nonce, deadline)`,
 and an agent submits it; `setPolicyActive(false)` revokes instantly and `emergencyNonceBump()`
@@ -143,12 +142,25 @@ kills queued signatures.
 > see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md). EPK v2 exists because of this: there every
 > customer has their own vault.
 
-- Specification: [docs/SPEC.md](docs/SPEC.md); old website pages: [docs/v1/](docs/v1/)
+- Specification: [docs/SPEC.md](docs/SPEC.md) · [Integration](docs/INTEGRATION.md) · [Threat model](docs/THREAT_MODEL.md) · old website pages: [docs/v1/](docs/v1/)
 - BSC Testnet addresses and smoke test: [docs/TESTNET_ADDRESSES_UPDATED.md](docs/TESTNET_ADDRESSES_UPDATED.md)
 - Scripts: `scripts/Deploy.s.sol` (kernel + validators), `scripts/SmokeTest.s.sol` (policy → execute → revoke)
 - Tests: 202 passing, including invariants (nonce monotonicity, a revoked policy can never execute)
 
 ---
+
+## Limits
+
+EPK v2 narrows what a compromised key can do; it does not make loss impossible. In particular:
+
+- Inside its limits, a compromised operator or agent can still spend — up to the configured limit
+  per window, and only to allowlisted addresses.
+- If the admin key is stolen and no guardian vetoes in time, a timelocked change goes through after
+  the delay. Guardians and the Watchtower must run on independent infrastructure.
+- Calls other than plain token transfers and approvals are not inspected inside their arguments —
+  allowlist swaps, lending or bridges only together with a validator that checks them.
+
+The full list is in the [internal security review, §3](docs/SECURITY_REVIEW_v2.md#3-residual-risks-and-design-limitations).
 
 ## Security
 

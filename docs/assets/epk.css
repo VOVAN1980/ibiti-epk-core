@@ -123,7 +123,7 @@ h3 { font-size: 21px; line-height: 1.25; font-weight: 700; }
   font: 500 12px/1 var(--font-mono); letter-spacing: 0.18em; text-transform: uppercase; animation: float 6s ease-in-out infinite;
 }
 .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--safe); box-shadow: 0 0 10px var(--safe); animation: pulse 2s ease-in-out infinite; }
-.hero h1 { font-size: clamp(44px, 8.4vw, 104px); line-height: 1.02; font-weight: 800; margin: 28px auto 0; max-width: 1000px; text-shadow: 0 0 30px rgba(59, 130, 246, 0.35); }
+.hero h1 { font-size: clamp(38px, 6.2vw, 80px); line-height: 1.04; font-weight: 800; margin: 28px auto 0; max-width: 1180px; text-shadow: 0 0 30px rgba(59, 130, 246, 0.35); }
 .grad {
   background: linear-gradient(to right, #60a5fa 10%, #a78bfa 50%, #22d3ee 90%);
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
