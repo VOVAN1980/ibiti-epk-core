@@ -43,6 +43,7 @@ from decimal import Decimal
 RPC = "https://bsc-testnet-rpc.publicnode.com"
 TRACE_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545"  # traces recent transactions only
 TRACES = "deployments/bsc-testnet/traces"
+ARCHIVE_DIR = "deployments/bsc-testnet/verification"
 EVIDENCE = "deployments/bsc-testnet/epk-v2-evidence.json"
 DOC = "docs/TESTNET_V2.md"
 IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"  # EIP-1967
@@ -112,14 +113,17 @@ class RpcError(Exception):
 
 
 class Chain:
-    def __init__(self, url):
-        self.url = url
+    def __init__(self, url, record=None):
+        self.url, self.record = url, record  # record: list collecting raw node answers (--archive)
 
     def __call__(self, method, *params):
         body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": list(params)}).encode()
         req = urllib.request.Request(self.url, body, {"Content-Type": "application/json", "User-Agent": "epk-verify/2.0"})
         with urllib.request.urlopen(req, timeout=40) as r:
             out = json.load(r)
+        if self.record is not None:
+            self.record.append({"node": self.url, "method": method, "params": list(params),
+                                **({"error": out["error"]} if "error" in out else {"result": out.get("result")})})
         if "error" in out:
             raise RpcError(out["error"])
         return out["result"]
@@ -148,12 +152,66 @@ def no_history(e):
     return any(k in m for k in ("missing trie node", "unknown state", "historical state", "pruned", "not available"))
 
 
+class History:
+    """Vault facts derived from event logs. Unlike historical state, which free public nodes prune after
+    a few hours, logs of old blocks stay available on every full node."""
+
+    STEP = 10_000  # blocks per eth_getLogs request
+
+    def __init__(self, chain, vault, token, start):
+        self.chain, self.vault, self.token, self.start, self.loaded = chain, vault, token, start, False
+
+    def _logs(self, address, topics):
+        out, b, latest = [], self.start, int(self.chain("eth_blockNumber"), 16)
+        while b <= latest:
+            e = min(b + self.STEP - 1, latest)
+            out += self.chain("eth_getLogs", {"address": address, "topics": topics, "fromBlock": hex(b), "toBlock": hex(e)})
+            b = e + 1
+        return sorted(out, key=lambda lg: (int(lg["blockNumber"], 16), int(lg["logIndex"], 16)))
+
+    def load(self):
+        if not self.loaded:
+            tr, vw = topic0("Transfer(address,address,uint256)"), "0x" + w(self.vault)
+            self.t_in = self._logs(self.token, [tr, None, vw])
+            self.t_out = self._logs(self.token, [tr, vw, None])
+            self.pause = self._logs(self.vault, [[topic0("Paused(address)"), topic0("Unpaused()")]])
+            self.upgraded = self._logs(self.vault, [topic0("Upgraded(address)")])
+            self.outflow = self._logs(self.vault, [topic0("Outflow(address,uint256,uint256)"), "0x" + w(self.token)])
+            self.loaded = True
+        return self
+
+    @staticmethod
+    def _upto(logs, n, after=-1):
+        return [lg for lg in logs if after < int(lg["blockNumber"], 16) <= n]
+
+    def paused(self, n):
+        ev = self._upto(self.pause, n)
+        return bool(ev) and ev[-1]["topics"][0] == topic0("Paused(address)")
+
+    def implementation(self, n):
+        ev = self._upto(self.upgraded, n)
+        return ("0x" + ev[-1]["topics"][1][-40:]) if ev else None
+
+    def balance(self, n):
+        return sum(int(lg["data"], 16) for lg in self._upto(self.t_in, n)) - sum(int(lg["data"], 16) for lg in self._upto(self.t_out, n))
+
+    def moved_out(self, a, b):
+        return sum(int(lg["data"], 16) for lg in self._upto(self.t_out, b, after=a))
+
+    def limit_left(self, n):
+        ev = [lg for lg in self.outflow if int(lg["blockNumber"], 16) == n]
+        return int(ev[-1]["data"][66:130], 16) if ev else None  # Outflow.availableAfter, only at a payment block
+
+
 class Report:
     def __init__(self):
-        self.ok = self.bad = self.skip = 0
+        self.ok = self.bad = self.skip = self.pruned = 0
 
-    def line(self, good, text):
-        if good is None:
+    def line(self, good, text, pruned=False):
+        if good is None and pruned:
+            self.pruned += 1
+            tag = "OLD "
+        elif good is None:
             self.skip += 1
             tag = "SKIP"
         elif good:
@@ -178,7 +236,9 @@ def main():
     roles = ev["roles"]
     sessions = {k: int(v) for k, v in ev.get("sessions", {}).items()}
     names = {a.lower(): k for k, a in {**C, **roles}.items()}
-    chain, tracer, rep = Chain(url), Chain(trace_url), Report()
+    archive = sys.argv[sys.argv.index("--archive") + 1] if "--archive" in sys.argv else None
+    record = [] if archive else None
+    chain, tracer, rep = Chain(url, record), Chain(trace_url, record), Report()
 
     def show_error(sig, data):
         types = [] if sig.endswith("()") else sig[sig.index("(") + 1:-1].split(",")
@@ -323,7 +383,9 @@ def main():
             except RpcError as err:
                 data = err.data if isinstance(err.data, str) else ""
                 if not data and no_history(err):
-                    rep.line(None, f"REPLAY  needs historical state; this node has none ({err})")
+                    rep.line(None, f"REPLAY  this node no longer keeps the state of block {block - 1}: re-check the reason "
+                                   f"with an archive node (--rpc-url); earlier replays are archived in {ARCHIVE_DIR}/",
+                             pruned=True)
                     continue
             same = data[:10] == want
             methods["REPLAY"] += same
@@ -337,44 +399,65 @@ def main():
                      if not touched else f"REPLAY  {len(touched)} earlier tx(s) in block {block} touched the vault or token — replay is indicative only")
 
     # ---- historical checkpoints ----------------------------------------------------------------
-    print("\nCheckpoints (historical state at fixed blocks)")
+    print("\nCheckpoints — the vault at fixed blocks")
+    print("  STATE  = historical state read from the node (free nodes keep it only for recent blocks)")
+    print("  EVENTS = derived from event logs, which full nodes keep for good")
     v, tok = C["vault"], C["token"]
-    for cp in ev["checkpoints"]:
-        b = hex(cp["block"])
-        print(f"  block {cp['block']}: {cp['label']}")
+    hist = History(chain, v, tok, ev["contracts"]["vault"]["createdAtBlock"])
+
+    def at(n, state_fn, event_fn):
         try:
-            if "paused" in cp:
-                p = bool(int(chain.call(v, selector("paused()"), b), 16))
-                rep.line(p == cp["paused"], f"paused = {p}")
-            if "implementation" in cp:
-                impl = "0x" + chain("eth_getStorageAt", v, IMPL_SLOT, b)[-40:]
-                rep.line(impl.lower() == C[cp["implementation"]].lower(), f"implementation = {who(impl)}")
-            if "eUSD" in cp:
-                bal = int(chain.call(tok, selector("balanceOf(address)") + w(v), b), 16)
-                rep.line(bal == wei(cp["eUSD"]), f"vault eUSD balance = {eusd(bal)}")
-            if "vaultLimitLeft" in cp:
-                left = int(chain.call(v, selector("availableToSpend(address)") + w(tok), b), 16)
-                rep.line(left == wei(cp["vaultLimitLeft"]), f"vault limit left today = {eusd(left)} eUSD")
-            if "sessionBudgetLeft" in cp:
-                s = cp["sessionBudgetLeft"]
-                left = int(chain.call(v, selector("budgetAvailable(uint256,address)") + w(sessions[s["session"]]) + w(tok), b), 16)
-                rep.line(left == wei(s["value"]), f"agent session budget left = {eusd(left)} eUSD")
+            return state_fn(hex(n)), "STATE "
         except RpcError as err:
-            if no_history(err):
-                rep.line(None, f"this node has no historical state for block {cp['block']} — use --rpc-url with an archive node")
-            else:
+            if not no_history(err):
                 raise
+        val = event_fn(hist.load(), n) if event_fn else None
+        return (val, "EVENTS") if val is not None else (None, None)
+
+    def check(n, label, state_fn, event_fn, expect, show):
+        val, how = at(n, state_fn, event_fn)
+        if how is None:
+            rep.line(None, f"{label}: the node no longer keeps block {n}'s state and it cannot be derived from "
+                           f"events — re-check with an archive node (--rpc-url); archived in {ARCHIVE_DIR}/", pruned=True)
+        else:
+            rep.line(val == expect, f"{how} {label} = {show(val)}")
+
+    for cp in ev["checkpoints"]:
+        n = cp["block"]
+        print(f"  block {n}: {cp['label']}")
+        if "paused" in cp:
+            check(n, "paused", lambda b: bool(int(chain.call(v, selector("paused()"), b), 16)),
+                  lambda h, n: h.paused(n), cp["paused"], str)
+        if "implementation" in cp:
+            check(n, "implementation", lambda b: ("0x" + chain("eth_getStorageAt", v, IMPL_SLOT, b)[-40:]).lower(),
+                  lambda h, n: (h.implementation(n) or "").lower() or None, C[cp["implementation"]].lower(), who)
+        if "eUSD" in cp:
+            check(n, "vault eUSD balance", lambda b: int(chain.call(tok, selector("balanceOf(address)") + w(v), b), 16),
+                  lambda h, n: h.balance(n), wei(cp["eUSD"]), eusd)
+        if "vaultLimitLeft" in cp:
+            check(n, "vault limit left today (eUSD)", lambda b: int(chain.call(v, selector("availableToSpend(address)") + w(tok), b), 16),
+                  lambda h, n: h.limit_left(n), wei(cp["vaultLimitLeft"]), eusd)
+        if "sessionBudgetLeft" in cp:
+            s = cp["sessionBudgetLeft"]
+            check(n, "agent session budget left (eUSD)",
+                  lambda b: int(chain.call(v, selector("budgetAvailable(uint256,address)") + w(sessions[s["session"]]) + w(tok), b), 16),
+                  None, wei(s["value"]), eusd)
 
     # ---- money moved while the attacks ran ---------------------------------------------------
     if ev.get("attackWindows"):
         print("\nAttack windows (vault balance before the first and after the last attack)")
         for aw in ev["attackWindows"]:
+            a, b = aw["fromBlock"], aw["toBlock"]
             try:
-                bal = [int(chain.call(tok, selector("balanceOf(address)") + w(v), hex(b)), 16) for b in (aw["fromBlock"], aw["toBlock"])]
-                rep.line(bal[0] == bal[1], f"{aw['label']}: blocks {aw['fromBlock']}..{aw['toBlock']}, "
-                                           f"{eusd(bal[0])} -> {eusd(bal[1])} eUSD, moved by attacks: {eusd(bal[0] - bal[1])}")
+                bal = [int(chain.call(tok, selector("balanceOf(address)") + w(v), hex(x)), 16) for x in (a, b)]
+                how, moved = "STATE ", bal[0] - bal[1]
             except RpcError as err:
-                rep.line(None, f"{aw['label']}: needs historical state ({err})")
+                if not no_history(err):
+                    raise
+                h = hist.load()
+                bal, how, moved = [h.balance(a), h.balance(b)], "EVENTS", h.moved_out(a, b)
+            rep.line(bal[0] == bal[1] and moved == 0, f"{how} {aw['label']}: blocks {a}..{b}, "
+                                                      f"{eusd(bal[0])} -> {eusd(bal[1])} eUSD, moved out: {eusd(moved)}")
 
     # ---- now ---------------------------------------------------------------------------------
     print("\nDemo vault now")
@@ -385,9 +468,18 @@ def main():
 
     print(f"\nRejection reasons proven by execution trace (STRICT): {methods['STRICT']}, "
           f"by historical replay (REPLAY): {methods['REPLAY']}")
-    print(f"RESULT: {rep.ok} checks OK, {rep.bad} mismatches, {rep.skip} not checkable — "
-          + ("everything matches the evidence" if rep.bad == rep.skip == 0 else
+    print(f"RESULT: {rep.ok} checks OK, {rep.bad} mismatches, {rep.skip} not checkable, "
+          f"{rep.pruned} need an archive node (OLD: history this node no longer keeps) — "
+          + ("everything checkable matches the evidence" if rep.bad == rep.skip == 0 else
              "MISMATCH, see BAD lines" if rep.bad else "incomplete, see SKIP lines"))
+    if archive:
+        os.makedirs(os.path.dirname(archive) or ".", exist_ok=True)
+        json.dump({"about": "Raw JSON-RPC answers used by verify_evidence.py, kept in case public nodes drop BSC "
+                            "Testnet history. A snapshot for reference, not a substitute for re-checking.",
+                   "capturedAt": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+                   "result": {"ok": rep.ok, "bad": rep.bad, "skip": rep.skip, "needArchiveNode": rep.pruned}, "calls": record},
+                  open(archive, "w", encoding="utf-8"), indent=1)
+        print(f"raw node answers archived: {archive} ({len(record)} calls)")
     sys.exit(1 if rep.bad else 2 if rep.skip else 0)
 
 

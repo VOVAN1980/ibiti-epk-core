@@ -40,6 +40,7 @@
       "address": "0xB2166241D29C50F4678aebb5061504ee562FA340",
       "label": "Demo vault (customer proxy)",
       "codeHash": "0x9cc1a19c72e91a360d2e4cb825a7780a1c29cef1e8c0595a4e0f6c8fed401538",
+      "createdAtBlock": 141338424,
       "artifact": "out/EPKVaultFactory.sol/EPKVaultProxy.json",
       "proxyImplementation": "implementation_2_0_0"
     }
