@@ -28,3 +28,14 @@ coverage.summary.txt
 *.pptx
 КОМАНДЫ ЗАПУСКА.txt
 ibiticoin.github.io/
+
+# Claude Code local worktrees / settings
+.claude/
+
+# Local video/presentation material (screenshots for the hackathon video)
+media/
+
+# Watchtower runtime files (local alert log and state)
+watchtower/alerts.log
+watchtower/state.json
+watchtower/__pycache__/
