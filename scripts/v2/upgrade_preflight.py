@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: BUSL-1.1
 """Checks before and after each step of the demo vault's upgrade to 2.0.1. It never signs anything.
 
 Usage (from the repo root; Python 3 only, no keys):

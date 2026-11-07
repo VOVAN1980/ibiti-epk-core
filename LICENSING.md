@@ -17,15 +17,17 @@ refers to the same rights holder.
 |---|---|---|
 | **EPK v1** — kernel, validators, mocks | `contracts/epk/`, `contracts/validators/`, `contracts/mocks/` | **MIT** ([`LICENSE`](LICENSE)) |
 | EPK v1 tests | `test/*.sol` (top level) | MIT |
-| Scripts | `scripts/` | MIT |
+| Scripts (EPK v1 and helpers) | `scripts/` except `scripts/v2/` | MIT |
 | TypeScript SDK | `sdk/` | MIT |
-| Documentation | `docs/`, `README.md`, other top-level `*.md` | MIT |
+| Documentation and the website | `docs/`, `README.md`, other top-level `*.md` | MIT |
+| Testnet evidence (addresses, transactions, traces, reports) | `deployments/` | MIT |
 | **EPK v2** — EPKVault, EPKVaultProxy, EPKVaultFactory, EPKRegistry | `contracts/v2/` | **BUSL-1.1** ([`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)) |
 | EPK v2 tests and mocks | `test/v2/` | **BUSL-1.1** |
+| EPK v2 deployment, demo and verification scripts | `scripts/v2/` | **BUSL-1.1** |
 | EPK Watchtower (automatic guardian) | `watchtower/` | **BUSL-1.1** |
 | Third-party libraries | `lib/` (e.g. OpenZeppelin Contracts) | their own licenses (OpenZeppelin: MIT) — not relicensed |
 
-Each Solidity file states its license in the `SPDX-License-Identifier` header.
+Each Solidity file, and each Python file of EPK v2, states its license in its `SPDX-License-Identifier` header.
 Everything already published under MIT (including release `v1.0.0`) stays under MIT permanently.
 
 ## EPK v2 under the Business Source License 1.1
@@ -35,7 +37,7 @@ Parameters (see [`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)):
 | Parameter | Value |
 |---|---|
 | Licensor | Volodymyr Podkorytov (IBITI Labs) |
-| Licensed Work | EPK v2: the files in `contracts/v2/` and `test/v2/` |
+| Licensed Work | EPK v2: the files in `contracts/v2/`, `test/v2/`, `scripts/v2/` and `watchtower/` |
 | Additional Use Grant | Deploy and use on public test networks, in hackathons, and for education, research and security review — as long as it does not hold, control or secure assets of real economic value |
 | Change Date | 2030-11-06 (or, for any version, the fourth anniversary of its first public release, whichever comes first) |
 | Change License | MIT |
@@ -72,7 +74,7 @@ Commercial licenses are granted case by case and in writing by the Licensor.
 
 ## Contributions
 
-Contributions to `contracts/v2/` or `test/v2/` are accepted under BUSL-1.1 with the same
+Contributions to `contracts/v2/`, `test/v2/`, `scripts/v2/` or `watchtower/` are accepted under BUSL-1.1 with the same
 parameters. By submitting a contribution you confirm that you have the right to do so and that
 the Licensor may also offer it under commercial licenses. Contributions elsewhere are under MIT.
 

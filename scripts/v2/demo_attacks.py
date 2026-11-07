@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: BUSL-1.1
 """Send prepared EPK v2 attack transactions so that each one is rejected ON-CHAIN (evidence).
 
 Usage (from the repo root):

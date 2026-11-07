@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: BUSL-1.1
 """Independently re-check the EPK v2 testnet evidence against the chain.
 
 Usage (from the repo root; Python 3.8+ only — no Foundry, no keys, no packages):

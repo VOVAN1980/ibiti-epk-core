@@ -12,7 +12,7 @@ Thanks for your interest in contributing to EPK.
 - Keep toolchain settings consistent with the repo.
 
 ## Licensing of contributions
-- Contributions to `contracts/v2/` and `test/v2/` are made under the Business Source License 1.1 (see `LICENSING.md`).
+- Contributions to `contracts/v2/`, `test/v2/`, `scripts/v2/` and `watchtower/` are made under the Business Source License 1.1 (see `LICENSING.md`).
 - Contributions to everything else are made under MIT.
 
 ## Security
