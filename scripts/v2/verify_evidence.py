@@ -3,6 +3,7 @@
 
 Usage (from the repo root; Python 3.8+ only — no Foundry, no keys, no packages):
     python scripts/v2/verify_evidence.py [--rpc-url URL] [--build]
+    python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.1-evidence.json --doc docs/TESTNET_V21.md
 
 The claims live in deployments/bsc-testnet/epk-v2-evidence.json (and, for people, in
 docs/TESTNET_V2.md — the script first checks that both list the same transactions and contracts).
@@ -231,8 +232,13 @@ def main():
     trace_url = sys.argv[sys.argv.index("--trace-rpc") + 1] if "--trace-rpc" in sys.argv else TRACE_RPC
     build, save_traces = "--build" in sys.argv, "--save-traces" in sys.argv
     methods = {"STRICT": 0, "REPLAY": 0}
+    # --evidence / --doc check another claims file the same way (e.g. the EPK 2.1 guard demo)
+    global EVIDENCE, DOC
+    EVIDENCE = sys.argv[sys.argv.index("--evidence") + 1] if "--evidence" in sys.argv else EVIDENCE
+    DOC = sys.argv[sys.argv.index("--doc") + 1] if "--doc" in sys.argv else DOC
     ev = json.load(open(EVIDENCE, encoding="utf-8"))
     doc = open(DOC, encoding="utf-8").read()
+    sym = ev.get("tokenSymbol", "eUSD")
     C = {k: v["address"] for k, v in ev["contracts"].items()}
     roles = ev["roles"]
     sessions = {k: int(v) for k, v in ev.get("sessions", {}).items()}
@@ -247,7 +253,7 @@ def main():
         for i, ty in enumerate(types):
             word = data[10 + 64 * i:74 + 64 * i] or "0"
             args.append(who("0x" + word[-40:]) if ty == "address" else
-                        (f"{eusd(int(word, 16))} eUSD" if int(word, 16) >= 10 ** 15 else str(int(word, 16))))
+                        (f"{eusd(int(word, 16))} {sym}" if int(word, 16) >= 10 ** 15 else str(int(word, 16))))
         return sig.split("(")[0] + f"({', '.join(args)})"
 
     def resolve(ref):
@@ -305,7 +311,7 @@ def main():
             impl = "0x" + chain("eth_getStorageAt", c["address"], IMPL_SLOT, "latest")[-40:]
             want = C[c["proxyImplementation"]]
             rep.line(impl.lower() == want.lower(), f"EIP-1967 implementation slot -> {who(impl)} ({impl})")
-        if build:
+        if build and c.get("artifact"):
             try:
                 art = json.load(open(c["artifact"], encoding="utf-8"))["deployedBytecode"]
             except FileNotFoundError:
@@ -346,7 +352,7 @@ def main():
                     cands = [lg for lg in cands if int(lg["data"][2 + 64 * i:66 + 64 * i] or "0", 16) == wei(amount)]
                 if e.get("codehashOf"):
                     cands = [lg for lg in cands if "0x" + lg["data"][-64:] == codehash.get(e["codehashOf"])]
-                extra = (f", amounts {' / '.join(e['data'])} eUSD" if e.get("data") else "") + \
+                extra = (f", amounts {' / '.join(e['data'])} {e.get('unit', sym)}" if e.get("data") else "") + \
                         (f", code hash = on-chain code of {e['codehashOf']}" if e.get("codehashOf") else "")
                 rep.line(len(cands) == 1, f"event {e['event'].split('(')[0]} from {e['emitter']}{extra}")
         else:
@@ -460,14 +466,14 @@ def main():
                 h = hist.load()
                 bal, how, moved = [h.balance(a), h.balance(b)], "EVENTS", h.moved_out(a, b)
             rep.line(bal[0] == bal[1] and moved == 0, f"{how} {aw['label']}: blocks {a}..{b}, "
-                                                      f"{eusd(bal[0])} -> {eusd(bal[1])} eUSD, moved out: {eusd(moved)}")
+                                                      f"{eusd(bal[0])} -> {eusd(bal[1])} {sym}, moved out: {eusd(moved)}")
 
     # ---- now ---------------------------------------------------------------------------------
     print("\nDemo vault now")
     impl = "0x" + chain("eth_getStorageAt", v, IMPL_SLOT, "latest")[-40:]
     print(f"  implementation {who(impl)} ({impl}), vaultVersion {int(chain.call(v, selector('vaultVersion()')), 16)}")
     print(f"  paused: {bool(int(chain.call(v, selector('paused()')), 16))}")
-    print(f"  eUSD balance: {eusd(int(chain.call(tok, selector('balanceOf(address)') + w(v)), 16))}")
+    print(f"  {sym} balance: {eusd(int(chain.call(tok, selector('balanceOf(address)') + w(v)), 16))}")
 
     print(f"\nRejection reasons proven by execution trace (STRICT): {methods['STRICT']}, "
           f"by historical replay (REPLAY): {methods['REPLAY']}")

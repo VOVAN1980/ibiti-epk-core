@@ -1,8 +1,10 @@
 # EPK guards — protected swaps for trading bots and AI agents
 
 Status (2026-11-07): **built and tested on the branch `feature/epk-v2.1`**, together with vault release
-**2.1.0**. Not deployed, not audited. The testnet demo vault keeps running 2.0.x and its 2.0.1 upgrade
-test is unaffected.
+**2.1.0**, and **running on BSC Testnet on a separate demo vault**: allowed trades and 11 attacks through
+the real PancakeSwap V2 router with real Chainlink feeds, every claim re-checkable —
+[`TESTNET_V21.md`](TESTNET_V21.md), live check in the browser: `docs/proof/guards.html`. Not audited, not on
+mainnet. The EPK v2 demo vault keeps running 2.0.x and its 2.0.1 upgrade test is unaffected.
 
 | Module | File | What it does |
 |---|---|---|
