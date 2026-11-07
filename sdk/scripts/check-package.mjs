@@ -1,6 +1,7 @@
 // Install the SDK the way an outside team would — `npm pack`, then `npm install <tarball>` into a clean, empty
 // project — and check that it imports, type-checks and talks to BSC Testnet.
-//   npm run check:package            (LIVE=0 to skip the network part)
+//   npm run check:package                              (LIVE=0 to skip the network part)
+//   FROM_NPM=@ibiti/epk-sdk@preview npm run check:package   (install the published package from npm instead)
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -11,10 +12,19 @@ const work = fs.mkdtempSync(path.join(os.tmpdir(), "epk-sdk-check-"));
 const sh = (cmd, cwd) => execSync(cmd, { cwd, stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
 const step = (s) => console.log(`\n== ${s}`);
 
-step("build, then npm pack");
-sh("npm run build", sdkDir);
-const packed = JSON.parse(sh(`npm pack --json --ignore-scripts --pack-destination "${work}"`, sdkDir))[0];
-const tarball = path.join(work, packed.filename);
+const fromNpm = process.env.FROM_NPM;
+let packed;
+let tarball;
+if (fromNpm) {
+  step(`fetch ${fromNpm} from the npm registry`);
+  packed = JSON.parse(sh(`npm pack "${fromNpm}" --json --pack-destination "${work}"`, work))[0];
+  tarball = fromNpm;
+} else {
+  step("build, then npm pack");
+  sh("npm run build", sdkDir);
+  packed = JSON.parse(sh(`npm pack --json --ignore-scripts --pack-destination "${work}"`, sdkDir))[0];
+  tarball = path.join(work, packed.filename);
+}
 console.log(`${packed.filename}: ${packed.entryCount} files, ${(packed.size / 1024).toFixed(0)} kB`);
 const files = packed.files.map((f) => f.path);
 for (const must of ["dist/v2/index.js", "dist/v2/index.d.ts", "dist/index.js", "dist/abi/EPKernel.abi.json", "README.md"]) {
@@ -23,12 +33,12 @@ for (const must of ["dist/v2/index.js", "dist/v2/index.d.ts", "dist/index.js", "
 const leaked = files.filter((f) => /(^|\/)(\.env|test\/|examples\/|scripts\/|src\/)/.test(f));
 if (leaked.length) throw new Error(`package contains files it should not: ${leaked.join(", ")}`);
 
-step("clean outside project: npm install <tarball>");
+step(`clean outside project: npm install ${fromNpm ?? "<tarball>"}`);
 const app = path.join(work, "outside-app");
 fs.mkdirSync(app);
 fs.writeFileSync(path.join(app, "package.json"), JSON.stringify({ name: "outside-app", private: true, type: "module" }, null, 2));
 sh(`npm install "${tarball}" typescript@5 --no-audit --no-fund --loglevel=error`, app);
-console.log("installed @ibiti/epk-sdk and its dependencies (viem) from the tarball");
+console.log(`installed @ibiti/epk-sdk and its dependencies (viem) from ${fromNpm ? "the npm registry" : "the tarball"}`);
 
 fs.writeFileSync(
   path.join(app, "check.mjs"),
