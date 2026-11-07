@@ -1,7 +1,7 @@
 {
   "name": "@ibiti/epk-sdk",
-  "version": "1.0.0",
-  "description": "IBITI EPK v1 TypeScript SDK (viem)",
+  "version": "1.1.0",
+  "description": "IBITI EPK TypeScript SDK (viem): EPK v1 kernel, and EPK v2 vaults, agent sessions, timelock and guards (./v2)",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -10,6 +10,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./v2": {
+      "types": "./dist/v2/index.d.ts",
+      "default": "./dist/v2/index.js"
     }
   },
   "files": [
@@ -26,7 +30,9 @@
     "example:smoke": "tsx -r dotenv/config examples/smoke.ts",
     "postbuild": "node -e \"const fs=require('fs');const path=require('path');const src=path.join('src','abi');const dst=path.join('dist','abi');fs.mkdirSync(dst,{recursive:true});for(const f of fs.readdirSync(src)){fs.copyFileSync(path.join(src,f),path.join(dst,f));}console.log('ABI copied to',dst);\"",
     "example:write": "tsx -r dotenv/config examples/write.ts",
-    "example:setup": "tsx -r dotenv/config examples/setup.ts"
+    "example:setup": "tsx -r dotenv/config examples/setup.ts",
+    "test:v2": "tsx --test test/v2/*.test.ts",
+    "example:v2": "tsx examples/v2-guarded-swap.ts"
   },
   "dependencies": {
     "viem": "^2.21.0"

@@ -34,3 +34,15 @@ jobs:
 
       - name: Watchtower unit tests
         run: python3 -m unittest discover -s watchtower -p "test_*.py" -v
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: SDK v2 tests
+        working-directory: sdk
+        run: |
+          npm ci
+          npm run typecheck
+          npm run test:v2

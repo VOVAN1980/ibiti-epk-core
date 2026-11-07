@@ -1,5 +1,50 @@
 # @ibiti/epk-sdk
 
+TypeScript SDK for **EPK** (IBITI Labs) built on **viem**.
+
+- `@ibiti/epk-sdk/v2` — **EPK v2 vaults (2.0.x and 2.1.x), AI-agent sessions, the timelock and the guards**
+  (DexGuard, ThreatFeed V2, CompositeGuard). In development, like EPK 2.1 itself.
+- `@ibiti/epk-sdk` — EPK v1 kernel (legacy reference), documented further below.
+
+## SDK v2 in five calls
+
+```ts
+import { createPublicClient, createWalletClient, http } from "viem";
+import { bscTestnet } from "viem/chains";
+import { EPKVaultClient, planGuardedSwap } from "@ibiti/epk-sdk/v2";
+
+const publicClient = createPublicClient({ chain: bscTestnet, transport: http() });
+const vault = new EPKVaultClient({ address: VAULT, publicClient });
+
+// 1. plan a swap the guard will accept (reads Chainlink fair value and the pool quote; throws if the
+//    pool is off the market — the trade would be refused on-chain anyway)
+const plan = await planGuardedSwap({ publicClient, guard: DEX_GUARD, router: ROUTER, vault: VAULT,
+  path: [WBNB, USDT], amountIn: 10n ** 15n, native: true });
+// 2. sign the batch with the bot's / agent's key (EIP-712, identical to the vault's digest)
+const signed = await vault.signBatch({ policyId, agent: botAddress, calls: plan.calls, signer: botWallet });
+// 3. dry-run: { ok: true } or the decoded reason, e.g. PriceTooLow, BudgetExceeded, GuardRequired
+const sim = await vault.simulate({ policyId, calls: plan.calls, deadline: signed.deadline, signature: signed.signature, agent: botAddress });
+// 4. submit (the bot's wallet is the agent the batch was signed for)
+if (sim.ok) await new EPKVaultClient({ address: VAULT, publicClient, walletClient: botWallet })
+  .execute({ policyId, calls: plan.calls, deadline: signed.deadline, signature: signed.signature });
+```
+
+Also: `availableToSpend` / `budgetAvailable` (limits left), `openSession` (AI-agent sessions),
+`schedule` / `executeScheduled` / `cancel` + `hashOperation` (timelock), `envelopeGuard`, `DexGuardClient`
+(`minimumOut`, `maximumIn`, `price`), `isCallBlocked` (ThreatFeed V2), batch builders `v2SwapExactTokens`,
+`v2SwapExactNative`, `v2SwapExactTokensForNative`, and `decodeEpkError` for every vault and guard error.
+
+```bash
+npm run test:v2      # offline: digest and operation ids equal the live vault's; all 11 on-chain rejections decode
+npm run example:v2   # read-only walkthrough against the EPK 2.1 demo vault on BSC Testnet (signs and simulates, sends nothing)
+```
+
+How the guards work and what they do not cover: [`docs/GUARDS_v2.md`](../docs/GUARDS_v2.md).
+
+---
+
+## EPK v1 SDK (legacy reference)
+
 TypeScript SDK for **Eternal Permission Kernel (EPK) v1** (IBITI Labs) built on **viem**.
 
 Goal: a small, practical SDK that:
