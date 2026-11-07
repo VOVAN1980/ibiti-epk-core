@@ -21,7 +21,12 @@ import sys
 import urllib.request
 from datetime import datetime, timezone
 
-KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian2": "V2_GUARDIAN2_PRIVATE_KEY", "admin": "PRIVATE_KEY"}
+KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian2": "V2_GUARDIAN2_PRIVATE_KEY", "admin": "PRIVATE_KEY",
+           # EPK 2.1 guard demo (separate vault and keys)
+           "operator": "V21_OPERATOR_PRIVATE_KEY", "agent21": "V21_AGENT_PRIVATE_KEY", "admin21": "V21_ADMIN_PRIVATE_KEY"}
+ERROR_SOURCES = ["contracts/v2/EPKVault.sol:EPKVault", "contracts/v2/guards/DexGuard.sol:DexGuard",
+                 "contracts/v2/guards/ThreatFeedGuard.sol:ThreatFeedGuard",
+                 "contracts/v2/guards/CompositeGuard.sol:CompositeGuard"]
 TRACES = "deployments/bsc-testnet/traces"
 
 
@@ -64,9 +69,13 @@ def save_trace(rpc, tx):
 
 
 def error_table():
-    out = run(["forge", "inspect", "contracts/v2/EPKVault.sol:EPKVault", "errors", "--json"])
-    table = json.loads(out.stdout)
-    return {("0x" + sel.removeprefix("0x")).lower(): name for name, sel in table.items()}
+    """Custom errors of the vault and of every guard (a guard's error bubbles up through the vault)."""
+    errors = {}
+    for src in ERROR_SOURCES:
+        out = run(["forge", "inspect", src, "errors", "--json"])
+        if out.returncode == 0 and out.stdout.strip():
+            errors.update({("0x" + sel.removeprefix("0x")).lower(): name for name, sel in json.loads(out.stdout).items()})
+    return errors
 
 
 def main():
@@ -74,8 +83,8 @@ def main():
     rpc = sys.argv[sys.argv.index("--rpc-url") + 1] if "--rpc-url" in sys.argv else None
     env = load_env()
     rpc = rpc or env["BSC_RPC_URL"]
-    vault = json.load(open("deployments/bsc-testnet/epk-v2-vault.json"))["vault"]
     attacks = json.load(open(path))
+    vault = attacks.get("vault") or json.load(open("deployments/bsc-testnet/epk-v2-vault.json"))["vault"]
     errors = error_table()
     results = []
 

@@ -106,6 +106,31 @@ Adding agent sessions first produced 10 new results: `timestamp` / `incorrect-eq
 
 Slither again reports `0 result(s) found` on `contracts/v2/`.
 
+## 2c. Guards and vault 2.1.0 (2026-11-07, branch `feature/epk-v2.1`)
+
+DexGuard, ThreatFeedGuard, CompositeGuard and the vault 2.1.0 changes first produced 10 new results,
+all in the guards (none in `EPKVault`).
+
+| Detector | Where | Handling |
+|---|---|---|
+| `uninitialized-local` (×3) | `DexGuard._decodeV2` | **Fixed**: locals initialised explicitly |
+| `incorrect-equality` | `ThreatFeedGuard.executeUnblock` | Suppressed: `readyAt == 0` is the "nothing scheduled" sentinel, not a balance (`test_unblockWaitsAndCanBeVetoed`) |
+| `unused-return` | `DexGuard._price` | Suppressed: `startedAt` of `latestRoundData` is not needed; `updatedAt` bounds staleness (`test_price_staleRoundsFutureAndZero`) |
+| `missing-zero-check` | `DexGuard` constructor | Suppressed: `wrappedNative = 0` is a valid setting (native swaps are then refused) |
+| `calls-loop` | `DexGuard` constructor | Suppressed: token / feed decimals are read once per configured token at deployment |
+| `assembly` | `DexGuard._addressAt` | Suppressed: read-only, memory-safe 20-byte load, bounds checked by the caller (`test_v3_rules`) |
+| `cyclomatic-complexity` | `DexGuard._decodeV2` | Suppressed: one flat branch per supported V2 function, on purpose |
+| `timestamp` | `DexGuard._checkSwap`, `_price`; `ThreatFeedGuard.executeUnblock` | Suppressed: deadlines, feed staleness and unblock delays are minutes to days |
+
+Slither again reports `0 result(s) found` on `contracts/v2/` (40 contracts, 102 detectors).
+
+After test-network delays and parallel upgrade clocks (`EPKChains`, commit `c6fbaf4`): still `0 result(s) found`
+(41 contracts, 102 detectors, clean build), no new suppressions.
+
+Note for Windows: if Python or an editor rewrites a `.sol` file with CRLF line endings, Slither's line
+numbers shift and inline suppressions stop matching. Keep the working copy of `contracts/` in LF and run
+`forge clean` before the check.
+
 ## 3. How to reproduce
 
 ```bash

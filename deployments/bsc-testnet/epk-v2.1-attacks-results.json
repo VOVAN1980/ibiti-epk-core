@@ -1,0 +1,85 @@
+{
+  "vault": "0x83c6D86019BfF5ebBb7bd955aa63878DAa60f674",
+  "results": [
+    {
+      "attack": "a_recipientAttacker",
+      "from": "operator",
+      "sender": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+      "error": "RecipientNotVault(address)",
+      "tx": "0x230bea921b660091505a4f448c743f603065d99f09d0a4e5f96f3b3c78832616",
+      "status": "rejected"
+    },
+    {
+      "attack": "b_minOutOne",
+      "from": "operator",
+      "sender": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+      "error": "PriceTooLow(uint256,uint256)",
+      "tx": "0x5220be5d551033fcf40020f9e85fa6815d86c165b8b26d583b7edf3d87c464d8",
+      "status": "rejected"
+    },
+    {
+      "attack": "c_mispricedRealPool",
+      "from": "operator",
+      "sender": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+      "error": "PriceTooLow(uint256,uint256)",
+      "tx": "0x9db601b5833b4284d3cd7b85f2d51d97f2bb34c613ff2d5da2ab8e34d18daabb",
+      "status": "rejected"
+    },
+    {
+      "attack": "d_feeOnTransferFunction",
+      "from": "operator",
+      "sender": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+      "error": "UnsupportedCall(address,bytes4)",
+      "tx": "0x05853bd3bc7e3e8a9b339becb2b50584a748e0f22134846ea669f5762453e999",
+      "status": "rejected"
+    },
+    {
+      "attack": "e_farDeadline",
+      "from": "operator",
+      "sender": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+      "error": "BadDeadline(uint256)",
+      "tx": "0x35c4ad2706ed7c7483facf9f8e46110c5fc3ceda9ab87f99f5db896b660b67f9",
+      "status": "rejected"
+    },
+    {
+      "attack": "f_approveNonRouter",
+      "from": "operator",
+      "sender": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+      "error": "ApproveToNonRouter(address)",
+      "tx": "0x95737ee150630e8d602acc7c20e8b537e0dbd80917e73825c91c344a5507fbaa",
+      "status": "rejected"
+    },
+    {
+      "attack": "g_unlistedToken",
+      "from": "operator",
+      "sender": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+      "error": "TokenNotAllowed(address)",
+      "tx": "0x928d90b08b8d3dcbdb59755e6626f282227064e460b7d1560fe9557099a449bf",
+      "status": "rejected"
+    },
+    {
+      "attack": "h_sessionToAttacker",
+      "from": "agent21",
+      "sender": "0x602D636dC4eA21Ac4a1278CC589E9Ab1CfD03201",
+      "error": "RecipientNotVault(address)",
+      "tx": "0xa0d40d9efa4edc3b0ba50944e3e6327ffddf79e7b60c698eae493e56549fe855",
+      "status": "rejected"
+    },
+    {
+      "attack": "i_unguardedSessionSwap",
+      "from": "agent21",
+      "sender": "0x602D636dC4eA21Ac4a1278CC589E9Ab1CfD03201",
+      "error": "GuardRequired()",
+      "tx": "0x2df4abbb15f84e31fa624d5ea7e2831ba04403fa8227e61c5bd458a8fba1bfd1",
+      "status": "rejected"
+    },
+    {
+      "attack": "j_removeGuardWithoutTimelock",
+      "from": "admin21",
+      "sender": "0x8502C5cFdaF6Dbad23995a68735534d813672A71",
+      "error": "NotTimelocked()",
+      "tx": "0xcd45ca08b953f4de349748649f9e32572c17e9a770834ca4553e435ffa094cd6",
+      "status": "rejected"
+    }
+  ]
+}

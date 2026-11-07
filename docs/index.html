@@ -170,7 +170,7 @@
           <li class="bad"><strong>The thief tries to push it through anyway</strong> and the vault answers <code>UnknownOperation</code>: the change no longer exists.</li>
         </ol>
         <div class="cta" style="justify-content:flex-start;margin-top:28px">
-          <a class="btn btn-ghost btn-small" target="_blank" rel="noopener" href="https://github.com/VOVAN1980/ibiti-epk-core/tree/feature/epk-v2/watchtower">How the Watchtower works ↗</a>
+          <a class="btn btn-ghost btn-small" target="_blank" rel="noopener" href="https://github.com/VOVAN1980/ibiti-epk-core/tree/master/watchtower">How the Watchtower works ↗</a>
         </div>
       </div>
       <div class="crystal terminal reveal d2" data-type data-tilt>
@@ -257,7 +257,7 @@
           <h3>From the command line</h3>
           <div class="cmd"><span class="c-dim"># Python 3 only — no packages, no keys</span>
 git clone https://github.com/VOVAN1980/ibiti-epk-core
-cd ibiti-epk-core &amp;&amp; git checkout feature/epk-v2
+cd ibiti-epk-core &amp;&amp; git checkout bd3cf19   <span class="c-dim"># the commit the evidence was published with</span>
 python scripts/v2/verify_evidence.py
 
 <span class="c-dim"># + byte-for-byte: on-chain code = open-source build</span>
@@ -305,8 +305,8 @@ forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
       </div>
       <div class="road">
         <div class="crystal st done reveal"><div class="when">2026 · done</div><h3>EPK v1</h3><p>Permission kernel for agents; DoraHacks OpenClaw winner; MIT.</p></div>
-        <div class="crystal st now reveal d1"><div class="when">Nov 2026 · now</div><h3>EPK v2 on testnet</h3><p>Per-customer vaults, agent sessions, Watchtower, public proof. Opt-in upgrade 2.0.0 → 2.0.1 on Nov 14–16.</p></div>
-        <div class="crystal st reveal d2"><div class="when">next</div><h3>SDK v2 &amp; guard modules</h3><p>TypeScript SDK, DEX guard, threat feed, always-on Watchtower.</p></div>
+        <div class="crystal st now reveal d1"><div class="when">Nov 2026 · now</div><h3>EPK v2 &amp; 2.1 on testnet</h3><p>Per-customer vaults, agent sessions, Watchtower, guarded swaps, opt-in upgrades at the same address in minutes on test networks, public proof.</p></div>
+        <div class="crystal st reveal d2"><div class="when">next</div><h3>SDK v2 &amp; Watchtower service</h3><p>TypeScript SDK for integrators, always-on Watchtower, emergency evacuation to the owner's cold wallet.</p></div>
         <div class="crystal st reveal d3"><div class="when">then</div><h3>Independent audit</h3><p>Professional audit of vault, sessions and upgrades; public bug bounty.</p></div>
         <div class="crystal st reveal d4"><div class="when">after the audit</div><h3>Mainnet</h3><p>Production deployments under commercial licenses.</p></div>
       </div>

@@ -1,0 +1,35 @@
+MIT License
+
+Copyright (c) 2026 IBITI Labs
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---------------------------------------------------------------------------------------------------
+EPK SDK — license scope
+
+The TypeScript source and compiled JavaScript of this SDK are licensed under the MIT License above.
+
+The compiled EPK v2 contract bytecode shipped in dist/v2/abi/*Bytecode.js (DexGuard, ThreatFeedGuard,
+CompositeGuard) is part of EPK v2 and is licensed under the Business Source License 1.1
+(https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSE-BUSL-1.1): free for development,
+public test networks, hackathons, education, research and security review; using it to hold, control
+or secure assets of real economic value requires a commercial license from the Licensor
+(info@ibiticoin.com). See LICENSING.md in the repository.
+
+PREVIEW: EPK v2 has not been independently audited. Do not use this SDK or EPK v2 with real funds.

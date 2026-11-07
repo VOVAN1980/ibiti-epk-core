@@ -5,6 +5,10 @@
 
 **Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.**
 
+> **Status: EPK 2.1 preview — BSC Testnet only. Not independently audited, not on any mainnet; do not use it
+> with real funds.** TypeScript SDK: `npm install @ibiti/epk-sdk@preview viem` ·
+> [developer guide](docs/INTEGRATION_v2.md)
+
 EPK (Eternal Permission Kernel) by IBITI Labs gives every customer their own on-chain vault. AI
 agents, trading bots and servers pay from it — but only within limits, only to addresses approved
 in advance, and only through short-lived sessions. If an agent, the server or the operator key is
@@ -47,8 +51,9 @@ every step a real transaction:
 | A **stolen admin key** schedules a new withdrawal address | 🛡 the Watchtower cancelled it **5 blocks later**; executing it anyway was rejected (`UnknownOperation`) |
 
 **7 of 7** attack transactions rejected · **0 eUSD** left the vault during the attacks.
-Next on testnet: the upgrade 2.0.0 → 2.0.1 at the same address through the timelock
-(scheduled from 2026-11-14).
+Opt-in upgrades are shown live on EPK 2.1: a vault upgraded at the same address with the same funds in
+5 minutes on BSC Testnet (test networks use minute-scale delays; mainnet keeps 7 days) —
+[`docs/TESTNET_V21_FAST_UPGRADE.md`](docs/TESTNET_V21_FAST_UPGRADE.md).
 
 ### Check it yourself
 
@@ -125,6 +130,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Specification — EPK v2 (EPKVault)](docs/SPEC_v2.md)
 - [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
+- [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
 - [BSC Testnet demo and evidence](docs/TESTNET_V2.md)
 - [Roadmap](docs/ROADMAP.md)
 
