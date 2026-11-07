@@ -97,6 +97,15 @@ Afterwards the real outflow is charged against the per-window limit.
 | `unused-return` | `_recoverOrZero` | the third value of `tryRecoverCalldata` is a diagnostic error argument; any error means "no valid ECDSA signature" |
 | `reentrancy-no-eth`, `reentrancy-benign`, `reentrancy-events` | `execute` | same analysis as `reentrancy-eth` above |
 
+## 2b. Agent sessions (2026-11-07)
+
+Adding agent sessions first produced 10 new results: `timestamp` / `incorrect-equality` on functions that read the `policies` struct (`_checkCall`, `_isValidSignature`, `_authorize`, `_requirePolicy`, `budgetAvailable`) and `cyclomatic-complexity` on `_loadExecutablePolicy`. Root cause: the session expiry was computed from `block.timestamp` and stored in the policy, so Slither tainted every policy field. **Fixed in code, no new suppressions**:
+
+- `openSession` takes an absolute `validUntil`, which is only *checked* against the envelope's max TTL;
+- the agent check moved into `_requireAgent`.
+
+Slither again reports `0 result(s) found` on `contracts/v2/`.
+
 ## 3. How to reproduce
 
 ```bash

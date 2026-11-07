@@ -1,0 +1,44 @@
+# EPK Roadmap
+
+This page is the **single source of truth** for what EPK is today and what comes next.
+GitHub (README), DoraHacks and the IBITI Labs website must describe the same state as this page —
+no older promises, no features that are not built yet presented as done.
+
+Last updated: 2026-11-07.
+
+## Where we are
+
+| Component | Status |
+|---|---|
+| **EPK v1** — `EPKernel` + validators | Released (`v1.0.0`, MIT), deployed on BSC testnet. Reference kernel; **not for holding real funds** (shared executor, see `docs/THREAT_MODEL.md`). |
+| **EPK v2** — `EPKVault` | In active development on `feature/epk-v2` (draft PR #1), BUSL-1.1. Not audited, not deployed. |
+
+EPK v2 today:
+
+- **One protected vault per customer** (permanent proxy address); funds and calls come from the customer's own vault.
+- **Survives a compromised server / operator key / AI agent**: per-asset outflow limits on real balance changes, destination allowlist, signed batches, allowances that cannot outlive a batch, optional independent co-signer.
+- **Agent sessions**: instant, short-lived sessions for AI agents, each with its own budget, only inside envelopes the owner approved through the timelock; one switch stops all sessions of an envelope.
+- **Separate roles**: operator, admin, ≥ 2 guardians (can only stop), recovery key, session manager.
+- **Tighten instantly, loosen only through a timelock** that guardians can veto; `panic()` stops everything.
+- **Upgradeable without moving funds — only by the owner's decision**: registry of reviewed releases (7-day public delay), ≥ 2-day per-vault delay, guardian veto; nobody (including IBITI) can upgrade a vault for its owner.
+- **Quality**: 313 tests incl. fuzz and stateful invariants (compromised operator, compromised admin, compromised session manager), three internal security reviews, Slither with every finding fixed or justified.
+
+## Next milestones
+
+| # | Milestone | What it delivers |
+|---|---|---|
+| 1 | **Guard modules** | DEX Guard (swap recipient / slippage checks for routers), ThreatFeed V2 (Merkle blocklist of malicious contracts/addresses) as validators that plug into policies and sessions without changing the vault |
+| 2 | **SDK v2** | TypeScript (viem): create vaults, sign batches and co-signatures, open sessions, schedule changes and upgrades, read limits and budgets |
+| 3 | **Watchtower** | Monitoring bot that acts as a guardian: vetoes unexpected scheduled changes, pauses on anomalies, alerts the owner |
+| 4 | **Testnet end-to-end** | Public BSC testnet deployment: create vault → deposit → open agent session → allowed payment → blocked attack → upgrade through the timelock → `panic` → recovery, all on the same vault address |
+| 5 | **Publication** | Merge to `master`, release tag, updated README, DoraHacks page and IBITI Labs website describing exactly this state |
+| 6 | **Independent audit** | Professional audit of the vault, sessions and upgrade path; public bug bounty |
+| 7 | **Mainnet** | Only after the audit; commercial licenses for production use (BUSL-1.1, see `LICENSING.md`) |
+
+Later: ERC-4337 / ERC-7579 smart-account integration, agent identity (ERC-8004), multi-chain deployments, B2B API.
+
+## Rules for every public update
+
+1. GitHub, DoraHacks and the website describe the same version as this page.
+2. "Done" means merged, tested and documented; "in development" and "planned" are labelled as such.
+3. Nothing is described as audited or production-ready before the independent audit.

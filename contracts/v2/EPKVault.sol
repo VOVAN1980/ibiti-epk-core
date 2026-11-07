@@ -642,36 +642,39 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
 
     // slither-disable-start timestamp
-    // timestamp: session expiry is seconds-to-days; validator skew is irrelevant.
+    // timestamp: checks that the requested expiry lies within the envelope's max TTL (seconds-to-days).
     /// @notice Open an agent session instantly (admin or session manager), inside an active envelope.
-    ///         The session may make the envelope's calls, with its own budget per asset, until it
-    ///         expires; it dies with `panic`/`revokeAll` and can be closed with `revokePolicy`.
+    ///         The session may make the envelope's calls, with its own budget per asset, until
+    ///         `validUntil`; it dies with `panic`/`revokeAll` and can be closed with `revokePolicy`.
     /// @param signer session key that signs batches (can be the agent's own key)
     /// @param agent the only address allowed to submit the session's batches
-    function openSession(uint256 envelopeId, address signer, address agent, uint48 ttl)
+    /// @param validUntil absolute expiry; must be in the future and at most `maxTtl` from now
+    function openSession(uint256 envelopeId, address signer, address agent, uint48 validUntil)
         external
         returns (uint256 policyId)
     {
         if (msg.sender != admin && msg.sender != sessionManager) revert NotSessionManager();
         if (paused) revert IsPaused();
         Envelope memory env = envelopes[envelopeId];
-        if (!env.active || ttl == 0 || ttl > env.maxTtl) revert OutsideEnvelope();
+        if (
+            envelopeId >= type(uint64).max || !env.active || validUntil <= block.timestamp
+                || validUntil > block.timestamp + env.maxTtl
+        ) revert OutsideEnvelope();
         if (signer == address(0) || agent == address(0)) revert ZeroAddress();
         if (signer == address(this)) revert BadRole(signer);
 
-        uint48 until = uint48(block.timestamp) + ttl;
         policyId = nextPolicyId++;
         policies[policyId] = Policy({
             signer: signer,
             active: true,
-            validUntil: until,
+            validUntil: validUntil,
             epoch: epoch,
             maxValuePerCall: env.maxValuePerCall,
             validator: address(0),
             envelope: uint64(envelopeId) + 1
         });
-        agentPermission[policyId][agent] = AgentPermission({allowed: true, validUntil: uint40(until)});
-        emit SessionOpened(policyId, envelopeId, signer, agent, until);
+        agentPermission[policyId][agent] = AgentPermission({allowed: true, validUntil: uint40(validUntil)});
+        emit SessionOpened(policyId, envelopeId, signer, agent, validUntil);
     }
     // slither-disable-end timestamp
 
@@ -897,7 +900,10 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         if (deadline == 0) revert DeadlineRequired();
         if (deadline <= block.timestamp) revert Expired();
         if (p.validUntil != 0 && block.timestamp > p.validUntil) revert Expired();
+        _requireAgent(policyId);
+    }
 
+    function _requireAgent(uint256 policyId) internal view {
         AgentPermission memory ap = agentPermission[policyId][msg.sender];
         if (!ap.allowed) revert AgentNotAllowed();
         if (ap.validUntil != 0 && block.timestamp > ap.validUntil) revert AgentExpired();

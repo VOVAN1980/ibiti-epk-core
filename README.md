@@ -14,6 +14,7 @@ It enables safe delegated execution for agents **without implicit approve(∞)**
 - [Security review (v2, internal)](docs/SECURITY_REVIEW_v2.md)
 - [Upgrade architecture (v2)](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Slither triage (v2)](docs/SLITHER_TRIAGE.md)
+- [Roadmap — single source of truth for GitHub, DoraHacks and the website](docs/ROADMAP.md)
 - [Integration](docs/INTEGRATION.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Testnet deployment + smoke evidence](docs/TESTNET_ADDRESSES_UPDATED.md)
@@ -34,6 +35,7 @@ It enables safe delegated execution for agents **without implicit approve(∞)**
 - **Destination allowlist** for transfers, approvals and native value
 - **Signed batches**; token allowances can never outlive the batch that created them
 - **Optional independent co-signer** for large outflows
+- **Agent sessions**: AI agents get instant, short-lived sessions with their own budgets — only inside envelopes the owner approved through the timelock
 - **Tighten instantly, loosen only through a timelock** that guardians can veto
 - **`panic()`**: one call pauses the vault and invalidates every policy and pending change
 - **Upgradeable without moving funds — only by the owner's decision**: permanent proxy address, registry of reviewed releases, 2× timelock, guardian veto; nobody (including IBITI) can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md))

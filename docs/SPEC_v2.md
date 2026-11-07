@@ -28,6 +28,7 @@ v2 fixes this by construction: **every customer gets their own vault**. Funds si
 | **Admin** | multisig / cold key | tighten instantly; **schedule** loosening changes | loosen without the timelock; be a guardian |
 | **Guardians** (≥ 2) | independent people / monitoring bots | pause, revoke, cancel pending changes, lower limits, `panic` | move funds, loosen anything, unpause, block their own removal |
 | **Recovery** (optional, recommended) | cold key | replace a lost or compromised admin (2× delay); veto pending changes | move funds, execute admin operations |
+| **Session manager** (optional) | hot key of the operator's backend | open agent sessions instantly inside approved envelopes; close sessions | widen any envelope, create ordinary policies, open sessions while paused |
 
 ## 4. Lifecycle
 
@@ -100,6 +101,30 @@ See [SECURITY_REVIEW_v2.md §3](SECURITY_REVIEW_v2.md#3-residual-risks-and-desig
 - Track every asset the vault holds; untracked assets, positions in other tokens and NFTs are not limited.
 - External validators must key their state by `msg.sender` (the vault) and should be immutable — a validator's own owner could otherwise change its rules outside the vault timelock.
 - Guardians can cause denial of service (never theft); two colluding guardians can keep the vault frozen.
+
+## 10b. Agent sessions (instant, bounded delegation for AI agents)
+
+A **session** gives one agent its own key, its own budget and an expiry — opened **instantly**, without waiting for the timelock, but only inside an **envelope** the owner approved in advance.
+
+**Envelope** (session template, id chosen by the admin):
+
+| Setting | Function | Widening | Narrowing |
+|---|---|---|---|
+| on/off, max TTL, max native value per call | `setEnvelope(id, active, maxTtl, maxValuePerCall)` | timelock | instant (admin / guardian) |
+| allowed calls `(target, selector)` | `setEnvelopeCall(id, target, selector, allowed)` | timelock | instant |
+| budget per asset **for each session** (per window of that asset) | `setEnvelopeBudgetCap(id, asset, cap)` | timelock | instant |
+
+Narrowing an envelope applies to **every open session of it at once** (sessions read the envelope's calls and caps live). Switching an envelope off stops all its sessions.
+
+**Session manager**: an optional hot key (e.g. the operator's backend) set via `setSessionManager` — setting it is timelocked, removing it (`address(0)`) is instant.
+
+**Opening**: `openSession(envelopeId, signer, agent, ttl)` — by the admin or the session manager; not while paused; `ttl ≤ maxTtl`. Creates a policy with `envelope = envelopeId + 1`, expiry `now + ttl`, the envelope's value cap, and the agent allowed until the same expiry. `signer` can be the agent's own key (fully autonomous agent).
+
+**Spending**: every outflow of a session is charged twice — against the **vault-wide** limit of the asset and against the **session's own budget** for that asset (a token bucket with capacity = the envelope's current cap; untouched = full). A session cannot move an asset its envelope gives no budget for. Destinations, allowance and co-signer rules apply as for any policy.
+
+**Closing**: expiry; `revokePolicy` (admin, guardian or session manager); switching the envelope off; `panic` / `revokeAll`.
+
+**Guarantee** (tested with a compromised session manager and compromised session keys, `test/v2/EPKVault.sessions.t.sol`): total outflow stays within the vault-wide limit, each session stays within its own budget, only allowlisted destinations receive funds, and nothing can be widened without the timelock.
 
 ## 11. Upgrades (opt-in, same address)
 

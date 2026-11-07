@@ -66,7 +66,7 @@ abstract contract SessionBase is Test {
     function _open(uint256 agentPk, uint48 ttl) internal returns (uint256 sid) {
         address agent = vm.addr(agentPk);
         vm.prank(manager);
-        sid = vault.openSession(ENV, agent, agent, ttl);
+        sid = vault.openSession(ENV, agent, agent, uint48(_now() + ttl));
     }
 
     function _one(address target, uint256 value, bytes memory data) internal pure returns (EPKVault.Call[] memory c) {
@@ -151,18 +151,18 @@ contract EPKVaultSessionsTest is SessionBase {
         address agent = vm.addr(AGENT_A);
         vm.startPrank(manager);
         vm.expectRevert(EPKVault.OutsideEnvelope.selector);
-        vault.openSession(ENV, agent, agent, 2 days); // longer than maxTtl
+        vault.openSession(ENV, agent, agent, uint48(_now() + 2 days)); // longer than maxTtl
         vm.expectRevert(EPKVault.OutsideEnvelope.selector);
-        vault.openSession(ENV, agent, agent, 0);
+        vault.openSession(ENV, agent, agent, uint48(_now())); // not in the future
         vm.expectRevert(EPKVault.OutsideEnvelope.selector);
-        vault.openSession(ENV + 1, agent, agent, 1 hours); // unknown / inactive envelope
+        vault.openSession(ENV + 1, agent, agent, uint48(_now() + 1 hours)); // unknown / inactive envelope
         vm.expectRevert(abi.encodeWithSelector(EPKVault.BadRole.selector, address(vault)));
-        vault.openSession(ENV, address(vault), agent, 1 hours);
+        vault.openSession(ENV, address(vault), agent, uint48(_now() + 1 hours));
         vm.stopPrank();
 
         vm.prank(attacker);
         vm.expectRevert(EPKVault.NotSessionManager.selector);
-        vault.openSession(ENV, agent, agent, 1 hours);
+        vault.openSession(ENV, agent, agent, uint48(_now() + 1 hours));
     }
 
     function test_sessionCanOnlyDoWhatTheEnvelopeAllows() public {
@@ -235,7 +235,7 @@ contract EPKVaultSessionsTest is SessionBase {
         _actFails(b, AGENT_B, _pay(1e18), abi.encodeWithSelector(EPKVault.PolicyInactive.selector));
         vm.prank(manager);
         vm.expectRevert(EPKVault.OutsideEnvelope.selector);
-        vault.openSession(ENV, vm.addr(AGENT_A), vm.addr(AGENT_A), 1 hours);
+        vault.openSession(ENV, vm.addr(AGENT_A), vm.addr(AGENT_A), uint48(_now() + 1 hours));
     }
 
     function test_wideningTheEnvelopeNeedsTheTimelock() public {
@@ -279,7 +279,7 @@ contract EPKVaultSessionsTest is SessionBase {
         vault.setSessionManager(address(0));
         vm.prank(manager);
         vm.expectRevert(EPKVault.NotSessionManager.selector);
-        vault.openSession(ENV, vm.addr(AGENT_A), vm.addr(AGENT_A), 1 hours);
+        vault.openSession(ENV, vm.addr(AGENT_A), vm.addr(AGENT_A), uint48(_now() + 1 hours));
         vm.prank(manager);
         vm.expectRevert(EPKVault.NotAdminOrGuardian.selector);
         vault.revokePolicy(0);
@@ -291,7 +291,7 @@ contract EPKVaultSessionsTest is SessionBase {
         vault.panic();
         vm.prank(manager);
         vm.expectRevert(EPKVault.IsPaused.selector);
-        vault.openSession(ENV, vm.addr(AGENT_B), vm.addr(AGENT_B), 1 hours);
+        vault.openSession(ENV, vm.addr(AGENT_B), vm.addr(AGENT_B), uint48(_now() + 1 hours));
 
         bytes memory unpause = abi.encodeCall(EPKVault.unpause, ());
         vm.prank(admin);
@@ -351,7 +351,7 @@ contract CompromisedManagerHandler is Test {
         uint256 pk = uint256(keccak256(abi.encode("agent", sids.length, seed))) % 1e30 + 1;
         address agent = vm.addr(pk);
         vm.prank(manager);
-        try vault.openSession(7, agent, agent, uint48(bound(ttl, 1, 2 days))) returns (uint256 sid) {
+        try vault.openSession(7, agent, agent, uint48(vm.getBlockTimestamp() + bound(ttl, 1, 2 days))) returns (uint256 sid) {
             pks.push(pk);
             sids.push(sid);
             openedAt.push(vm.getBlockTimestamp());
