@@ -28,3 +28,6 @@ coverage.summary.txt
 *.pptx
 КОМАНДЫ ЗАПУСКА.txt
 ibiticoin.github.io/
+
+# Claude Code local worktrees / settings
+.claude/

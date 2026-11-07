@@ -14,6 +14,8 @@ abstract contract SessionBase is Test {
     uint128 constant VAULT_CAP = 100e18; // per day, whole vault
     uint128 constant SESSION_BUDGET = 30e18; // per day, each session
     uint256 constant ENV = 7; // envelope id
+    uint256 constant OP_PK = 0x0F;
+    uint256 opPid;
 
     EPKVaultFactory factory;
     EPKVault vault;
@@ -47,6 +49,10 @@ abstract contract SessionBase is Test {
         vault.setEnvelopeCall(ENV, address(token), IERC20.transfer.selector, true);
         vault.setEnvelopeCall(ENV, friend, bytes4(0), true);
         vault.setEnvelopeBudgetCap(ENV, address(token), SESSION_BUDGET);
+        // an ordinary (non-session) policy next to the sessions
+        opPid = vault.createPolicy(vm.addr(OP_PK), 0, 0, address(0));
+        vault.setAgent(opPid, vm.addr(OP_PK), true, 0);
+        vault.setCall(opPid, address(token), IERC20.transfer.selector, true);
         vault.finalizeSetup();
         vm.stopPrank();
 
@@ -312,10 +318,136 @@ contract EPKVaultSessionsTest is SessionBase {
     }
 
     function test_ordinaryPoliciesAreUnaffected() public {
-        assertEq(vault.budgetAvailable(0, address(token)), 0); // no policy 0 yet -> not a session
+        assertEq(vault.budgetAvailable(opPid, address(token)), 0); // not a session
         uint256 sid = _open(AGENT_A, 1 hours);
-        (,,,,,, uint64 env) = vault.policies(sid);
+        (,,,,,, uint64 env,) = vault.policies(sid);
         assertEq(env, ENV + 1);
+        _act(opPid, OP_PK, _pay(40e18)); // ordinary policy: only the vault-wide limit applies
+        assertEq(token.balanceOf(friend), 40e18);
+    }
+
+    // ------------------------------------------------------------------ sessions review fixes
+
+    function _timelock(bytes memory op) internal {
+        vm.prank(admin);
+        vault.schedule(op, keccak256(op));
+        _warp(DELAY);
+        vm.prank(admin);
+        vault.executeScheduled(op, keccak256(op));
+    }
+
+    /// Review F1: an envelope id >= 2^64 can never alias a smaller envelope.
+    function test_largeEnvelopeIdsAreRejected() public {
+        uint256 big = (uint256(1) << 64) + ENV;
+        _timelock(abi.encodeCall(EPKVault.setEnvelope, (big, true, 365 days, 1 ether)));
+        vm.prank(manager);
+        vm.expectRevert(EPKVault.OutsideEnvelope.selector);
+        vault.openSession(big, vm.addr(AGENT_A), vm.addr(AGENT_A), uint48(_now() + 1 hours));
+    }
+
+    /// Review F2: the session manager can close sessions, never ordinary policies.
+    function test_managerCannotRevokeOrdinaryPolicies() public {
+        vm.prank(manager);
+        vm.expectRevert(EPKVault.NotAdminOrGuardian.selector);
+        vault.revokePolicy(opPid);
+        _act(opPid, OP_PK, _pay(1e18));
+    }
+
+    /// Review F3: sessions live in their own id range and per-policy settings never apply to them.
+    function test_sessionsHaveTheirOwnIdsAndCannotBeWidened() public {
+        uint256 nextPolicy = vault.nextPolicyId();
+        uint256 sid = _open(AGENT_A, 1 hours);
+        assertEq(sid, uint256(1) << 128);
+        assertEq(vault.nextPolicyId(), nextPolicy, "sessions do not shift policy ids");
+
+        bytes memory err = abi.encodeWithSelector(EPKVault.IsSession.selector);
+        bytes[4] memory ops = [
+            abi.encodeCall(EPKVault.updatePolicy, (sid, vm.addr(AGENT_A), 0, 10 ether, address(0))),
+            abi.encodeCall(EPKVault.setAgent, (sid, attacker, true, 0)),
+            abi.encodeCall(EPKVault.setCall, (sid, address(token), IERC20.approve.selector, true)),
+            abi.encodeCall(EPKVault.setPolicyActive, (sid, true))
+        ];
+        for (uint256 i = 0; i < ops.length; i++) {
+            vm.prank(admin);
+            vault.schedule(ops[i], bytes32(i));
+        }
+        _warp(DELAY);
+        for (uint256 i = 0; i < ops.length; i++) {
+            vm.prank(admin);
+            vm.expectRevert(err);
+            vault.executeScheduled(ops[i], bytes32(i));
+        }
+    }
+
+    /// Review F4: disallowCall on a session is refused instead of silently doing nothing.
+    function test_disallowCallOnASessionIsRefused() public {
+        uint256 sid = _open(AGENT_A, 1 hours);
+        vm.prank(guardian);
+        vm.expectRevert(EPKVault.IsSession.selector);
+        vault.disallowCall(sid, address(token), IERC20.transfer.selector);
+    }
+
+    /// Review F5: lowering the envelope's value cap applies to open sessions at once.
+    function test_loweringTheValueCapAppliesToOpenSessions() public {
+        uint256 sid = _open(AGENT_A, 1 hours);
+        vm.prank(guardian);
+        vault.setEnvelope(ENV, true, 1 days, 0.01 ether);
+        _actFails(sid, AGENT_A, _one(friend, 0.05 ether, ""), abi.encodeWithSelector(EPKVault.ValueTooHigh.selector));
+    }
+
+    /// Review F6: switching an envelope off ends its sessions for good; re-activation does not revive them.
+    function test_reactivatingAnEnvelopeDoesNotReviveSessions() public {
+        uint256 sid = _open(AGENT_A, 1 days);
+        vm.prank(guardian);
+        vault.setEnvelope(ENV, false, 1 days, 0.1 ether);
+        _timelock(abi.encodeCall(EPKVault.setEnvelope, (ENV, true, 1 days, 0.1 ether)));
+        _actFails(sid, AGENT_A, _pay(1e18), abi.encodeWithSelector(EPKVault.PolicyInactive.selector));
+        uint256 fresh = _open(AGENT_B, 1 hours); // new sessions work again
+        _act(fresh, AGENT_B, _pay(1e18));
+    }
+
+    /// Design: only the session manager opens sessions — the admin key alone can never spend instantly.
+    function test_adminCannotOpenSessions() public {
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.NotSessionManager.selector);
+        vault.openSession(ENV, vm.addr(AGENT_A), vm.addr(AGENT_A), uint48(_now() + 1 hours));
+    }
+
+    /// Design: the session manager is a separate key from admin, guardians and recovery.
+    function test_sessionManagerRoleSeparation() public {
+        _timelock(abi.encodeCall(EPKVault.setSessionManager, (address(0)))); // (removal is instant anyway)
+        vm.startPrank(admin);
+        bytes[2] memory ops = [
+            abi.encodeCall(EPKVault.setSessionManager, (admin)), abi.encodeCall(EPKVault.setSessionManager, (guardian))
+        ];
+        vm.stopPrank();
+        for (uint256 i = 0; i < 2; i++) {
+            vm.prank(admin);
+            vault.schedule(ops[i], bytes32(i));
+        }
+        _warp(DELAY);
+        vm.prank(admin);
+        vm.expectRevert(abi.encodeWithSelector(EPKVault.BadRole.selector, admin));
+        vault.executeScheduled(ops[0], bytes32(0));
+        vm.prank(admin);
+        vm.expectRevert(abi.encodeWithSelector(EPKVault.BadRole.selector, guardian));
+        vault.executeScheduled(ops[1], bytes32(uint256(1)));
+    }
+
+    /// Design: no sessions before the vault goes live.
+    function test_noSessionsBeforeSetupIsFinished() public {
+        address[] memory g = new address[](2);
+        g[0] = guardian;
+        g[1] = guardian2;
+        vm.prank(admin);
+        EPKVault fresh = EPKVault(payable(factory.createVault(g, DELAY, address(0), bytes32("pre"))));
+        vm.startPrank(admin);
+        fresh.setSessionManager(manager);
+        fresh.setEnvelope(ENV, true, 1 days, 0);
+        vm.stopPrank();
+        vm.prank(manager);
+        vm.expectRevert(EPKVault.SetupNotFinished.selector);
+        fresh.openSession(ENV, vm.addr(AGENT_A), vm.addr(AGENT_A), uint48(_now() + 1 hours));
     }
 }
 

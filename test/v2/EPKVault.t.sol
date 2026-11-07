@@ -812,7 +812,7 @@ contract EPKVaultTest is Test {
         _activate(abi.encodeCall(EPKVault.untrackAsset, (address(falseToken))));
         _activate(abi.encodeCall(EPKVault.setDelay, (2 days)));
 
-        (,,,, uint128 maxValue,,) = vault.policies(pid);
+        (,,,, uint128 maxValue,,,) = vault.policies(pid);
         assertEq(maxValue, 2 ether);
         assertEq(vault.recovery(), newRecovery);
         assertEq(vault.coSigner(), address(0));

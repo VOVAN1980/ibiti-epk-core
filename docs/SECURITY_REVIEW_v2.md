@@ -76,6 +76,24 @@ No critical or high findings; the only way for a vault to change its code is an 
 
 Residual items for a professional audit / formal verification: storage compatibility of every future release, a formal proof that only `scheduleUpgrade` operations can set the implementation slot, correctness of each release's `_migrate` across skip paths, guardian/recovery liveness game theory, registry-owner key setup, chain-specific `codehash`/`extcodecopy` behaviour.
 
+### 1d. Agent sessions — review round 4
+
+Scope: envelopes, session manager, `openSession`, per-session budgets (commit 05b15ed and follow-ups). The core guarantee held: with a compromised session manager **and** compromised session keys, the vault-wide limit, every session budget and the destination allowlist were never exceeded.
+
+| ID | Severity | Finding | Status | Regression test |
+|---|---|---|---|---|
+| F1 | Medium | Envelope ids ≥ 2^64 were truncated when stored, so a session could run on another envelope's calls/budgets and escape "envelope off" | **Fixed** — such ids are rejected | `test_largeEnvelopeIdsAreRejected` |
+| F2 | Medium | The session manager could revoke ordinary policies (availability) | **Fixed** — it may close sessions only | `test_managerCannotRevokeOrdinaryPolicies` |
+| F3 | Low | Sessions and policies shared one id counter (timelocked follow-ups could hit a session); per-policy timelocked changes could widen a session beyond its envelope | **Fixed** — sessions use ids from 2^128 (`nextSessionId`); `updatePolicy`/`setAgent`/`setCall`/`setPolicyActive` refuse sessions (`IsSession`) | `test_sessionsHaveTheirOwnIdsAndCannotBeWidened` |
+| F4 | Low | `disallowCall` on a session silently did nothing | **Fixed** — refused (`IsSession`); narrow the envelope or revoke the session | `test_disallowCallOnASessionIsRefused` |
+| F5 | Low | Lowering an envelope's value cap / max TTL did not reach open sessions | **Fixed** for the value cap (applied live); `maxTtl` documented as limiting new sessions (use revoke / envelope off for open ones) | `test_loweringTheValueCapAppliesToOpenSessions` |
+| F6 | Low | Re-activating an envelope revived the sessions it had stopped | **Fixed** — envelope `generation` is bumped on every switch-off; older sessions stay dead | `test_reactivatingAnEnvelopeDoesNotReviveSessions` |
+| D1 | Design | The admin key could open sessions and so spend instantly | **Fixed** — only the session manager opens sessions | `test_adminCannotOpenSessions` |
+| D4 | Design | Sessions could be opened before `finalizeSetup` | **Fixed** | `test_noSessionsBeforeSetupIsFinished` |
+| D5 | Design | Session manager could also be admin / guardian / recovery | **Fixed** — roles are kept apart in every setter | `test_sessionManagerRoleSeparation` |
+| D2, D3 | Design | A compromised manager can open many sessions (bounded only by the vault-wide limit) and is back after an unpause | **Documented** — playbook: remove the manager (instant) + `panic` or switch the envelope off; envelope-wide aggregate budgets are a candidate for a later release | — |
+| D7–D10 | Info | Internal getters (events for operations; SDK hardcodes the EIP-712 name/version), `budgetAvailable` ignores session status, inflows can offset outflows | **Documented** | — |
+
 ## 2. Verified as sound by the review
 
 - No path around `onlyTimelocked`: no delegatecall; `execute`/`setCall` reject the vault as target; `execute` and `executeScheduled` share one reentrancy lock; timelocked functions make no external calls.
@@ -105,13 +123,13 @@ Commands (Foundry 1.5.1, solc 0.8.24, via-IR):
 ```bash
 forge test
 forge test --match-path "test/v2/*"
-forge coverage --ir-minimum --match-path "test/v2/*" --report summary
+FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --match-path "test/v2/*" --report summary
 ```
 
 Results on 2026-11-06:
 
-- Whole repository: **313 / 313 tests passing** (v1: 202, v2: 111).
-- Agent sessions: 15 unit tests + 3 stateful invariants with a compromised session manager and compromised session keys (`test/v2/EPKVault.sessions.t.sol`).
+- Whole repository: **322 / 322 tests passing** (v1: 202, v2: 120).
+- Agent sessions: 24 unit tests + 3 stateful invariants with a compromised session manager and compromised session keys (`test/v2/EPKVault.sessions.t.sol`).
 - Static analysis: Slither reports **0** results on `contracts/v2/` — every original finding fixed or justified with proof tests, see [SLITHER_TRIAGE.md](SLITHER_TRIAGE.md); reentrancy and native-transfer proofs in `test/v2/EPKVault.reentrancy.t.sol`.
 - v2 unit + fuzz: 55 passing; fuzz tests at 257 runs each, including `testFuzz_compromisedOperatorCannotDrain` (operator signer, agent and co-signer all compromised).
 - v2 upgrade mechanism: 27 unit/fuzz + 2 stateful invariants (`test/v2/EPKVault.upgrade.t.sol`), see [EPK_V2_UPGRADE_ARCHITECTURE.md §10](EPK_V2_UPGRADE_ARCHITECTURE.md#10-test-evidence).
@@ -124,11 +142,11 @@ Results on 2026-11-06:
 
 ## 5. Coverage
 
-`forge coverage --ir-minimum --match-path "test/v2/*" --report summary`:
+`FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --match-path "test/v2/*" --report summary`:
 
 | File | Lines | Statements | Branches | Functions |
 |---|---|---|---|---|
-| `contracts/v2/EPKVault.sol` | 97.69% (422/432) | 94.36% (569/603) | 81.90% (95/116) | 100% (78/78) |
+| `contracts/v2/EPKVault.sol` | 97.09% (501/516) | 94.48% (684/724) | 82.86% (116/140) | 100% (95/95) |
 | `contracts/v2/EPKRegistry.sol` | 100% (46/46) | 94.44% (51/54) | 75.00% (9/12) | 100% (9/9) |
 | `contracts/v2/EPKVaultFactory.sol` | 100% (17/17) | 95.00% (19/20) | 50.00% (1/2) | 100% (5/5) |
 

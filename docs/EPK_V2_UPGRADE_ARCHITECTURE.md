@@ -104,7 +104,7 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 
 | Threat | Mitigation |
 |---|---|
-| Storage collision between versions | append-only layout in one contract (no inherited state; OZ 5 uses ERC-7201 namespaced storage; slots 0–16, no overlap with ERC-1967 / `Initializable`); snapshot `docs/storage-layout/EPKVault-2.0.0.txt`; every release must diff against it (struct members too) |
+| Storage collision between versions | append-only layout in one contract (no inherited state; OZ 5 uses ERC-7201 namespaced storage; slots 0–22, no overlap with ERC-1967 / `Initializable`); snapshot `docs/storage-layout/EPKVault-2.0.0.txt`; every release must diff against it (struct members too) |
 | Initializer takeover | implementation runs `_disableInitializers()`; proxies are initialized in the same transaction they are created; `initialize` rejects the vault itself as admin / guardian / recovery |
 | Migration called by an outsider | base `migrate()` is not overridable and requires the vault itself as caller; only attachable via `scheduleUpgrade` |
 | Migration step lost when a vault skips a release | `_migrate(from)` receives the version captured **before** `reinitializer(n)` runs and must run every missing step |
@@ -136,7 +136,7 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 6. Tests: full suite + an upgrade test from **every** previous release (including skipping releases) + invariants after upgrade.
 7. Independent audit → `proposeRelease` → 7 days → announce.
 8. Static analysis: Slither must report no unexplained findings ([SLITHER_TRIAGE.md](SLITHER_TRIAGE.md)).
-9. Bytecode budget: `EPKVault` is 21,329 B of the 24,576 B limit. New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
+9. Bytecode budget: `EPKVault` is 23,776 B of the 24,576 B limit (v2 is compiled with optimizer_runs = 1 for size). New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
 
 ## 10. Test evidence
 

@@ -21,7 +21,7 @@ EPK v2 today:
 - **Separate roles**: operator, admin, ≥ 2 guardians (can only stop), recovery key, session manager.
 - **Tighten instantly, loosen only through a timelock** that guardians can veto; `panic()` stops everything.
 - **Upgradeable without moving funds — only by the owner's decision**: registry of reviewed releases (7-day public delay), ≥ 2-day per-vault delay, guardian veto; nobody (including IBITI) can upgrade a vault for its owner.
-- **Quality**: 313 tests incl. fuzz and stateful invariants (compromised operator, compromised admin, compromised session manager), three internal security reviews, Slither with every finding fixed or justified.
+- **Quality**: 322 tests incl. fuzz and stateful invariants (compromised operator, compromised admin, compromised session manager), four internal security reviews, Slither with every finding fixed or justified.
 
 ## Next milestones
 

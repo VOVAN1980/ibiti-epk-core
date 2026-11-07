@@ -71,6 +71,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     uint256 public constant GRACE_PERIOD = 14 days;
     uint256 internal constant MAX_TRACKED_ASSETS = 16;
     uint256 internal constant MAX_CALLS = 16;
+    uint256 internal constant SESSION_ID_BASE = 1 << 128;
     /// @notice Guardians required before the vault can go live (admin is never a guardian).
     uint256 internal constant MIN_GUARDIANS = 2;
     /// @notice An upgrade always waits at least this long, whatever the vault delay is.
@@ -91,6 +92,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         uint128 maxValuePerCall; // native value cap per call
         address validator; // optional extra rules (0 = none)
         uint64 envelope; // sessions: envelopeId + 1 (calls and budgets come from that envelope); 0 = policy
+        uint32 generation; // sessions: envelope generation at opening (switching the envelope off ends it)
     }
 
     struct AgentPermission {
@@ -122,7 +124,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     struct Envelope {
         bool active;
         uint48 maxTtl; // longest session that may be opened
-        uint128 maxValuePerCall; // native value cap of every session
+        uint128 maxValuePerCall; // native value cap of every session (applies live)
+        uint32 generation; // bumped on every switch-off: sessions of an older generation stay dead
     }
 
     /// @notice A session's own spending bucket for one asset (capacity = envelope budget cap).
@@ -166,6 +169,10 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     mapping(uint256 => mapping(bytes32 => bool)) public envelopeCallAllowed;
     mapping(uint256 => mapping(address => uint128)) public envelopeBudgetCap;
     mapping(uint256 => mapping(address => Budget)) public policyBudgets;
+
+    /// @notice Sessions get ids from SESSION_ID_BASE upward, so opening sessions never shifts the ids
+    ///         that timelocked `createPolicy` operations will return.
+    uint256 public nextSessionId;
 
     // Future versions: append new state variables BELOW this line only.
 
@@ -229,6 +236,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     error SetupAlreadyFinished();
     error SetupNotFinished();
     error IsPaused();
+    error IsSession();
     error BadOperation();
     error OperationExists();
     error UnknownOperation();
@@ -492,7 +500,10 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     /// @notice Deactivates a policy (or closes a session) and invalidates any signature already queued
     ///         for it. Admin, any guardian or the session manager.
     function revokePolicy(uint256 policyId) external {
-        if (msg.sender != admin && !isGuardian[msg.sender] && msg.sender != sessionManager) revert NotAdminOrGuardian();
+        // the session manager may only close sessions, never ordinary policies
+        if (msg.sender != admin && !isGuardian[msg.sender]) {
+            if (msg.sender != sessionManager || policies[policyId].envelope == 0) revert NotAdminOrGuardian();
+        }
         _requirePolicy(policyId);
         policies[policyId].active = false;
         uint256 n = nonces[policyId] + 1;
@@ -507,8 +518,9 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         emit AgentSet(policyId, agent, false, 0);
     }
 
+    /// @dev Sessions use their envelope's calls: narrow the envelope (or revoke the session) instead.
     function disallowCall(uint256 policyId, address target, bytes4 selector) external onlyAdminOrGuardian {
-        _requirePolicy(policyId);
+        _requireOrdinaryPolicy(policyId);
         callAllowed[policyId][_callKey(target, selector)] = false;
         emit CallSet(policyId, target, selector, false);
     }
@@ -568,7 +580,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
             epoch: epoch,
             maxValuePerCall: maxValuePerCall,
             validator: validator,
-            envelope: 0
+            envelope: 0,
+            generation: 0
         });
         emit PolicyCreated(policyId, signer);
         emit PolicyUpdated(policyId, signer, validUntil, maxValuePerCall, validator);
@@ -582,7 +595,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         uint128 maxValuePerCall,
         address validator
     ) external onlyTimelocked {
-        _requirePolicy(policyId);
+        _requireOrdinaryPolicy(policyId);
         if (signer == address(0)) revert ZeroAddress();
         if (signer == address(this) || validator == address(this)) revert BadRole(address(this));
         Policy storage p = policies[policyId];
@@ -607,20 +620,40 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         }
     }
 
-    /// @notice Hot key (e.g. the operator's backend) allowed to open and close sessions instantly
-    ///         inside envelopes. Setting one is timelocked; removing it (address(0)) is instant.
+    /// @dev Sessions are governed by their envelope; per-policy settings never apply to them.
+    function _requireOrdinaryPolicy(uint256 policyId) internal view {
+        _requirePolicy(policyId);
+        if (policies[policyId].envelope != 0) revert IsSession();
+    }
+
+    /// @dev The session manager is a separate hot key: never the admin, a guardian or the recovery key.
+    function _isSessionManager(address account) internal view returns (bool) {
+        return account != address(0) && account == sessionManager;
+    }
+
+    /// @notice Hot key (e.g. the operator's backend) that alone may open sessions inside envelopes, and
+    ///         may close them. Setting one is timelocked; removing it (address(0)) is instant.
     function setSessionManager(address manager) external {
         _checkChange(manager != address(0));
-        if (manager == address(this)) revert BadRole(manager);
+        if (
+            manager != address(0)
+                && (manager == address(this) || manager == admin || manager == recovery || isGuardian[manager])
+        ) revert BadRole(manager);
         sessionManager = manager;
         emit SessionManagerSet(manager);
     }
 
     /// @notice Outer bounds for sessions. Widening or (re)activating is timelocked; narrowing is instant.
+    ///         The value cap applies live to open sessions; `maxTtl` limits sessions opened from now on.
+    ///         Switching an envelope off ends all its sessions for good (a later re-activation does not
+    ///         revive them).
     function setEnvelope(uint256 envelopeId, bool active, uint48 maxTtl, uint128 maxValuePerCall) external {
         Envelope memory old = envelopes[envelopeId];
         _checkChange(active && (!old.active || maxTtl > old.maxTtl || maxValuePerCall > old.maxValuePerCall));
-        envelopes[envelopeId] = Envelope({active: active, maxTtl: maxTtl, maxValuePerCall: maxValuePerCall});
+        uint32 generation = old.generation;
+        if (old.active && !active) generation++;
+        envelopes[envelopeId] =
+            Envelope({active: active, maxTtl: maxTtl, maxValuePerCall: maxValuePerCall, generation: generation});
         emit EnvelopeSet(envelopeId, active, maxTtl, maxValuePerCall);
     }
 
@@ -653,7 +686,9 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         external
         returns (uint256 policyId)
     {
-        if (msg.sender != admin && msg.sender != sessionManager) revert NotSessionManager();
+        // only the dedicated hot key: the admin key alone can never move funds instantly
+        if (!_isSessionManager(msg.sender)) revert NotSessionManager();
+        if (!setupDone) revert SetupNotFinished();
         if (paused) revert IsPaused();
         Envelope memory env = envelopes[envelopeId];
         if (
@@ -663,7 +698,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         if (signer == address(0) || agent == address(0)) revert ZeroAddress();
         if (signer == address(this)) revert BadRole(signer);
 
-        policyId = nextPolicyId++;
+        policyId = SESSION_ID_BASE + nextSessionId++;
         policies[policyId] = Policy({
             signer: signer,
             active: true,
@@ -671,7 +706,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
             epoch: epoch,
             maxValuePerCall: env.maxValuePerCall,
             validator: address(0),
-            envelope: uint64(envelopeId) + 1
+            envelope: uint64(envelopeId) + 1,
+            generation: env.generation
         });
         agentPermission[policyId][agent] = AgentPermission({allowed: true, validUntil: uint40(validUntil)});
         emit SessionOpened(policyId, envelopeId, signer, agent, validUntil);
@@ -679,20 +715,20 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     // slither-disable-end timestamp
 
     function setPolicyActive(uint256 policyId, bool active) external onlyTimelocked {
-        _requirePolicy(policyId);
+        _requireOrdinaryPolicy(policyId);
         policies[policyId].active = active;
         emit PolicyStatus(policyId, active);
     }
 
     function setAgent(uint256 policyId, address agent, bool allowed, uint40 validUntil) external onlyTimelocked {
-        _requirePolicy(policyId);
+        _requireOrdinaryPolicy(policyId);
         if (agent == address(0)) revert ZeroAddress();
         agentPermission[policyId][agent] = AgentPermission({allowed: allowed, validUntil: validUntil});
         emit AgentSet(policyId, agent, allowed, validUntil);
     }
 
     function setCall(uint256 policyId, address target, bytes4 selector, bool allowed) external onlyTimelocked {
-        _requirePolicy(policyId);
+        _requireOrdinaryPolicy(policyId);
         if (target == address(0) || target == address(this)) revert BadTarget();
         callAllowed[policyId][_callKey(target, selector)] = allowed;
         emit CallSet(policyId, target, selector, allowed);
@@ -758,7 +794,9 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         if (guardian == address(0)) revert ZeroAddress();
         if (isGuardian[guardian] == enabled) return;
         if (enabled) {
-            if (guardian == admin || guardian == recovery || guardian == address(this)) revert BadRole(guardian);
+            if (guardian == admin || guardian == recovery || guardian == address(this) || _isSessionManager(guardian)) {
+                revert BadRole(guardian);
+            }
             isGuardian[guardian] = true;
             guardianCount++;
         } else {
@@ -774,7 +812,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         if (!isGuardian[oldGuardian]) revert BadRole(oldGuardian);
         if (
             newGuardian == address(0) || isGuardian[newGuardian] || newGuardian == admin || newGuardian == recovery
-                || newGuardian == address(this)
+                || newGuardian == address(this) || _isSessionManager(newGuardian)
         ) revert BadRole(newGuardian);
         isGuardian[oldGuardian] = false;
         isGuardian[newGuardian] = true;
@@ -790,7 +828,9 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
 
     function setAdmin(address newAdmin) external onlyTimelocked {
         if (newAdmin == address(0)) revert ZeroAddress();
-        if (newAdmin == address(this) || isGuardian[newAdmin] || newAdmin == recovery) revert BadRole(newAdmin);
+        if (newAdmin == address(this) || isGuardian[newAdmin] || newAdmin == recovery || _isSessionManager(newAdmin)) {
+            revert BadRole(newAdmin);
+        }
         emit AdminChanged(admin, newAdmin);
         admin = newAdmin;
     }
@@ -825,7 +865,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
 
     function setRecovery(address newRecovery) external onlyTimelocked {
-        if (newRecovery == admin || newRecovery == address(this) || isGuardian[newRecovery]) {
+        if (newRecovery == admin || newRecovery == address(this) || isGuardian[newRecovery] || _isSessionManager(newRecovery))
+        {
             revert BadRole(newRecovery);
         }
         recovery = newRecovery;
@@ -894,13 +935,20 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         p = policies[policyId];
         if (p.signer == address(0)) revert PolicyNotFound();
         if (!p.active || p.epoch != epoch) revert PolicyInactive();
-        // switching an envelope off stops every open session of it at once
-        if (p.envelope != 0 && !envelopes[p.envelope - 1].active) revert PolicyInactive();
+        if (p.envelope != 0) _applyEnvelope(p);
 
         if (deadline == 0) revert DeadlineRequired();
         if (deadline <= block.timestamp) revert Expired();
         if (p.validUntil != 0 && block.timestamp > p.validUntil) revert Expired();
         _requireAgent(policyId);
+    }
+
+    /// @dev Sessions follow their envelope live: switched off (or switched off and back on) ends them,
+    ///      and a lowered value cap applies at once.
+    function _applyEnvelope(Policy memory p) internal view {
+        Envelope memory e = envelopes[p.envelope - 1];
+        if (!e.active || e.generation != p.generation) revert PolicyInactive();
+        if (e.maxValuePerCall < p.maxValuePerCall) p.maxValuePerCall = e.maxValuePerCall;
     }
 
     function _requireAgent(uint256 policyId) internal view {
