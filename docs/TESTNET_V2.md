@@ -4,9 +4,11 @@ Goal: prove on a real chain that the whole EPKVault lifecycle works — with the
 funds unchanged from start to finish. Network: BSC Testnet (chainId 97). Explorer:
 https://testnet.bscscan.com
 
-Status: **live on BSC Testnet since 2026-11-07** — steps 1–5 done (deploy, vault, agent payment,
-5 attacks rejected on-chain, panic). Steps 6–8 (recovery, upgrade) follow the timelocks. Evidence
-(addresses, tx hashes) is in `deployments/bsc-testnet/` and summarised below.
+Status: **live on BSC Testnet since 2026-11-07** — steps 1–6 done (deploy, vault, agent payment,
+5 attacks rejected on-chain, panic, recovery with a new session; the pre-panic session stays
+dead). Steps 7–8 (upgrade to 2.0.1) follow the 7-day release window: schedule on 2026-11-14,
+execute on 2026-11-16. Evidence (addresses, tx hashes) is in `deployments/bsc-testnet/` and
+summarised below.
 
 ## Roles (testnet keys in the local `.env`, never committed)
 
@@ -47,7 +49,7 @@ All 8 steps passed, with time travelled forward for steps 6–8:
 
 ## Evidence (BSC Testnet, 2026-11-07)
 
-All contracts are verified on BscScan (source code public). Gas for steps 1–5: about 0.0014 tBNB
+All contracts are verified on BscScan (source code public). Gas for steps 1–6: about 0.0014 tBNB
 (plus 0.01 tBNB sent to the role keys).
 
 ### Contracts
@@ -83,6 +85,10 @@ timelock delay 1 hour.
 | 4e | a stranger submits the agent's valid signature | [0x746c76f1…](https://testnet.bscscan.com/tx/0x746c76f1f772785726b0f5b79512b2f84dbb480a8d750ef2b1a2a9adf3834ce3) | **rejected**: `AgentNotAllowed` |
 | 5 | guardian presses `panic` | [0xe459a04d…](https://testnet.bscscan.com/tx/0xe459a04d459bf5d12d80c4a4e858673af8f5cd42cb88e77a34aa1f9fbd3d0939) | success; vault paused |
 | 5 | admin schedules `unpause` through the timelock (+1 h) | [0x35439ba3…](https://testnet.bscscan.com/tx/0x35439ba3f6c0223682cfd73ddae01c949c63c5f0c4ab7572af757e71635c5b38) | success |
+| 6 | admin executes the timelocked `unpause` (1 h after panic) | [0x9979f260…](https://testnet.bscscan.com/tx/0x9979f260dbb2fab88f7cca90835fbadd110972dae7190a6f49daa26b7ed636a0) | success; vault unpaused |
+| 6 | session manager opens a **new** agent session | [0x24f9fdd1…](https://testnet.bscscan.com/tx/0x24f9fdd1c32850ea4dabc20a1f7b17879ee57071367e970f71cc30f19c19a955) | success |
+| 6 | agent pays 10 eUSD through the new session | [0xf6230b91…](https://testnet.bscscan.com/tx/0xf6230b91efc20c1e03ff92a22109896671fbf97118253b0a9c6b4de29ac88573) | success |
+| 6f | agent tries to pay through the **old** (pre-panic) session | [0x7310bcc7…](https://testnet.bscscan.com/tx/0x7310bcc7d20efa8396e7eb61c55b3b3738a8e0e484728955b5bbf373542648d0) | **rejected**: `PolicyInactive` |
 
 Machine-readable copies: `deployments/bsc-testnet/epk-v2.json`, `epk-v2-vault.json`,
 `epk-v2-attacks.json`, `epk-v2-attacks-results.json`.
@@ -121,10 +127,13 @@ Exit code 0 = everything matches, 1 = a mismatch, 2 = something could not be che
 four planted false claims (an attack "succeeded", a wrong rejection reason, a wrong balance, a wrong
 amount) produced four `BAD` lines and exit code 1.
 
-Last run 2026-11-07 (with `--build`): **75 checks OK, 0 mismatches**. The on-chain bytecode of all
-6 contracts equals this repository's build; the replayed rejections are
-`BudgetExceeded(token, 60 eUSD, 50.0116 eUSD)` (the session budget refills slowly over the day),
-`DestinationNotAllowed(0x…dEaD)`, `CallNotAllowed()`, `BadSignature()`, `AgentNotAllowed()`.
+Last run 2026-11-07, after the recovery (with `--build`): **111 checks OK, 0 mismatches, 0 not
+checkable**. The on-chain bytecode of all 6 contracts equals this repository's build. Rejection
+reasons: 6f `PolicyInactive()` (the pre-panic session) proven **STRICT** by its execution trace;
+4a–4e proven by **REPLAY** — `BudgetExceeded(token, 60 eUSD, 50.0116 eUSD)` (the session budget
+refills slowly over the day), `DestinationNotAllowed(0x…dEaD)`, `CallNotAllowed()`,
+`BadSignature()`, `AgentNotAllowed()`. Money moved during both attack windows: 0 eUSD. Vault after
+recovery: unpaused, 9,940 eUSD (10,000 − 50 − 10), new session budget left 90 eUSD.
 
 About the pause: lifting it is never automatic. Only the admin can schedule `unpause`, it waits
 out the timelock (1 hour in this demo), the admin then executes it, and during the wait the

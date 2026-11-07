@@ -53,7 +53,8 @@
     "agent": "0xcC3b10e3FcBFc15a0B7942B6f06A7c5efB3fde16"
   },
   "sessions": {
-    "day0": "340282366920938463463374607431768211456"
+    "day0": "340282366920938463463374607431768211456",
+    "recovery": "340282366920938463463374607431768211457"
   },
   "transactions": [
     {
@@ -248,6 +249,92 @@
           "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)"
         }
       ]
+    },
+    {
+      "step": "6",
+      "what": "admin executes the timelocked unpause (1 h after panic)",
+      "tx": "0x9979f260dbb2fab88f7cca90835fbadd110972dae7190a6f49daa26b7ed636a0",
+      "from": "admin",
+      "to": "vault",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "vault",
+          "event": "Unpaused()"
+        },
+        {
+          "emitter": "vault",
+          "event": "OperationExecuted(bytes32)"
+        }
+      ]
+    },
+    {
+      "step": "6",
+      "what": "session manager opens a new agent session",
+      "tx": "0x24f9fdd1c32850ea4dabc20a1f7b17879ee57071367e970f71cc30f19c19a955",
+      "from": "sessionManager",
+      "to": "vault",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "vault",
+          "event": "SessionOpened(uint256,uint256,address,address,uint48)",
+          "indexed": [
+            "session:recovery",
+            "uint:1",
+            "agent"
+          ]
+        }
+      ]
+    },
+    {
+      "step": "6",
+      "what": "agent pays 10 eUSD through the new session",
+      "tx": "0xf6230b91efc20c1e03ff92a22109896671fbf97118253b0a9c6b4de29ac88573",
+      "from": "agent",
+      "to": "vault",
+      "expect": "success",
+      "events": [
+        {
+          "emitter": "vault",
+          "event": "Executed(uint256,address,address,uint256,uint256)",
+          "indexed": [
+            "session:recovery",
+            "agent",
+            "agent"
+          ]
+        },
+        {
+          "emitter": "vault",
+          "event": "Outflow(address,uint256,uint256)",
+          "indexed": [
+            "token"
+          ],
+          "data": [
+            "10"
+          ]
+        },
+        {
+          "emitter": "token",
+          "event": "Transfer(address,address,uint256)",
+          "indexed": [
+            "vault",
+            "admin"
+          ],
+          "data": [
+            "10"
+          ]
+        }
+      ]
+    },
+    {
+      "step": "6f",
+      "what": "agent tries to pay through the old (pre-panic) session",
+      "tx": "0x7310bcc7d20efa8396e7eb61c55b3b3738a8e0e484728955b5bbf373542648d0",
+      "from": "agent",
+      "to": "vault",
+      "expect": "reverted",
+      "error": "PolicyInactive()"
     }
   ],
   "checkpoints": [
@@ -289,6 +376,33 @@
       "paused": true,
       "implementation": "implementation_2_0_0",
       "eUSD": "9950"
+    },
+    {
+      "label": "recovery: one block before the timelocked unpause",
+      "block": 141347120,
+      "paused": true
+    },
+    {
+      "label": "recovery: unpause block",
+      "block": 141347121,
+      "paused": false,
+      "implementation": "implementation_2_0_0",
+      "eUSD": "9950"
+    },
+    {
+      "label": "recovery: right after the new session's 10 eUSD payment",
+      "block": 141347132,
+      "paused": false,
+      "eUSD": "9940",
+      "sessionBudgetLeft": {
+        "session": "recovery",
+        "value": "90"
+      }
+    },
+    {
+      "label": "recovery: after the old session's attempt (nothing moved)",
+      "block": 141347140,
+      "eUSD": "9940"
     }
   ],
   "attackWindows": [
@@ -296,6 +410,11 @@
       "label": "day 0: attacks 4a-4e",
       "fromBlock": 141338825,
       "toBlock": 141338889
+    },
+    {
+      "label": "after recovery: old-session attempt 6f",
+      "fromBlock": 141347132,
+      "toBlock": 141347140
     }
   ]
 }
