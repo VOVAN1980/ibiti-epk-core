@@ -89,16 +89,32 @@ Machine-readable copies: `deployments/bsc-testnet/epk-v2.json`, `epk-v2-vault.js
 
 ### Check it yourself
 
-No need to trust this page. One command (Python 3 only — no Foundry, no keys) asks a public BSC
-Testnet node about every link above: each contract must have code, each transaction must exist
-and its status must match this table (rows marked "rejected" must have failed on-chain), and it
-prints which implementation the demo vault runs, its balance and pause state:
+No need to trust this page. The same claims are written in machine-readable form in
+`deployments/bsc-testnet/epk-v2-evidence.json`, and one command (Python 3 only — no Foundry, no
+keys, no packages) checks every one of them against a public BSC Testnet node:
 
 ```bash
-python scripts/v2/verify_evidence.py
+python scripts/v2/verify_evidence.py            # add --build after `forge build` to compare bytecode with this repo
 ```
 
-Last run 2026-11-07: 6/6 contracts, 12/12 transactions match; vault on 2.0.0, paused, 9,950 eUSD.
+| What | How it is checked |
+|---|---|
+| Network | `chainId` must be 97 |
+| This page = the evidence file | both list exactly the same transactions and contracts |
+| Code | every contract has code; its keccak256 hash is printed; vault implementations must match the hash **pinned in EPKRegistry**; the release event's hash must equal the deployed code; the vault's EIP-1967 slot must point to the claimed implementation; with `--build` the on-chain bytecode must equal this repository's compiled bytecode (immutables masked) |
+| Who did what | every transaction was sent by the claimed role to the claimed contract |
+| Successful steps | the claimed events were emitted by the claimed contract, with the claimed indexed values and amounts (e.g. `Transfer` of exactly 50 eUSD from the vault to the treasury) |
+| Rejected steps | failed by revert, not by running out of gas; replaying each one against the chain state right before its block returns **exactly the claimed custom error**, with its arguments |
+| History | fixed block-number checkpoints (paused, implementation, balance, limits left) — Day 0 stays reproducible after later upgrades; needs a node with historical state (the default, publicnode, has it) |
+
+Exit code 0 = everything matches, 1 = a mismatch, 2 = something could not be checked. A test with
+four planted false claims (an attack "succeeded", a wrong rejection reason, a wrong balance, a wrong
+amount) produced four `BAD` lines and exit code 1.
+
+Last run 2026-11-07 (with `--build`): **75 checks OK, 0 mismatches**. The on-chain bytecode of all
+6 contracts equals this repository's build; the replayed rejections are
+`BudgetExceeded(token, 60 eUSD, 50.0116 eUSD)` (the session budget refills slowly over the day),
+`DestinationNotAllowed(0x…dEaD)`, `CallNotAllowed()`, `BadSignature()`, `AgentNotAllowed()`.
 
 About the pause: lifting it is never automatic. Only the admin can schedule `unpause`, it waits
 out the timelock (1 hour in this demo), the admin then executes it, and during the wait the
