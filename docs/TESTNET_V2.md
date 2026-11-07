@@ -148,13 +148,13 @@ available. So:
   `--archive <file>`);
 - from now on each milestone is verified right away and archived the same day.
 
-The same checks also run in any browser, with no installation: [`proof/index.html`](../proof/index.html)
+The same checks also run in any browser, with no installation: [`docs/proof/index.html`](proof/index.html)
 ("EPK Proof of Security") loads the evidence file **from a fixed Git commit** (so the claims it
 checks cannot be changed afterwards) and checks it live against the chain. Preview it locally
 without exposing the rest of the repository:
 
 ```bash
-python -m http.server 8765 --bind 127.0.0.1 --directory proof
+python -m http.server 8765 --bind 127.0.0.1 --directory docs    # then open http://127.0.0.1:8765/proof/
 ```
 
 Exit code 0 = everything checkable matches (details that need an archive node are listed as OLD),

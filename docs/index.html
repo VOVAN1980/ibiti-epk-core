@@ -1,881 +1,389 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IBITI Labs | EPK v1</title>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        background: '#020204',
-                        glass: 'rgba(255, 255, 255, 0.03)',
-                        border: 'rgba(255, 255, 255, 0.08)',
-                        primary: '#3B82F6',
-                        accent: '#8B5CF6',
-                        gold: '#FFD700',
-                        cyan: '#06b6d4',
-                        safe: '#10B981'
-                    },
-                    fontFamily: {
-                        sans: ['Outfit', 'Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    animation: {
-                        'slide-down': 'slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                        'float': 'float 6s ease-in-out infinite',
-                        'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
-                        'shimmer': 'shimmer 3s linear infinite',
-                    },
-                    keyframes: {
-                        slideDown: { from: { transform: 'translateY(-100%)' }, to: { transform: 'translateY(0)' } },
-                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
-                        pulseGlow: { '0%, 100%': { opacity: 0.5 }, '50%': { opacity: 0.8 } },
-                        shimmer: { from: { backgroundPosition: '0 0' }, to: { backgroundPosition: '-200% 0' } }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        /* --- UNIVERSE & GRAIN --- */
-        body{
-       background-color:#020204;
-       color:#fff;
-       overflow-x:hidden;
-
-       position: relative;
-       isolation: isolate;
-     }
-
-       #universe{
-       position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-
-      z-index: -10;
-      pointer-events: none;
-
-  /* если хочешь оставить затемнение — ок */
-  mask-image: linear-gradient(to bottom, black 20%, rgba(0,0,0,0.8) 100%);
-}
-        
-        /* --- CRYSTAL UI (PREMIUM LOOK) --- */
-        .crystal {
-            background: rgba(15, 15, 20, 0.4);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.02);
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-        .crystal:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            transform: translateY(-5px) scale(1.01);
-            box-shadow: 0 20px 60px rgba(0,0,0, 0.6), inset 0 0 20px rgba(255,255,255,0.05);
-            background: rgba(20, 20, 25, 0.6);
-            z-index: 10;
-        }
-
-        /* --- TEXT GRADIENTS --- */
-        .text-gradient-live {
-            background: linear-gradient(to right, #60a5fa 10%, #a78bfa 50%, #22d3ee 90%);
-            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-            background-size: 200% auto; animation: textShine 6s linear infinite;
-        }
-        @keyframes textShine { to { background-position: 200% center; } }
-
-        /* --- 3D CARDS & ANIMATIONS --- */
-        .tilt-card { transform-style: preserve-3d; transform: perspective(1000px); }
-        .tilt-inner { transform: translateZ(20px); }
-        .reveal { opacity: 0; transform: translateY(30px); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
-        .reveal.active { opacity: 1; transform: translateY(0); }
-
-        /* --- TERMINAL --- */
-        .scanline {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3) 50%); background-size: 100% 4px; pointer-events: none; z-index: 2; opacity: 0.3;
-        }
-        .beam {
-            position: absolute; top: -20%; left: 0; width: 100%; height: 30%;
-            background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.15), transparent);
-            animation: beam 4s linear infinite; z-index: 3;
-        }
-        @keyframes beam { 0% { top: -20%; } 100% { top: 120%; } }
-
-        /* --- MODAL --- */
-        #contact-modal { transition: opacity 0.3s ease, visibility 0.3s; }
-        #contact-modal.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-        #contact-modal.flex { opacity: 1; visibility: visible; pointer-events: auto; }
-        
-        /* --- UTILS --- */
-        .glow-text { text-shadow: 0 0 30px rgba(59, 130, 246, 0.4); }
-        .feature-icon {
-            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01));
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-        }
-        
-        /* Mobile fixes */
-        @media (max-width: 768px) {
-            .tilt-card { transform: none !important; }
-        }
-
-         /* Recognition shimmer — subtle, premium */
-.recog-shimmer {
-  position: relative;
-  overflow: hidden;
-}
-.recog-shimmer::after{
-  content:"";
-  position:absolute;
-  inset:-2px;
-  background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,0.05) 40%, transparent 80%);
-  background-size: 200% 100%;
-  animation: shimmer 5.5s linear infinite;
-  opacity: 0.35;
-  pointer-events:none;
-  mask-image: radial-gradient(circle at 30% 20%, black 0%, transparent 60%);
-}
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EPK v2 — Even a stolen key can't drain the vault | IBITI Labs</title>
+<meta name="description" content="EPK v2 by IBITI Labs: a personal on-chain vault for AI agents and teams. Spending limits, agent budgets, a panic button and an automatic Watchtower, enforced by the contract. Live on BSC Testnet with public, re-checkable proof.">
+<meta property="og:title" content="EPK v2 — Even a stolen key can't drain the vault">
+<meta property="og:description" content="A personal on-chain vault for AI agents and teams. Every attack in the demo was rejected on-chain — check it yourself.">
+<meta property="og:image" content="https://vovan1980.github.io/ibiti-epk-core/img/epk-investor-hero.webp">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#020204">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/epk.css">
 </head>
-<body class="selection:bg-primary/30 selection:text-white">
+<body>
+<canvas id="universe" aria-hidden="true"></canvas>
+<div class="aurora a1" aria-hidden="true"></div>
+<div class="aurora a2" aria-hidden="true"></div>
 
-    <canvas id="universe"></canvas>
-
-    <!-- NAVBAR -->
-    <nav class="fixed top-0 w-full z-50 animate-slide-down">
-        <div class="absolute inset-0 bg-background/70 backdrop-blur-xl border-b border-white/5"></div>
-        <div class="relative max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <!-- Back Button -->
-                <a href="https://vovan1980.github.io/IBITILabs" class="flex items-center gap-2 text-sm text-white/50 hover:text-white transition group">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:-translate-x-1 transition-transform"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-               <span class="hidden sm:inline">Back to IBITI Labs</span>
-             </a>
-
-            <!-- Logo -->
-            <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
-                <div class="relative w-6 h-6 flex items-center justify-center">
-                    <div class="absolute inset-0 bg-primary/40 blur-lg rounded-full animate-pulse"></div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-full h-full text-white relative z-10"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                </div>
-                <span class="font-bold tracking-tight text-lg">IBITI <span class="text-white/40 font-normal">Labs</span></span>
-            </div>
-
-            <!-- Right Actions -->
-            <div class="flex items-center gap-3">
-                <!-- FX Toggle Button -->
-                <button id="fx-toggle" onclick="toggleFX()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-mono tracking-widest text-green-400 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_5px_currentColor]"></span>
-                    FX: ON
-                </button>
-
-                 <a href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" class="text-white/50 hover:text-white transition p-2 bg-white/5 rounded-full hover:bg-white/10" title="View Source">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                </a>
-            </div>
-        </div>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="./" aria-label="EPK by IBITI Labs — home">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>
+      <span>EPK <small>by IBITI Labs</small></span>
+      <span class="tag">V2 · TESTNET</span>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#attacks">Attacks</a>
+      <a href="#watchtower">Watchtower</a>
+      <a href="#how">How it works</a>
+      <a href="proof/">Proof</a>
+      <a href="pilot.html">Pilot &amp; licensing</a>
     </nav>
-
-    <main class="relative pt-24 pb-12 px-6 overflow-hidden">
-        
-        <!-- 1. HERO SECTION -->
-        <section class="mt-10 md:mt-20 mb-28 max-w-5xl mx-auto text-center relative z-10 perspective-1000">
-            <div class="space-y-8 reveal active">
-                
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-[10px] md:text-xs font-mono tracking-widest uppercase mb-4 animate-float">
-                    <span class="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_#3B82F6]"></span>
-                    Kernel Active v1.0
-                </div>
-
-                <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.1] glow-text">
-                    Trust Your <br />
-                    <span class="text-gradient-live">
-                        Artificial Agents
-                    </span>
-                </h1>
-
-                <p class="text-base md:text-xl text-white/50 max-w-2xl mx-auto leading-relaxed px-4">
-                    The execution kernel for on-chain intelligence.
-                    <span class="text-white border-b border-white/20">Immutable core</span>, modular validators, and instant revocation.
-                </p>
-
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 px-6">
-                  <a href="pilot.html"
-                     class="w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-black font-bold tracking-wide shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(255,255,255,0.3)] transition-all transform hover:-translate-y-1">
-                  Pilot / Partners
-               </a>
-                    <a href="docs.html" class="w-full sm:w-auto px-8 py-4 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 hover:border-white/20 transition backdrop-blur-md flex items-center justify-center gap-2 group">
-                     <svg class="text-white/50 group-hover:text-white transition" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                       <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                         <line x1="16" y1="17" x2="8" y2="17"></line>
-                          <polyline points="10 9 9 9 8 9"></polyline>
-                         </svg>
-                        <span>EPK v1 Docs</span>
-                     </a>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. HOLOGRAPHIC CODE -->
-<section class="max-w-4xl mx-auto mb-32 reveal">
-  <div class="crystal rounded-xl overflow-hidden relative shadow-[0_0_80px_rgba(59,130,246,0.1)] border border-white/10">
-    <div class="scanline"></div>
-    <div class="beam"></div>
-
-    <div class="px-6 py-4 border-b border-white/5 bg-black/40 flex items-center justify-between">
-      <div class="flex gap-2">
-        <div class="w-3 h-3 rounded-full bg-red-500/50"></div>
-        <div class="w-3 h-3 rounded-full bg-yellow-500/50"></div>
-        <div class="w-3 h-3 rounded-full bg-green-500/50"></div>
-      </div>
-      <div class="font-mono text-xs text-white/30 uppercase tracking-widest">EPKernel.sol (Read-Only)</div>
-    </div>
-
-    <!-- scrollable terminal body (Y-scroll only, no bottom X-scroll) -->
-    <div class="p-6 md:p-8 bg-[#050508] scrollbar-hide max-h-[420px] overflow-y-auto overflow-x-hidden">
-
-      <!-- source links -->
-      <div class="mb-4 text-xs md:text-sm text-gray-500">
-        <div class="font-semibold text-gray-400 opacity-80">execute() excerpt (v1, readability)</div>
-        <div class="mt-1 text-gray-600">
-          Omitted: struct declarations + helper bodies. Preserved: real check order (policy → expiry → agent → allowlist → value → nonce+EIP-712 → validator → nonce++ → call).
-        </div>
-        <div class="mt-2 flex flex-wrap gap-3">
-          <a class="text-cyan-300 hover:text-cyan-200 underline"
-             href="https://testnet.bscscan.com/address/0x0beEB0083C576B54DB99B4abEF0Dcbc5Bc70bF82#code"
-             target="_blank" rel="noopener">Verified contract (BscScan)</a>
-
-          <a class="text-cyan-300 hover:text-cyan-200 underline"
-             href="https://github.com/VOVAN1980/ibiti-epk-core/blob/master/contracts/epk/EPKernel.sol"
-             target="_blank" rel="noopener">Source (GitHub)</a>
-        </div>
-      </div>
-
-      <pre class="font-mono text-xs md:text-sm leading-relaxed text-gray-400 whitespace-pre overflow-hidden">
-<span class="text-white/20">140</span> <span class="text-purple-400">function</span> <span class="text-blue-400">execute</span>(
-<span class="text-white/20">141</span>     <span class="text-yellow-200">uint256</span> policyId,
-<span class="text-white/20">142</span>     <span class="text-yellow-200">address</span> target,
-<span class="text-white/20">143</span>     <span class="text-yellow-200">uint256</span> value,
-<span class="text-white/20">144</span>     <span class="text-yellow-200">bytes</span> <span class="text-purple-400">calldata</span> data,
-<span class="text-white/20">145</span>     <span class="text-yellow-200">uint256</span> deadline,
-<span class="text-white/20">146</span>     <span class="text-yellow-200">bytes</span> <span class="text-purple-400">calldata</span> signature
-<span class="text-white/20">147</span> ) <span class="text-purple-400">external payable</span> <span class="text-purple-400">returns</span> (<span class="text-yellow-200">bytes</span> <span class="text-purple-400">memory</span> out) {
-<span class="text-white/20">148</span>
-<span class="text-white/20">149</span>     <span class="text-gray-600">// Omitted: Policy/AgentPermission struct declarations</span>
-<span class="text-white/20">150</span>     <span class="text-gray-600">// Omitted: _hashTypedDataV4(), _recover(), _EXECUTE_TYPEHASH</span>
-<span class="text-white/20">151</span>
-<span class="text-white/20">152</span>     <span class="text-gray-600">// 1) Policy exists + active</span>
-<span class="text-white/20">153</span>     Policy <span class="text-purple-400">memory</span> p = policies[policyId];
-<span class="text-white/20">154</span>     <span class="text-purple-400">if</span> (p.owner == <span class="text-purple-400">address</span>(0)) <span class="text-purple-400">revert</span> <span class="text-cyan-400">PolicyNotFound</span>();
-<span class="text-white/20">155</span>     <span class="text-purple-400">if</span> (!p.active) <span class="text-purple-400">revert</span> <span class="text-cyan-400">PolicyInactive</span>();
-<span class="text-white/20">156</span>
-<span class="text-white/20">157</span>     <span class="text-gray-600">// 2) Deadline required + fresh</span>
-<span class="text-white/20">158</span>     <span class="text-purple-400">if</span> (deadline == 0) <span class="text-purple-400">revert</span> <span class="text-cyan-400">DeadlineRequired</span>();
-<span class="text-white/20">159</span>     <span class="text-purple-400">if</span> (deadline &lt;= block.timestamp) <span class="text-purple-400">revert</span> <span class="text-cyan-400">Expired</span>();
-<span class="text-white/20">160</span>
-<span class="text-white/20">161</span>     <span class="text-gray-600">// 3) Effective expiry = min(policyTTL, deadline)</span>
-<span class="text-white/20">162</span>     <span class="text-yellow-200">uint256</span> policyExpiry = (p.validUntil == 0)
-<span class="text-white/20">163</span>         ? <span class="text-blue-300">type</span>(<span class="text-yellow-200">uint256</span>).max
-<span class="text-white/20">164</span>         : <span class="text-yellow-200">uint256</span>(p.validUntil);
-<span class="text-white/20">165</span>     <span class="text-yellow-200">uint256</span> effectiveExpiry = policyExpiry &lt; deadline ? policyExpiry : deadline;
-<span class="text-white/20">166</span>     <span class="text-purple-400">if</span> (block.timestamp &gt; effectiveExpiry) <span class="text-purple-400">revert</span> <span class="text-cyan-400">Expired</span>();
-<span class="text-white/20">167</span>
-<span class="text-white/20">168</span>     <span class="text-gray-600">// 4) Agent permission (+ TTL)</span>
-<span class="text-white/20">169</span>     AgentPermission <span class="text-purple-400">memory</span> ap = agentPermission[policyId][msg.sender];
-<span class="text-white/20">170</span>     <span class="text-purple-400">if</span> (!ap.allowed) <span class="text-purple-400">revert</span> <span class="text-cyan-400">AgentNotAllowed</span>();
-<span class="text-white/20">171</span>     <span class="text-purple-400">if</span> (ap.validUntil != 0 &amp;&amp; block.timestamp &gt; ap.validUntil) <span class="text-purple-400">revert</span> <span class="text-cyan-400">AgentExpired</span>();
-<span class="text-white/20">172</span>
-<span class="text-white/20">173</span>     <span class="text-gray-600">// 5) Target + selector allowlist</span>
-<span class="text-white/20">174</span>     <span class="text-purple-400">if</span> (data.length &lt; 4) <span class="text-purple-400">revert</span> <span class="text-cyan-400">CallNotAllowed</span>();
-<span class="text-white/20">175</span>     <span class="text-yellow-200">bytes4</span> selector = <span class="text-blue-300">bytes4</span>(data[:4]);
-<span class="text-white/20">176</span>     <span class="text-yellow-200">bytes32</span> callKey = <span class="text-blue-300">keccak256</span>(abi.encodePacked(target, selector));
-<span class="text-white/20">177</span>     <span class="text-purple-400">if</span> (!callAllowed[policyId][callKey]) <span class="text-purple-400">revert</span> <span class="text-cyan-400">CallNotAllowed</span>();
-<span class="text-white/20">178</span>
-<span class="text-white/20">179</span>     <span class="text-gray-600">// 6) Value bound + exact msg.value match</span>
-<span class="text-white/20">180</span>     <span class="text-purple-400">if</span> (value &gt; p.maxValuePerCall) <span class="text-purple-400">revert</span> <span class="text-cyan-400">ValueTooHigh</span>();
-<span class="text-white/20">181</span>     <span class="text-purple-400">if</span> (msg.value != value) <span class="text-purple-400">revert</span> <span class="text-cyan-400">MsgValueMismatch</span>();
-<span class="text-white/20">182</span>
-<span class="text-white/20">183</span>     <span class="text-gray-600">// 7) Nonce + EIP-712 owner signature</span>
-<span class="text-white/20">184</span>     <span class="text-yellow-200">uint256</span> nonce = nonces[policyId];
-<span class="text-white/20">185</span>     <span class="text-yellow-200">bytes32</span> digest = <span class="text-blue-300">_hashTypedDataV4</span>(
-<span class="text-white/20">186</span>         <span class="text-blue-300">keccak256</span>(abi.encode(
-<span class="text-white/20">187</span>             _EXECUTE_TYPEHASH, policyId, target, value, <span class="text-blue-300">keccak256</span>(data), nonce, deadline
-<span class="text-white/20">188</span>         ))
-<span class="text-white/20">189</span>     );
-<span class="text-white/20">190</span>     <span class="text-yellow-200">address</span> signer = <span class="text-blue-300">_recover</span>(digest, signature);
-<span class="text-white/20">191</span>     <span class="text-purple-400">if</span> (signer != p.owner) <span class="text-purple-400">revert</span> <span class="text-cyan-400">BadSignature</span>();
-<span class="text-white/20">192</span>
-<span class="text-white/20">193</span>     <span class="text-gray-600">// 8) Optional validator</span>
-<span class="text-white/20">194</span>     <span class="text-purple-400">if</span> (p.validator != <span class="text-purple-400">address</span>(0)) {
-<span class="text-white/20">195</span>         IPolicyValidator(p.validator).<span class="text-blue-400">validate</span>(policyId, p.owner, msg.sender, target, value, data);
-<span class="text-white/20">196</span>     }
-<span class="text-white/20">197</span>
-<span class="text-white/20">198</span>     <span class="text-gray-600">// 9) Nonce++ then atomic call (revert bubbles up)</span>
-<span class="text-white/20">199</span>     nonces[policyId] = nonce + 1;
-<span class="text-white/20">200</span>     (bool ok, <span class="text-yellow-200">bytes</span> <span class="text-purple-400">memory</span> ret) = target.<span class="text-blue-400">call</span>{value: value}(data);
-<span class="text-white/20">201</span>     <span class="text-purple-400">if</span> (!ok) { <span class="text-gray-600">/* assembly { revert(add(ret, 32), mload(ret)) } */</span> }
-<span class="text-white/20">202</span>     <span class="text-purple-400">emit</span> <span class="text-blue-400">Executed</span>(policyId, p.owner, msg.sender, target, selector, value);
-<span class="text-white/20">203</span>     <span class="text-purple-400">return</span> ret;<span class="animate-pulse text-primary">_</span>
-<span class="text-white/20">204</span> }</pre>
+    <div class="nav-actions">
+      <button class="chip fx" data-fx type="button" aria-pressed="true"><span class="dot"></span>FX: ON</button>
+      <a class="icon-btn" href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" rel="noopener" aria-label="Source code on GitHub">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.6 0-12 5.4-12 12 0 5.3 3.4 9.8 8.2 11.4.6.1.8-.3.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2 1-.3 2-.4 3-.4s2 .1 3 .4c2.3-1.6 3.3-1.2 3.3-1.2.7 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.8-1.6 8.2-6.1 8.2-11.4C24 5.4 18.6 0 12 0z"/></svg>
+      </a>
+      <button class="icon-btn menu-btn" data-menu type="button" aria-label="Menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
     </div>
   </div>
-</section>
+</header>
 
-        <!-- 3. REAL STATS -->
-        <section id="security" class="max-w-6xl mx-auto mb-32 reveal">
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left border-y border-white/5 bg-white/[0.01] rounded-2xl p-8 md:p-12">
-    <div>
-      <div class="flex items-baseline justify-center md:justify-start gap-2">
-        <div id="corePassed" class="text-4xl md:text-5xl font-bold text-white tabular-nums">0</div>
-        <div id="coreTotal" class="text-2xl text-green-400 font-mono">/ 0</div>
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="reveal active"><span class="badge"><span class="dot"></span>EPK v2 · live on BSC Testnet</span></div>
+      <h1 class="reveal active d1">Even a stolen key<br><span class="grad">can't drain the vault.</span></h1>
+      <p class="lead reveal active d2">EPK v2 gives every customer their own on-chain vault for AI agents and teams.
+        <strong>Spending limits, agent budgets, a panic button and an automatic Watchtower</strong> are enforced by the
+        contract itself — not by trust in a server, a bot, or us.</p>
+      <div class="cta reveal active d3">
+        <a class="btn btn-primary" href="proof/">See the live proof
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>
+        <a class="btn btn-ghost" href="pilot.html">Pilot &amp; licensing</a>
       </div>
-      <div class="text-xs font-mono text-white/40 uppercase tracking-widest mt-2">Core Tests Passing</div>
-    </div>
-
-    <div>
-      <div class="flex items-baseline justify-center md:justify-start gap-2">
-        <div id="invChecks" class="text-4xl md:text-5xl font-bold text-white tabular-nums">0</div>
-        <div class="text-2xl text-primary font-mono">+</div>
+      <div class="trust-row reveal active d4">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Source verified on BscScan</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Fuzz &amp; invariant tested</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Every claim re-checkable</span>
       </div>
-      <div class="text-xs font-mono text-white/40 uppercase tracking-widest mt-2">Invariant Checks</div>
-    </div>
 
-    <div class="flex flex-col justify-center items-center md:items-start">
-      <p class="text-sm text-white/40 mb-3">Verified by fuzzing & formal verification.</p>
-      <a href="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml" target="_blank" class="inline-flex items-center gap-2 text-xs font-mono text-green-400 border border-green-500/20 bg-green-500/5 px-3 py-2 rounded hover:bg-green-500/10 transition">
-        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-        VIEW LIVE CI LOGS
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
-      </a>
+      <div class="stats" data-live-stats>
+        <div class="crystal stat reveal d1"><div class="n" data-stat="attacks">7/7</div><div class="l">attacks rejected on-chain</div><div class="src" data-src="attacks"><span class="dot"></span>checking…</div></div>
+        <div class="crystal stat reveal d2"><div class="n"><span data-stat="moved">0</span> <small style="font-size:.45em;color:var(--dim)">eUSD</small></div><div class="l">moved by those attacks</div><div class="src" data-src="moved"><span class="dot"></span>checking…</div></div>
+        <div class="crystal stat reveal d3"><div class="n"><span data-stat="blocks">5</span> <small style="font-size:.45em;color:var(--dim)">blocks</small></div><div class="l">until the Watchtower cancelled a thief's change</div><div class="src" data-src="blocks"><span class="dot"></span>checking…</div></div>
+        <div class="crystal stat reveal d4"><div class="n"><span data-stat="balance">9,940</span> <small style="font-size:.45em;color:var(--dim)">eUSD</small></div><div class="l">still in the demo vault</div><div class="src" data-src="balance"><span class="dot"></span>checking…</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section id="problem">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">The problem</p>
+        <h2>AI agents hold keys.<br>Keys get stolen.</h2>
+        <p class="lead">Most "safe AI wallet" protection lives in the bot or on the server — exactly the parts that get
+          hacked. When they fall, the money goes with them. EPK moves the rules into the vault, where a hacked server
+          cannot switch them off.</p>
+      </div>
+      <div class="grid g3">
+        <article class="crystal hover pad reveal d1">
+          <div class="icon tone-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M9 9l6 4M15 9l-6 4"/></svg></div>
+          <h3>A hacked server or agent</h3>
+          <p class="card-text">Prompt injection, malware or a leaked API key, and the agent signs whatever the attacker wants.</p>
+        </article>
+        <article class="crystal hover pad reveal d2">
+          <div class="icon tone-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M17 6l3 3M15 8l2 2"/></svg></div>
+          <h3>A stolen admin key</h3>
+          <p class="card-text">The worst case: the key that may change the rules is in the wrong hands.</p>
+        </article>
+        <article class="crystal hover pad reveal d3">
+          <div class="icon tone-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/></svg></div>
+          <h3>One contract for everyone</h3>
+          <p class="card-text">Shared executors mean one mistake can reach every customer at once. EPK v2 gives each customer a separate vault.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ATTACKS -->
+  <section id="attacks">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">How an attack dies</p>
+        <h2>Real attempts. <span class="grad">Real rejections.</span></h2>
+        <p class="lead">Each of these was really sent to the demo vault on BSC Testnet and failed on-chain. Click any
+          transaction to see it on BscScan.</p>
+      </div>
+
+      <div class="crystal terminal reveal" data-type>
+        <div class="term-bar"><div class="term-dots"><i></i><i></i><i></i></div><div class="term-title">vault 0xB216…A340 · rejected on-chain</div></div>
+        <div class="term-body"><span class="ln c-dim">#   attempt                                 vault's answer          result</span>
+<span class="ln">4a  agent pays 60 eUSD, 50 left in budget   <span class="c-hi">BudgetExceeded</span>          <span class="c-bad">REJECTED</span></span>
+<span class="ln">4b  agent pays an unknown address           <span class="c-hi">DestinationNotAllowed</span>   <span class="c-bad">REJECTED</span></span>
+<span class="ln">4c  agent calls approve(), not allowed      <span class="c-hi">CallNotAllowed</span>          <span class="c-bad">REJECTED</span></span>
+<span class="ln">4d  batch signed with a forged key          <span class="c-hi">BadSignature</span>            <span class="c-bad">REJECTED</span></span>
+<span class="ln">4e  stranger replays the agent&#39;s signature  <span class="c-hi">AgentNotAllowed</span>         <span class="c-bad">REJECTED</span></span>
+<span class="ln">6f  pre-panic session tries again           <span class="c-hi">PolicyInactive</span>          <span class="c-bad">REJECTED</span></span>
+<span class="ln">W3  thief pushes a cancelled change         <span class="c-hi">UnknownOperation</span>        <span class="c-bad">REJECTED</span></span>
+<span class="ln c-dim">────────────────────────────────────────────────────────────────────────────</span>
+<span class="ln c-ok">moved by attacks: 0 eUSD · re-check it: scripts/v2/verify_evidence.py <span class="caret"></span></span></div>
+        <div class="scanline"></div><div class="beam"></div>
+      </div>
+
+      <div class="grid g3" style="margin-top:18px">
+        <article class="crystal hover attack reveal d1"><span class="who">Hacked agent</span><h3>Tries to overspend its budget</h3>
+          <p class="card-text">Its session may spend 100 eUSD a day; it already spent 50 and asks for 60.</p>
+          <div class="answer"><span class="err">BudgetExceeded</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x1f894a8062d3f67336a3789180f8dacbcf7400d20d1674744ef0ec5fb4c4b78b">tx 0x1f89…b78b ↗</a></div></article>
+        <article class="crystal hover attack reveal d2"><span class="who">Hacked agent</span><h3>Sends money to a new address</h3>
+          <p class="card-text">The vault only pays addresses on its own list — the owner's treasury.</p>
+          <div class="answer"><span class="err">DestinationNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0xba1d5b687f29a4128f1393fc53754e9990750a15e0a80a7dea79bf5007a76e12">tx 0xba1d…6e12 ↗</a></div></article>
+        <article class="crystal hover attack reveal d3"><span class="who">Hacked agent</span><h3>Calls a function it may not use</h3>
+          <p class="card-text">Token approvals are the classic drain. This agent's envelope allows only transfers, so <code>approve()</code> is refused.</p>
+          <div class="answer"><span class="err">CallNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x806b001fd66db317114bd895f9a5c1a798fc50aa075f8b906c5ab338d645c49e">tx 0x806b…c49e ↗</a></div></article>
+        <article class="crystal hover attack reveal d1"><span class="who">Forger</span><h3>Signs with the wrong key</h3>
+          <p class="card-text">Only the session's own key can authorise a batch.</p>
+          <div class="answer"><span class="err">BadSignature</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0xc301be1bdac7993d932d0ff3ec3363a0193b2764c795d83f2ad39cf06bbb1477">tx 0xc301…1477 ↗</a></div></article>
+        <article class="crystal hover attack reveal d2"><span class="who">Stranger</span><h3>Replays the agent's valid signature</h3>
+          <p class="card-text">A signature alone is not enough — only the agent itself may submit it.</p>
+          <div class="answer"><span class="err">AgentNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x746c76f1f772785726b0f5b79512b2f84dbb480a8d750ef2b1a2a9adf3834ce3">tx 0x746c…4ce3 ↗</a></div></article>
+        <article class="crystal hover attack reveal d3"><span class="who">After a panic</span><h3>An old session tries again</h3>
+          <p class="card-text">A panic revokes every earlier permission for good; only new sessions work after recovery.</p>
+          <div class="answer"><span class="err">PolicyInactive</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x7310bcc7d20efa8396e7eb61c55b3b3738a8e0e484728955b5bbf373542648d0">tx 0x7310…48d0 ↗</a></div></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- WATCHTOWER -->
+  <section id="watchtower">
+    <div class="wrap spotlight">
+      <div class="reveal">
+        <p class="eyebrow">The worst case</p>
+        <h2>A stolen admin key, <span class="grad">stopped in seconds.</span></h2>
+        <p class="lead">Every change that could let money out has to wait in the vault's timelock, and any guardian may
+          cancel it while it waits. The EPK Watchtower is a guardian that never sleeps.</p>
+        <ol class="steps">
+          <li class="bad"><strong>The thief uses the real admin key</strong> to schedule "allow payments to my address".</li>
+          <li class="good"><strong>The Watchtower cancels it 5 blocks later</strong> — no human involved.</li>
+          <li class="bad"><strong>The thief tries to push it through anyway</strong> and the vault answers <code>UnknownOperation</code>: the change no longer exists.</li>
+        </ol>
+        <div class="cta" style="justify-content:flex-start;margin-top:28px">
+          <a class="btn btn-ghost btn-small" target="_blank" rel="noopener" href="https://github.com/VOVAN1980/ibiti-epk-core/tree/feature/epk-v2/watchtower">How the Watchtower works ↗</a>
+        </div>
+      </div>
+      <div class="crystal terminal reveal d2" data-type data-tilt>
+        <div class="term-bar"><div class="term-dots"><i></i><i></i><i></i></div><div class="term-title">epk watchtower · live log · UTC</div></div>
+        <div class="term-body"><span class="ln c-dim">14:05:17  watching vault 0xB216…A340</span>
+<span class="ln c-dim">          guardian 0xD1e7…7Fa0 · confirmed by the vault</span>
+<span class="ln c-dim">          1 approved change: upgrade to 2.0.1</span>
+<span class="ln"> </span>
+<span class="ln c-bad">14:05:33  UNEXPECTED change by 0xa2bd…15f8</span>
+<span class="ln c-bad">          addDestination(0x…bad1)</span>
+<span class="ln c-bad">          "allow payments to a new address"</span>
+<span class="ln"> </span>
+<span class="ln c-ok">14:05:36  STOPPED — change cancelled</span>
+<span class="ln c-ok">          tx 0x6b08…1714 · block 141354347</span>
+<span class="ln"> </span>
+<span class="ln c-warn">thief: executeScheduled(…) → UnknownOperation</span>
+<span class="ln c-ok">moved: 0 eUSD <span class="caret"></span></span></div>
+        <div class="scanline"></div><div class="beam"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LAYERS -->
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">How it works</p>
+        <h2>Five layers between an attacker<br>and your funds.</h2>
+        <p class="lead">Each layer works on its own. To take money, an attacker would have to beat all of them at once.</p>
+      </div>
+      <div class="layers">
+        <div class="crystal layer reveal"><div class="num">01</div><div><h3>Your own vault</h3><p>Every customer gets a separate vault at a permanent address. No shared contract, no shared risk.</p></div>
+          <div class="facts"><span class="fact">1 vault per customer</span><span class="fact">permanent address</span></div></div>
+        <div class="crystal layer reveal d1"><div class="num">02</div><div><h3>Limits and allowed addresses</h3><p>Daily outflow limits per token, measured on the vault's real balance; money can only go to addresses on the vault's list; approvals cannot outlive a batch.</p></div>
+          <div class="facts"><span class="fact">per-token limits</span><span class="fact">destination list</span><span class="fact">no lingering approvals</span></div></div>
+        <div class="crystal layer reveal d2"><div class="num">03</div><div><h3>Agent sessions with budgets</h3><p>AI agents get short sessions with their own budget and expiry, only for the calls the owner approved in advance.</p></div>
+          <div class="facts"><span class="fact">own budget</span><span class="fact">expiry</span><span class="fact">approved calls only</span></div></div>
+        <div class="crystal layer reveal d3"><div class="num">04</div><div><h3>Guardians, timelock and panic</h3><p>Tightening is instant; loosening waits in a timelock that any guardian can veto. One panic pauses everything and revokes every earlier permission.</p></div>
+          <div class="facts"><span class="fact">≥ 2 guardians</span><span class="fact">timelock</span><span class="fact">panic</span><span class="fact">recovery key</span></div></div>
+        <div class="crystal layer reveal d4"><div class="num">05</div><div><h3>Watchtower</h3><p>An automatic guardian cancels any change the owner did not approve, presses panic on a burst of them and alerts the owner.</p></div>
+          <div class="facts"><span class="fact">cancels in seconds</span><span class="fact">alerts</span><span class="fact">can't move funds</span></div></div>
+      </div>
+
+      <div class="grid g2" style="margin-top:18px">
+        <article class="crystal hover pad reveal">
+          <div class="icon tone-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg></div>
+          <h3>Upgrades without moving funds — only if the owner wants</h3>
+          <p class="card-text">New versions go through a public registry with a 7-day waiting window. A vault opts in through its
+            own timelock (at least 2 days) that guardians can veto. Same address, same funds. Nobody — including IBITI Labs —
+            can upgrade a customer's vault for them.</p>
+        </article>
+        <article class="crystal hover pad reveal d1">
+          <div class="icon tone-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3>Built and checked like infrastructure</h3>
+          <p class="card-text">120 automated tests for the v2 vault alone (334 across the project), including fuzzing and stateful
+            invariants (compromised operator, admin and session manager), Slither static analysis with every finding fixed or justified, four internal security reviews,
+            verified source on BscScan.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROOF -->
+  <section id="proof">
+    <div class="wrap">
+      <div class="section-head center reveal">
+        <p class="eyebrow">Don't trust us</p>
+        <h2>Check every claim yourself.</h2>
+        <p class="lead">The evidence is pinned to a fixed public Git commit. Your browser — or one command — re-checks it
+          against BSC Testnet. Nothing to install, no keys, no account.</p>
+      </div>
+      <div class="crystal check-card reveal">
+        <div>
+          <h3>In your browser</h3>
+          <ul class="bullets">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>every contract's code hash, and the hash pinned in the registry</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>every transaction: who sent it, its events, its amounts</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>every rejection reason — from the execution trace where available</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>the vault's state at fixed blocks, and the money moved during attacks</li>
+          </ul>
+          <div class="cta" style="justify-content:flex-start;margin-top:26px"><a class="btn btn-primary" href="proof/?run=1">Run the check</a></div>
+        </div>
+        <div>
+          <h3>From the command line</h3>
+          <div class="cmd"><span class="c-dim"># Python 3 only — no packages, no keys</span>
+git clone https://github.com/VOVAN1980/ibiti-epk-core
+cd ibiti-epk-core &amp;&amp; git checkout feature/epk-v2
+python scripts/v2/verify_evidence.py
+
+<span class="c-dim"># + byte-for-byte: on-chain code = open-source build</span>
+forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
+          <p class="card-text" style="margin-top:16px">Last full run: <b style="color:#fff">112 checks OK, 0 mismatches</b>; the bytecode of all
+            6 contracts equals the repository's build.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUDIENCE -->
+  <section id="who">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Who it is for</p>
+        <h2>For everyone who lets software touch money.</h2>
+      </div>
+      <div class="grid g3">
+        <article class="crystal hover pad reveal d1">
+          <div class="icon tone-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M16 13h2M2 10h20"/></svg></div>
+          <h3>Wallets and exchanges</h3>
+          <p class="card-text">Offer AI-driven features to users without handing a bot unlimited power over their funds.</p>
+        </article>
+        <article class="crystal hover pad reveal d2">
+          <div class="icon tone-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 2v6M8 14h.01M16 14h.01M9 18h6"/></svg></div>
+          <h3>AI agent builders</h3>
+          <p class="card-text">Ship agents that pay, trade and rebalance — with budgets and kill switches your customers can verify.</p>
+        </article>
+        <article class="crystal hover pad reveal d3">
+          <div class="icon tone-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M12 3l9 5H3l9-5z"/></svg></div>
+          <h3>Protocols, funds and treasuries</h3>
+          <p class="card-text">Automate operations while governance keeps limits, allowlists, timelocks and the last word.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section id="roadmap">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Where we are</p>
+        <h2>Honest status.</h2>
+      </div>
+      <div class="road">
+        <div class="crystal st done reveal"><div class="when">2026 · done</div><h3>EPK v1</h3><p>Permission kernel for agents; DoraHacks OpenClaw winner; MIT.</p></div>
+        <div class="crystal st now reveal d1"><div class="when">Nov 2026 · now</div><h3>EPK v2 on testnet</h3><p>Per-customer vaults, agent sessions, Watchtower, public proof. Opt-in upgrade 2.0.0 → 2.0.1 on Nov 14–16.</p></div>
+        <div class="crystal st reveal d2"><div class="when">next</div><h3>SDK v2 &amp; guard modules</h3><p>TypeScript SDK, DEX guard, threat feed, always-on Watchtower.</p></div>
+        <div class="crystal st reveal d3"><div class="when">then</div><h3>Independent audit</h3><p>Professional audit of vault, sessions and upgrades; public bug bounty.</p></div>
+        <div class="crystal st reveal d4"><div class="when">after the audit</div><h3>Mainnet</h3><p>Production deployments under commercial licenses.</p></div>
+      </div>
+      <div class="notice reveal" style="margin-top:22px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+        <div><b>Testnet only.</b> EPK v2 has not been independently audited yet, and the demo uses a test token (eUSD) with no
+          value. The demo proves that these protections worked in these scenarios — it is not a guarantee that no
+          vulnerabilities exist. Mainnet comes only after an independent audit.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LICENSING -->
+  <section id="license">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <p class="eyebrow">Licensing</p>
+        <h2>Open to learn from.<br>Fair to build a business on.</h2>
+      </div>
+      <div class="grid g3">
+        <article class="crystal hover lic reveal d1"><span class="eyebrow tone-green">EPK v1</span><div class="price">MIT</div>
+          <ul><li>Free for everyone, forever</li><li>Reference kernel — not for holding real funds</li></ul></article>
+        <article class="crystal hover lic reveal d2"><span class="eyebrow tone-blue">EPK v2 · BUSL-1.1</span><div class="price">Free to test</div>
+          <ul><li>Read the code, run it, build on it</li><li>Testnets, hackathons, education, research and security review</li></ul></article>
+        <article class="crystal hover lic reveal d3"><span class="eyebrow tone-violet">Production</span><div class="price">By agreement</div>
+          <ul><li>Protecting real funds needs a commercial license from IBITI Labs</li><li>Becomes MIT no later than 2030-11-06</li></ul></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECOGNITION -->
+  <section id="recognition" style="padding-top:40px">
+    <div class="wrap">
+      <div class="section-head reveal"><p class="eyebrow">Recognition</p><h2>Seen by the ecosystem.</h2></div>
+      <div class="grid g2">
+        <a class="crystal hover recog reveal d1" href="https://dorahacks.io/buidl/39567/" target="_blank" rel="noopener">
+          <img src="img/dorahacks.png" alt="DoraHacks" width="54" height="54" loading="lazy"><div><div class="t">DoraHacks — OpenClaw winner</div><div class="u">dorahacks.io/buidl/39567 ↗</div></div></a>
+        <a class="crystal hover recog reveal d2" href="https://x.com/BNBCHAIN" target="_blank" rel="noopener">
+          <img src="img/bnbchain.png" alt="BNB Chain" width="54" height="54" loading="lazy"><div><div class="t">BNB Chain — AI Agent Ecosystem</div><div class="u">x.com/BNBCHAIN ↗</div></div></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section style="padding-top:40px">
+    <div class="wrap">
+      <div class="crystal final reveal">
+        <p class="eyebrow">Next step</p>
+        <h2>Let's protect your agents.</h2>
+        <p class="lead">Tell us what your agents do. We'll map the limits, sessions and guardians, and run your own vault on testnet.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="pilot.html">Start a pilot</a>
+          <a class="btn btn-ghost" href="mailto:info@ibiticoin.com?subject=EPK%20v2%20%E2%80%94%20pilot">info@ibiticoin.com</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="./"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span>EPK <small>by IBITI Labs</small></span></a>
+        <p class="fine">© 2026 IBITI Labs (Volodymyr Podkorytov). EPK v2 is licensed under BUSL-1.1, EPK v1 under MIT.
+          Testnet demo with a test token; not audited yet; no investment advice.</p>
+      </div>
+      <nav aria-label="Footer">
+        <a href="proof/">Proof</a>
+        <a href="pilot.html">Pilot &amp; licensing</a>
+        <a href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://x.com/IBITILabs" target="_blank" rel="noopener">X</a>
+        <a href="v1/">EPK v1 archive</a>
+        <a href="https://vovan1980.github.io/IBITILabs">IBITI Labs</a>
+      </nav>
     </div>
   </div>
-</section>
-
-        <!-- 4. SYSTEM ARCHITECTURE -->
-        <section id="features" class="max-w-6xl mx-auto mb-32 reveal">
-            <div class="flex flex-col md:flex-row justify-between items-end mb-12 px-2">
-                <h2 class="text-3xl font-bold">System Architecture</h2>
-                <div class="text-white/30 text-sm mt-2 md:mt-0">Modular security for autonomous agents</div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <!-- Feature 1 -->
-                <a href="immutable-core.html" class="block group">
-                  <div class="crystal p-8 rounded-2xl hover:cursor-pointer">
-                    <div class="feature-icon w-10 h-10 rounded-lg flex items-center justify-center mb-6 text-primary">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                      </svg>
-                    </div>
-                  <h3 class="font-bold text-lg text-white mb-3">Immutable Core</h3>
-                  <p class="text-sm text-white/50 leading-relaxed">
-                   The kernel code is frozen. No upgrades, no proxy admin backdoors. Pure mathematical security.
-                  </p>
-              </div>
-              </a>
-
-                <!-- Feature 2 -->
-                <a href="eip712-native.html" class="crystal p-8 rounded-2xl group block">
-                 <div class="feature-icon w-10 h-10 rounded-lg flex items-center justify-center mb-6 text-accent">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                   <path d="M4 17l6-6-6-6M12 19h8"/>
-                  </svg>
-                </div>
-               <h3 class="font-bold text-lg text-white mb-3">EIP-712 Native</h3>
-               <p class="text-sm text-white/50 leading-relaxed">
-                Agents sign typed data intents. Human-readable signatures that wallets understand natively.
-               </p>
-             </a>
-
-                <!-- Feature 3 -->
-                <a href="panic-mode.html" class="crystal p-8 rounded-2xl group block">
-                 <div class="feature-icon w-10 h-10 rounded-lg flex items-center justify-center mb-6 text-cyan-400">
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                     <circle cx="12" cy="12" r="10"></circle>
-                     <line x1="12" y1="8" x2="12" y2="12"></line>
-                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                    </svg>
-                  </div>
-                  <h3 class="font-bold text-lg text-white mb-3">Panic Mode</h3>
-                 <p class="text-sm text-white/50 leading-relaxed">
-                Instant revocation. One transaction blocks all agent activity in milliseconds.
-               </p>
-            </a>
-        </section>
-
-        <!-- 5. EXECUTION PIPELINE -->
-        <section id="integration" class="max-w-6xl mx-auto py-12 relative reveal">
-            <h2 class="text-3xl font-bold mb-16 text-center">Execution Pipeline</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                <!-- Card 1 -->
-                <a href="sign-intent.html" class="crystal rounded-2xl p-8 tilt-card group relative overflow-hidden block">
-                  <div class="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-primary/20"></div>
-                    <div class="tilt-inner relative z-10">
-                      <div class="text-4xl font-bold text-white/10 mb-6">01</div>
-                    <h3 class="text-xl font-bold mb-3 text-white group-hover:text-primary transition-colors">Sign Intent</h3>
-                   <p class="text-sm text-white/50 leading-relaxed">Agent constructs transaction. Owner signs message off-chain using EIP-712 standards.</p>
-                </div>
-             </a>
-
-                <!-- Card 2 -->
-                <a href="validate.html" class="crystal rounded-2xl p-8 tilt-card group relative overflow-hidden block">
-                 <div class="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-accent/20"></div>
-                   <div class="tilt-inner relative z-10">
-                      <div class="text-4xl font-bold text-white/10 mb-6">02</div>
-                        <h3 class="text-xl font-bold mb-3 text-white group-hover:text-accent transition-colors">Validate</h3>
-                     <p class="text-sm text-white/50 leading-relaxed">Kernel checks signature & Nonce. Delegates logical checks to attached Validator modules.</p>
-                    </div>
-                   </a>
-
-                <!-- Card 3 -->
-                <a href="execute.html" class="crystal rounded-2xl p-8 tilt-card group relative overflow-hidden block">
-                  <div class="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-cyan-500/20"></div>
-                    <div class="tilt-inner relative z-10">
-                       <div class="text-4xl font-bold text-white/10 mb-6">03</div>
-                          <h3 class="text-xl font-bold mb-3 text-white group-hover:text-cyan-400 transition-colors">Execute</h3>
-                       <p class="text-sm text-white/50 leading-relaxed">Low-level call executes. Any security violation triggers an instant atomic revert.</p>
-                    </div>
-                  </a>
-        </section>
-
-       <!-- 6. RECOGNITION (BALANCED, GLOW ON HOVER ONLY) -->
-<section id="recognition" class="relative py-24 md:py-28 reveal"
-  style="
-    /* 🎛️ ПАНЕЛЬ УПРАВЛЕНИЯ РАЗМЕРАМИ И ПОЛОЖЕНИЕМ */
-    --dora-w: 240px;  
-    --dora-y: 0px;    
-    
-    --bnb-w: 240px;   
-    --bnb-y: -20px;    
-  "
->
-  <div class="relative max-w-6xl mx-auto px-6">
-
-    <header class="text-center mb-12 md:mb-14">
-      <h2 class="text-3xl md:text-4xl font-bold">Recognition</h2>
-      <p class="text-white/50 mt-3">External validation. Click to verify.</p>
-    </header>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-start justify-items-center">
-
-      <!-- DoraHacks -->
-      <a href="https://dorahacks.io/buidl/39567/"
-         target="_blank" rel="noopener"
-         class="group relative w-full max-w-[520px] flex flex-col items-center text-center">
-        
-        <!-- Свечение фона (скрыто по умолчанию, появляется при наведении) -->
-        <div class="pointer-events-none absolute -inset-10 blur-3xl opacity-0 transition duration-500 ease-out group-hover:opacity-30
-                    bg-[radial-gradient(ellipse_at_center,rgba(255,120,0,0.5),transparent_65%)]"></div>
-
-        <div class="relative w-full h-[220px] md:h-[240px] flex items-center justify-center">
-          <!-- ЛОГОТИП DORA -->
-          <img src="img/dorahacks.png"
-               alt="DoraHacks"
-               style="width: var(--dora-w); margin-top: var(--dora-y);"
-               class="object-contain
-                      transition duration-500 ease-out
-                      group-hover:scale-105 group-hover:-translate-y-2
-                      group-hover:drop-shadow-[0_0_56px_rgba(255,120,0,0.4)]" />
-        </div>
-
-        <div class="mt-5 h-[58px] flex flex-col items-center justify-start">
-          <div class="text-sm font-semibold text-white/85 group-hover:text-white transition duration-300">
-            DoraHacks — OpenClaw Winner
-          </div>
-          <div class="text-xs font-mono text-white/40 group-hover:text-white/70 transition duration-300">
-            dorahacks.io/buidl/39567
-          </div>
-        </div>
-      </a>
-
-      <!-- BNB Chain -->
-      <a href="https://x.com/BNBCHAIN"
-         target="_blank" rel="noopener"
-         class="group relative w-full max-w-[320px] flex flex-col items-center text-center">
-        
-        <!-- Свечение фона (скрыто по умолчанию, появляется при наведении) -->
-        <div class="pointer-events-none absolute -inset-10 blur-3xl opacity-0 transition duration-500 ease-out group-hover:opacity-30
-                    bg-[radial-gradient(ellipse_at_center,rgba(255,200,0,0.5),transparent_65%)]"></div>
-
-        <div class="relative w-full h-[220px] md:h-[240px] flex items-center justify-center">
-          <!-- ЛОГОТИП BNB -->
-          <img src="img/bnbchain.png"
-               alt="BNB Chain"
-               style="width: var(--bnb-w); margin-top: var(--bnb-y);"
-               class="object-contain
-                      transition duration-500 ease-out
-                      group-hover:scale-105 group-hover:-translate-y-2
-                      group-hover:drop-shadow-[0_0_56px_rgba(255,200,0,0.4)]" />
-        </div>
-
-        <div class="mt-5 h-[58px] flex flex-col items-center justify-start">
-          <div class="text-sm font-semibold text-white/85 group-hover:text-white transition duration-300">
-            BNB Chain — AI Agent Ecosystem
-          </div>
-          <div class="text-xs font-mono text-white/40 group-hover:text-white/70 transition duration-300">
-            x.com/BNBCHAIN
-          </div>
-        </div>
-      </a>
-
-    </div>
-
-    <div class="mt-10 text-center text-xs font-mono text-white/25 tracking-widest">
-      PUBLIC LINKS • CLICK-TO-VERIFY
-    </div>
-
-  </div>
-</section>
-
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="border-t border-white/5 py-16 bg-[#010101] relative z-10">
-        <div class="max-w-6xl mx-auto px-6">
-            <div class="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
-                <!-- Brand -->
-                <div class="max-w-sm">
-                    <div class="flex items-center gap-2 mb-6">
-                         <div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_#3B82F6]"></div>
-                         <span class="font-bold tracking-tight text-xl text-white">IBITI <span class="text-white/40 font-normal">Labs</span></span>
-                    </div>
-                    <p class="text-sm text-white/40 leading-relaxed">
-                        Pioneering the security layer for the autonomous agent economy. Built for speed, security, and immutability.
-                    </p>
-                    
-                    <div class="mt-8 flex gap-4">
-                        <!-- X (Twitter) -->
-                        <a href="https://x.com/IBITILabs" target="_blank" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition border border-white/5">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                        </a>
-                        <!-- Website -->
-                        <a href="https://vovan1980.github.io/IBITILabs"" target="_blank" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition border border-white/5">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                        </a>
-                        <!-- Github -->
-                        <a href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition border border-white/5">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Links Grid -->
-                <div class="grid grid-cols-2 gap-12 text-sm w-full md:w-auto">
-                    <div>
-                        <h4 class="font-bold text-white mb-6">Product</h4>
-                        <ul class="space-y-4 text-white/50">
-                            <li><a href="#features" class="hover:text-primary transition">Features</a></li>
-                            <li><a href="#integration" class="hover:text-primary transition">Integration</a></li>
-                            <li><a href="#security" class="hover:text-primary transition">Security</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-white mb-6">Company</h4>
-                        <ul class="space-y-4 text-white/50">
-                            <li><a href="#" class="hover:text-primary transition">About</a></li>
-                            <li><a href="#" class="hover:text-primary transition">Careers</a></li>
-                            <li><a href="mailto:info@ibiticoin.com" class="hover:text-primary transition">Contact</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/20">
-                <p>&copy; 2026 IBITI Inc. All rights reserved.</p>
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                    <span>All Systems Operational</span>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- CONTACT MODAL -->
-    <div id="contact-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center px-4">
-        <div onclick="toggleModal(false)" class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
-        <div class="crystal max-w-md w-full rounded-2xl p-8 relative transform transition-all scale-100 z-10 border border-white/10">
-            <button onclick="toggleModal(false)" class="absolute top-4 right-4 text-white/40 hover:text-white transition">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-            <h2 class="text-2xl font-bold text-white mb-2">Get in touch</h2>
-            <p class="text-white/50 text-sm mb-8">We are currently in private beta. Reach out for pilot access.</p>
-            <div class="space-y-4">
-                <a href="mailto:info@ibiticoin.com" class="block p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition flex items-center gap-4 group">
-                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                    </div>
-                    <div>
-                        <div class="text-xs text-white/40 uppercase tracking-wide">Email Us</div>
-                        <span class="text-white font-medium">https://vovan1980.github.io/IBITILabs</span>
-                    </div>
-                </a>
-                <a href="https://x.com/IBITILabs" target="_blank" class="block p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition flex items-center gap-4 group">
-                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                    </div>
-                    <div>
-                        <div class="text-xs text-white/40 uppercase tracking-wide">Follow Updates</div>
-                        <span class="text-white font-medium">@IBITILabs</span>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- SCRIPTS -->
-    <script>
-        // --- MODAL ---
-        function toggleModal(show) {
-            const modal = document.getElementById('contact-modal');
-            if(show) { 
-                modal.classList.remove('hidden'); 
-                setTimeout(() => modal.classList.add('flex'), 10); 
-                document.body.style.overflow = 'hidden'; 
-            } else { 
-                modal.classList.remove('flex'); 
-                setTimeout(() => modal.classList.add('hidden'), 300); 
-                document.body.style.overflow = ''; 
-            }
-        }
-
-        // --- INTERACTIVE UNIVERSE BACKGROUND ---
-        const canvas = document.getElementById('universe');
-        const ctx = canvas.getContext('2d');
-        let width, height, nodes = [];
-        let fxEnabled = true;
-        let animationId;
-        
-        // Mouse Tracking for Interaction
-        let mouse = { x: null, y: null, radius: 200 };
-        
-        window.addEventListener('mousemove', (e) => {
-            mouse.x = e.x;
-            mouse.y = e.y;
-        });
-
-        function resize() { 
-            width = canvas.width = window.innerWidth; 
-            height = canvas.height = window.innerHeight; 
-            initNodes(); 
-        }
-        
-        window.addEventListener('resize', resize);
-        
-        class Node {
-            constructor() { 
-                this.x = Math.random() * width; 
-                this.y = Math.random() * height; 
-                this.vx = (Math.random() - 0.5) * 0.5; 
-                this.vy = (Math.random() - 0.5) * 0.5; 
-                this.size = Math.random() * 2 + 0.5; // Bigger variation
-                this.baseX = this.x;
-                this.baseY = this.y;
-            }
-            update() { 
-                // Regular movement
-                this.x += this.vx; 
-                this.y += this.vy; 
-
-                // Wall bounce
-                if(this.x < 0 || this.x > width) this.vx *= -1; 
-                if(this.y < 0 || this.y > height) this.vy *= -1; 
-
-                // MOUSE INTERACTION (The "Playful" Part)
-                if (mouse.x != null) {
-                    let dx = mouse.x - this.x;
-                    let dy = mouse.y - this.y;
-                    let distance = Math.sqrt(dx*dx + dy*dy);
-                    
-                    if (distance < mouse.radius) {
-                        const forceDirectionX = dx / distance;
-                        const forceDirectionY = dy / distance;
-                        const force = (mouse.radius - distance) / mouse.radius;
-                        const directionX = forceDirectionX * force * 3; // Strength
-                        const directionY = forceDirectionY * force * 3;
-                        
-                        this.x += directionX;
-                        this.y += directionY;
-                    }
-                }
-            }
-            draw() { 
-                ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random()*0.2})`; 
-                ctx.beginPath(); 
-                ctx.arc(this.x,this.y,this.size,0,Math.PI*2); 
-                ctx.fill(); 
-            }
-        }
-        
-        function initNodes() { 
-            nodes=[]; 
-            // More particles for better look, less on mobile
-            const count = window.innerWidth < 768 ? 50 : 130;
-            for(let i=0;i<count;i++) nodes.push(new Node()); 
-        }
-        
-        function animate() {
-            if(!fxEnabled) return;
-            
-            ctx.clearRect(0,0,width,height);
-            
-            for(let i=0; i<nodes.length; i++) {
-                nodes[i].update(); 
-                nodes[i].draw();
-                
-                // Connect to other nodes
-                for(let j=i; j<nodes.length; j++) {
-                    const dx = nodes[i].x - nodes[j].x;
-                    const dy = nodes[i].y - nodes[j].y;
-                    const d = Math.sqrt(dx*dx + dy*dy);
-                    
-                    if(d < 120) { 
-                        ctx.beginPath();
-                        ctx.strokeStyle = `rgba(100,150,255,${0.15 * (1 - d/120)})`; 
-                        ctx.lineWidth = 0.5;
-                        ctx.moveTo(nodes[i].x,nodes[i].y); 
-                        ctx.lineTo(nodes[j].x,nodes[j].y); 
-                        ctx.stroke(); 
-                    }
-                }
-                
-                // Connect to Mouse (Neural connection feel)
-                if (mouse.x != null) {
-                    const dx = nodes[i].x - mouse.x;
-                    const dy = nodes[i].y - mouse.y;
-                    const d = Math.sqrt(dx*dx + dy*dy);
-                    if (d < 150) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = `rgba(139, 92, 246, ${0.2 * (1 - d/150)})`; // Purple tint for interaction
-                        ctx.lineWidth = 0.8;
-                        ctx.moveTo(nodes[i].x, nodes[i].y);
-                        ctx.lineTo(mouse.x, mouse.y);
-                        ctx.stroke();
-                    }
-                }
-            }
-            animationId = requestAnimationFrame(animate);
-        }
-
-        // --- FX TOGGLE LOGIC ---
-        function toggleFX() {
-            fxEnabled = !fxEnabled;
-            const btn = document.getElementById('fx-toggle');
-            const span = btn.querySelector('span');
-            
-            if(fxEnabled) {
-                btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_5px_currentColor]"></span> FX: ON`;
-                btn.classList.remove('text-red-400');
-                btn.classList.add('text-green-400');
-                animate();
-            } else {
-                btn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> FX: OFF`;
-                btn.classList.remove('text-green-400');
-                btn.classList.add('text-red-400');
-                cancelAnimationFrame(animationId);
-                ctx.clearRect(0,0,width,height); // Clear canvas
-            }
-        }
-        
-        // Start
-        resize(); 
-        animate();
-
-        // --- TILT & REVEAL ---
-        if (window.matchMedia("(min-width: 768px)").matches) {
-            document.querySelectorAll('.tilt-card').forEach(c => {
-                c.addEventListener('mousemove', e => {
-                    const r = c.getBoundingClientRect(); 
-                    c.style.transform = `perspective(1000px) rotateX(${-(e.clientY-r.top-r.height/2)/20}deg) rotateY(${(e.clientX-r.left-r.width/2)/20}deg)`;
-                });
-                c.addEventListener('mouseleave', () => c.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)');
-            });
-        }
-        
-        const obs = new IntersectionObserver(es => es.forEach(e => {
-            if(e.isIntersecting) e.target.classList.add('active');
-        }), {threshold: 0.1});
-        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-
-        // --- STATS COUNT-UP (run when section is visible OR opened by #security) ---
-(() => {
-  let statsStarted = false;
-
-  // ТЕКУЩИЕ ЧИСЛА ИЗ ТВОЕГО ЛОГА
-  const TESTS = 202;
-  const INVAR = 128000;
-
-  function animateValue(el, to, ms, formatter) {
-    const start = performance.now();
-    function tick(now) {
-      const p = Math.min((now - start) / ms, 1);
-      const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
-      const v = Math.round(to * eased);
-      el.textContent = formatter ? formatter(v) : String(v);
-      if (p < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }
-
-  function runStats() {
-    if (statsStarted) return;
-    statsStarted = true;
-
-    const corePassed = document.getElementById('corePassed');
-    const coreTotal  = document.getElementById('coreTotal');
-    const invChecks  = document.getElementById('invChecks');
-    if (!corePassed || !coreTotal || !invChecks) return;
-
-    animateValue(corePassed, TESTS, 1200);
-    animateValue(coreTotal, TESTS, 1200, v => `/ ${v}`);
-    animateValue(invChecks, INVAR, 1500, v => (v >= 1000 ? `${(v/1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : String(v)));
-  }
-
-  const statsSection = document.getElementById('security');
-  if (!statsSection) return;
-
-  const statsObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) {
-      runStats();
-      statsObserver.disconnect();
-    }
-  }, { threshold: 0.35 });
-
-  statsObserver.observe(statsSection);
-
-  // Если заходят сразу по якорю ...#security
-  function runOnHash() {
-    if (location.hash === '#security') {
-      requestAnimationFrame(() => requestAnimationFrame(runStats));
-    }
-  }
-  window.addEventListener('load', runOnHash);
-  window.addEventListener('hashchange', runOnHash);
-})();
-
- </script>
-    <!-- RRWEB Session Recorder for Test Eternal Permission Kernel (EPK) on BSC Testnet -->
-<script>
-  window.RECORDING_SERVER_URL = 'https://platform.joinable.ai/backend';
-  window.CAMPAIGN_SLUG = 'test-eternal-permission-kernel-epk-on-bsc-testnet';
-  window.CAMPAIGN_TYPE = 'user-testing';
-</script>
-<script src="https://platform.joinable.ai/rrweb-recorder.js"></script>
+</footer>
+<script src="assets/epk.js"></script>
 </body>
 </html>
-
-
-
-
-

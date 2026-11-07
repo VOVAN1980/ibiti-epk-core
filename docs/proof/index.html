@@ -5,48 +5,75 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EPK Proof of Security</title>
 <meta name="description" content="EPK v2 by IBITI Labs: every security claim checked live against BSC Testnet in your browser.">
+<meta name="theme-color" content="#020204">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/epk.css">
 <style>
-:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--dim:#8b949e;--ok:#3fb950;--bad:#f85149;--warn:#d29922;--brand:#f0b90b;--link:#58a6ff}
-@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#ffffff;--panel:#f6f8fa;--line:#d0d7de;--text:#1f2328;--dim:#59636e;--ok:#1a7f37;--bad:#cf222e;--warn:#9a6700;--brand:#d4a106;--link:#0969da}}
-:root[data-theme="light"]{--bg:#ffffff;--panel:#f6f8fa;--line:#d0d7de;--text:#1f2328;--dim:#59636e;--ok:#1a7f37;--bad:#cf222e;--warn:#9a6700;--brand:#d4a106;--link:#0969da}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Arial,sans-serif}
-a{color:var(--link)}
-.wrap{max-width:1100px;margin:0 auto;padding:28px 16px 60px}
-header{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.badge{background:var(--brand);color:#0d1117;font-weight:800;border-radius:8px;padding:5px 11px}
-h1{font-size:30px;margin:0}
-h2{font-size:21px;margin:0 0 6px}
-.lead{color:var(--dim);margin:8px 0 18px;max-width:820px}
-.note{border:1px solid var(--warn);border-radius:10px;padding:12px 14px;margin:0 0 22px;font-size:15px}
-.note b{color:var(--warn)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 22px}
-@media (max-width:420px){.tile{padding:12px}.tile .n{font-size:26px}}
-.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-.tile .n{font-size:30px;font-weight:700}
-.tile .l{color:var(--dim);font-size:14px}
-.run{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0 0 10px}
-button{background:var(--brand);color:#0d1117;border:0;border-radius:10px;padding:11px 18px;font-weight:700;font-size:16px;cursor:pointer}
-button:disabled{opacity:.6;cursor:wait}
-.status{color:var(--dim);font-size:15px}
-section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
-section p{margin:6px 0 12px;color:var(--dim)}
-.scroll{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{text-align:left;padding:8px 8px;border-top:1px solid var(--line);vertical-align:top}
-th{color:var(--dim);font-weight:600;border-top:0}
-code,.mono{font-family:Consolas,"SF Mono",monospace;font-size:13px}
-.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;border:1px solid currentColor;white-space:nowrap}
-.claim{color:var(--dim)} .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)}
-#log{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;max-height:340px;overflow:auto;font:13px/1.5 Consolas,monospace;white-space:pre-wrap;word-break:break-word;margin:0}
-.cmd{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:13px Consolas,monospace;overflow-x:auto;white-space:pre}
-footer{color:var(--dim);font-size:14px;margin-top:26px}
-details summary{cursor:pointer;color:var(--dim)}
+.proof { padding: 120px 0 30px; }
+.proof .page-head h1 { font-size: clamp(38px, 6.4vw, 72px); line-height: 1.04; font-weight: 800; margin-top: 18px; text-shadow: 0 0 30px rgba(59,130,246,.35); }
+.proof .note { padding: 16px 18px; border-radius: 14px; border: 1px solid rgba(251,191,36,.35); background: rgba(251,191,36,.05); color: var(--muted); font-size: 14.5px; margin: 26px 0 22px; }
+.proof .note b { color: var(--gold); }
+.proof .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0 0 22px; }
+.proof .tile { background: var(--glass); border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius); padding: 20px; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.proof .tile .n { font: 800 clamp(28px, 3.4vw, 42px)/1 var(--font-display); }
+.proof .tile .l { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.proof .run { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin: 0 0 12px; }
+.proof #go { background: #fff; color: #050507; border: 0; border-radius: 14px; padding: 15px 24px; font: 700 16px/1 var(--font-display); cursor: pointer; box-shadow: 0 0 30px rgba(255,255,255,.15); transition: transform .25s, box-shadow .25s; }
+.proof #go:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(255,255,255,.3); }
+.proof #go:disabled { opacity: .6; cursor: wait; transform: none; }
+.proof .status { color: var(--muted); font-size: 15px; }
+.proof section { background: var(--glass); border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius); padding: 26px; margin: 16px 0; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.proof section h2 { font-size: 24px; margin: 0 0 8px; }
+.proof section p { margin: 6px 0 14px; color: var(--muted); }
+.proof .scroll { overflow-x: auto; }
+.proof table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.proof th, .proof td { text-align: left; padding: 10px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+.proof th { color: var(--dim); border-top: 0; font: 500 11px/1.2 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.proof code, .proof .mono { font-family: var(--font-mono); font-size: 12.5px; }
+.proof a { color: var(--primary-soft); }
+.proof .claim { color: var(--dim); } .proof .ok { color: var(--safe-soft); } .proof .bad { color: var(--danger-soft); } .proof .warn { color: var(--gold); }
+.proof #log { background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 12px; padding: 14px; max-height: 360px; overflow: auto; font: 12.5px/1.6 var(--font-mono); white-space: pre-wrap; word-break: break-word; margin: 0; }
+.proof details summary { cursor: pointer; color: var(--muted); margin: 6px 0; }
+.proof #rpc { background: rgba(0,0,0,.4); border: 1px solid var(--line); color: #fff; border-radius: 8px; padding: 8px 10px; }
+@media (max-width: 860px) { .proof .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .proof section { padding: 18px; } .proof #go { width: 100%; } }
 </style>
 </head>
 <body>
+<canvas id="universe" aria-hidden="true"></canvas>
+<div class="aurora a1" aria-hidden="true"></div>
+<div class="aurora a2" aria-hidden="true"></div>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="../" aria-label="EPK by IBITI Labs — home">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>
+      <span>EPK <small>by IBITI Labs</small></span>
+      <span class="tag">V2 · TESTNET</span>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="../#attacks">Attacks</a>
+      <a href="../#watchtower">Watchtower</a>
+      <a href="../#how">How it works</a>
+      <a href="./" aria-current="page">Proof</a>
+      <a href="../pilot.html">Pilot &amp; licensing</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="chip fx" data-fx type="button" aria-pressed="true"><span class="dot"></span>FX: ON</button>
+      <button class="icon-btn menu-btn" data-menu type="button" aria-label="Menu" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<main class="proof">
 <div class="wrap">
-<header><span class="badge">EPK v2</span><h1>Proof of Security</h1></header>
+<div class="page-head">
+  <span class="badge"><span class="dot"></span>Live check · BSC Testnet</span>
+  <h1>Proof of <span class="grad">Security</span></h1>
+</div>
 <p class="lead">EPK gives every customer their own on-chain vault. Even if the server or AI agent holding a key is
 hacked, the vault itself enforces limits, allowed destinations, agent budgets, a panic button and timelocked
 upgrades. This page does not ask you to trust us: press the button and your browser checks every claim below
@@ -130,16 +157,27 @@ vulnerabilities exist. EPK v2 has not yet been independently audited; nothing go
   </details>
 </section>
 
-<footer>EPK v2 © IBITI Labs (Volodymyr Podkorytov) · Business Source License 1.1 — use in production by agreement ·
-Test network only, test token only.</footer>
 </div>
+</main>
 
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="../"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span>EPK <small>by IBITI Labs</small></span></a>
+        <p class="fine">© 2026 IBITI Labs (Volodymyr Podkorytov). EPK v2 is licensed under BUSL-1.1 — use in production by agreement.
+          Test network only, test token only.</p>
+      </div>
+      <nav aria-label="Footer"><a href="../">Home</a><a href="../pilot.html">Pilot &amp; licensing</a><a href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" rel="noopener">GitHub</a><a href="../v1/">EPK v1 archive</a></nav>
+    </div>
+  </div>
+</footer>
+<script src="../assets/epk.js"></script>
 <script>
 "use strict";
-{ const th = new URLSearchParams(location.search).get("theme"); if (th === "dark" || th === "light") document.documentElement.dataset.theme = th; }
 // ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
 const REPO = "VOVAN1980/ibiti-epk-core";
-const EVIDENCE_COMMIT = "bd3cf198a361d3bc7780806e9cdd54f2be1a0f59";
+const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT) || "bd3cf198a361d3bc7780806e9cdd54f2be1a0f59";
 const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
 const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
 const EV_PATH = "deployments/bsc-testnet/epk-v2-evidence.json";
