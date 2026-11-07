@@ -1,5 +1,13 @@
 # @ibiti/epk-sdk
 
+> **Preview — testnet only.** EPK v2 has **not** been independently audited and is not deployed on any mainnet.
+> Do not use this SDK or EPK v2 to hold or move real funds. Install, integrate on BSC Testnet, and tell us what
+> is missing: info@ibiticoin.com · https://github.com/VOVAN1980/ibiti-epk-core
+>
+> `npm install @ibiti/epk-sdk@preview viem` · developer guide:
+> [INTEGRATION_v2.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/feature/epk-v2.1/docs/INTEGRATION_v2.md) ·
+> licence: SDK code MIT; bundled EPK v2 contract bytecode BUSL-1.1 (see `LICENSE`).
+
 TypeScript SDK for **EPK** (IBITI Labs) built on **viem**.
 
 - `@ibiti/epk-sdk/v2` — **EPK v2 vaults (2.0.x and 2.1.x), AI-agent sessions, the timelock and the guards**

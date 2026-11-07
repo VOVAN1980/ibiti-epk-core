@@ -1,8 +1,8 @@
 {
   "name": "@ibiti/epk-sdk",
-  "version": "1.1.0",
-  "description": "IBITI EPK TypeScript SDK (viem): EPK v1 kernel, and EPK v2 vaults, agent sessions, timelock and guards (./v2)",
-  "license": "MIT",
+  "version": "2.0.0-preview.0",
+  "description": "PREVIEW (testnet only, not audited) — TypeScript SDK for EPK v2 vaults: per-customer vaults for AI agents and trading bots, agent sessions, guarded swaps (DexGuard), timelock, upgrades. Built on viem.",
+  "license": "MIT AND BUSL-1.1",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +18,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "sideEffects": false,
   "scripts": {
@@ -65,5 +66,9 @@
     "bnb-chain",
     "security",
     "smart-contracts"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public",
+    "tag": "preview"
+  }
 }
