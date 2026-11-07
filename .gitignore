@@ -31,3 +31,6 @@ ibiticoin.github.io/
 
 # Claude Code local worktrees / settings
 .claude/
+
+# Local video/presentation material (screenshots for the hackathon video)
+media/
