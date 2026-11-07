@@ -2,13 +2,15 @@
 pragma solidity ^0.8.24;
 
 import {IEPKRegistry, IVersionedVault} from "./IEPK.sol";
+import {EPKChains} from "./EPKChains.sol";
 
 /// @title EPK Registry — catalogue of reviewed EPKVault implementations
 /// @notice Lists the implementation versions that vaults MAY opt into. The registry cannot upgrade,
 ///         pause or touch any vault: every vault decides for itself (admin + timelock + guardian veto).
 ///         A vault's registry is fixed at creation and cannot be swapped.
-///         A new release becomes usable only APPROVAL_DELAY after it is proposed, so the public can
-///         inspect it first; a release can be revoked instantly (blocks future opt-ins only).
+///         A new release becomes usable only `approvalDelay()` after it is proposed (7 days; minutes
+///         on public test networks, see EPKChains), so the public can inspect it first; a release can be
+///         revoked instantly (blocks future opt-ins only).
 contract EPKRegistry is IEPKRegistry {
     struct Release {
         uint64 version; // read from the implementation's own vaultVersion(); 0 = not listed
@@ -18,6 +20,8 @@ contract EPKRegistry is IEPKRegistry {
     }
 
     uint256 public constant APPROVAL_DELAY = 7 days;
+    /// @notice Release window on public test networks only (EPKChains.isTestChain).
+    uint256 public constant TEST_APPROVAL_DELAY = 5 minutes;
     /// @notice Largest version jump per release (one major version), so the version space cannot be
     ///         exhausted by a single malicious proposal.
     uint64 public constant MAX_VERSION_STEP = 10_000;
@@ -58,7 +62,12 @@ contract EPKRegistry is IEPKRegistry {
     }
 
     function proposeRelease(address implementation) external onlyOwner {
-        _list(implementation, uint64(block.timestamp + APPROVAL_DELAY), false);
+        _list(implementation, uint64(block.timestamp + approvalDelay()), false);
+    }
+
+    /// @notice Time between proposing a release and vaults being able to run it.
+    function approvalDelay() public view returns (uint256) {
+        return EPKChains.isTestChain() ? TEST_APPROVAL_DELAY : APPROVAL_DELAY;
     }
 
     function revokeRelease(address implementation) external onlyOwner {

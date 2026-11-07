@@ -89,7 +89,8 @@ python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.1
 ```
 
 Python 3 only — no Foundry, no keys. It checks the chain id, every contract's code hash (and, with
-`--build` after `forge build`, that it equals this repository's build), that the 2.1.0 implementation is
+`--build` after `forge build` at commit `5f0984c` — the code these contracts were deployed from; the vault
+code changed afterwards — that it equals this repository's build), that the 2.1.0 implementation is
 pinned in the demo registry and that the vault proxy points to it, every transaction's sender and
 target, the events and exact amounts of the successful steps, and the revert reason of every attack —
 **STRICT** from execution traces saved in `deployments/bsc-testnet/traces/` right after sending, or by

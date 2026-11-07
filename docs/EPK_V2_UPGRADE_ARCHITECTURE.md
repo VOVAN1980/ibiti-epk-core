@@ -69,13 +69,21 @@ Tests: `test/v2/EPKVault.upgrade.t.sol`. Storage snapshot: `docs/storage-layout/
 
 1. IBITI deploys the new implementation (e.g. `EPKVault 2.1.0`), publishes source, audit report and storage-layout diff.
 2. IBITI calls `registry.proposeRelease(impl)`. The registry reads the version from `impl.vaultVersion()` (must be higher than the latest, by at most one major step) and pins the codehash. The release is **usable only after 7 days** (public review window).
-3. A customer who wants it: admin calls `vault.scheduleUpgrade(impl, salt)`.
-   - Rejected immediately if the release is not approved or not newer than the current version.
+3. A customer who wants it: admin calls `vault.scheduleUpgrade(impl, salt)` — from 2.1.0 this may happen **during** the release window: both clocks run in parallel, so a new release reaches a vault in 7 days, not 7 + 2.
+   - Rejected immediately if the release is not listed or not newer than the current version.
    - Waits **max(2 × vault delay, 2 days)** — the floor holds even if the delay was lowered first. Visible as `OperationScheduled`.
+   - The code can still only run once the registry approves it (step 4): scheduling early never shortens the public review window, and a release revoked during its window can never be installed.
    - Any guardian **or the recovery key** can `cancel`; `panic` / `revokeAll` invalidate it.
 4. After the delay the **admin** calls `executeScheduled(vault.upgradeOperationData(impl), salt)`. `_authorizeUpgrade` re-checks: called by the vault itself, release still approved (not revoked), version still newer.
 5. The proxy points at the new code and the release's migration **always** runs once: the base `migrate()` (not overridable) checks that the caller is the vault itself and passes the version the vault is coming **from** to the release's `_migrate(from)`, which runs every missing step. A release without `_migrate` cannot be installed.
 6. Address, funds, roles, policies, nonces, limits stay. **Ordinary operations still pending from the old release become stale** and must be scheduled again under the new rules; recovery operations and shielded guardian changes survive.
+
+**Public test networks (from 2.1.0, `contracts/v2/EPKChains.sol`).** The same code uses minute-scale
+delays on BNB Smart Chain Testnet (97) and Ethereum Sepolia (11155111): release window 5 minutes, upgrade
+wait 5 minutes (in parallel), so a full release → schedule → upgrade cycle is testable in about 5 minutes.
+Every other chain — every mainnet, unknown chains and local test chains (31337) — gets the production delays
+(7 days, 2-day floor, 1-hour minimum timelock), so the test suite always exercises the real rules. Existing
+vaults keep the rules of the code they run; nothing here can shorten them.
 
 Things that are **impossible**: calling `upgradeToAndCall` directly (any caller), scheduling it or `migrate()` through the generic `schedule`, attaching any code other than the release's own migration, calling `migrate()` from outside, swapping the vault's registry, downgrading, installing an unlisted / revoked / not-yet-active implementation, re-initializing a proxy or the implementation, the recovery key executing the admin's operations, a pending operation from one release running under another.
 

@@ -349,16 +349,21 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         assertEq(_impl(), address(genesis));
     }
 
+    /// Both clocks run in parallel: a vault may schedule during the release window, but the new code can
+    /// only run once the registry approves it.
     function test_releaseUsableOnlyAfterRegistryDelay() public {
         vm.prank(registryOwner);
         registry.proposeRelease(address(v21));
-        _warp(registry.APPROVAL_DELAY() - 1);
+        vm.prank(admin);
+        vault.scheduleUpgrade(address(v21), bytes32(0));
+        _warp(registry.APPROVAL_DELAY() - 1); // the vault's own wait is long over
         vm.prank(admin);
         vm.expectRevert(abi.encodeWithSelector(EPKVault.ImplementationNotApproved.selector, address(v21)));
-        vault.scheduleUpgrade(address(v21), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
         _warp(1);
         vm.prank(admin);
-        vault.scheduleUpgrade(address(v21), bytes32(0));
+        vault.executeScheduled(_op(address(v21)), bytes32(0));
+        assertEq(_impl(), address(v21));
     }
 
     function test_revokedReleaseCannotBeInstalled() public {

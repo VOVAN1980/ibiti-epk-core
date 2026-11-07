@@ -21,7 +21,7 @@ EPK v2 today:
 - **Agent sessions**: instant, short-lived sessions for AI agents, each with its own budget, only inside envelopes the owner approved through the timelock; one switch stops all sessions of an envelope.
 - **Separate roles**: operator, admin, ≥ 2 guardians (can only stop), recovery key, session manager.
 - **Tighten instantly, loosen only through a timelock** that guardians can veto; `panic()` stops everything.
-- **Upgradeable without moving funds — only by the owner's decision**: registry of reviewed releases (7-day public delay), ≥ 2-day per-vault delay, guardian veto; nobody (including IBITI) can upgrade a vault for its owner.
+- **Upgradeable without moving funds — only by the owner's decision**: registry of reviewed releases (7-day public delay), ≥ 2-day per-vault delay, guardian veto; nobody (including IBITI) can upgrade a vault for its owner. From 2.1 both delays run in parallel (7 days, not 9), and public test networks use 5-minute delays with the same code.
 - **Quality**: 120 v2 tests (322 contract tests in the repository including v1, plus 12 Watchtower tests) incl. fuzz and stateful invariants (compromised operator, compromised admin, compromised session manager), four internal security reviews, Slither with every finding fixed or justified.
 
 ## Next milestones
@@ -33,8 +33,9 @@ EPK v2 today:
 | 3 | **Watchtower** | Monitoring bot that acts as a guardian: vetoes unexpected scheduled changes, pauses on anomalies, alerts the owner | **working on testnet** (2026-11-07); next: always-on hosting, more alert channels, owner-signed approvals |
 | 4 | **Testnet end-to-end** | Public BSC testnet deployment: create vault → deposit → open agent session → allowed payment → blocked attack → upgrade through the timelock → `panic` → recovery, all on the same vault address | **in progress on testnet**: steps 1–6 and the Watchtower demo completed 2026-11-07; upgrade 2.0.0 → 2.0.1 on 2026-11-14 / 16 |
 | 5 | **Publication** | Merge to `master`, release tag, updated README, DoraHacks page and IBITI Labs website describing exactly this state | after the upgrade, by the owner's decision |
-| 6 | **Independent audit** | Professional audit of the vault, sessions and upgrade path; public bug bounty | planned |
-| 7 | **Mainnet** | Only after the audit; commercial licenses for production use (BUSL-1.1, see `LICENSING.md`) | after the audit |
+| 6 | **Emergency response** | Before any mainnet: (a) instant **evacuation** of a vault's funds to the owner's own cold wallet, registered long in advance (changing it is timelocked) — any protective role may trigger it, nobody can redirect it; (b) a **fast track for critical security fixes** that needs an independent security council's release flag **and** the vault's owner **and** its guardians — never IBITI alone. Design, threat model and attack tests first. `EPKVault` is at the EIP-170 size limit, so new core code means moving logic into modules | planned (before the audit) |
+| 7 | **Independent audit** | Professional audit of the vault, sessions and upgrade path; public bug bounty | planned |
+| 8 | **Mainnet** | Only after the audit; commercial licenses for production use (BUSL-1.1, see `LICENSING.md`) | after the audit |
 
 Later: ERC-4337 / ERC-7579 smart-account integration, agent identity (ERC-8004), multi-chain deployments, B2B API.
 

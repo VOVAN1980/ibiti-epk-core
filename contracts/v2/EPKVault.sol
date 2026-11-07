@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {IPolicyValidator} from "../epk/IPolicyValidator.sol";
 import {IEPKGuard} from "./guards/IEPKGuard.sol";
 import {IEPKRegistry, IVersionedVault} from "./IEPK.sol";
+import {EPKChains} from "./EPKChains.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -77,6 +78,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     uint256 internal constant MIN_GUARDIANS = 2;
     /// @notice An upgrade always waits at least this long, whatever the vault delay is.
     uint256 public constant UPGRADE_DELAY_FLOOR = 2 days;
+    /// @dev On public test networks only (EPKChains): an upgrade waits exactly this long, same code.
+    uint256 internal constant TEST_UPGRADE_WAIT = 5 minutes;
 
     bytes4 private constant _ERC1271_MAGIC = 0x1626ba7e;
     bytes4 private constant _SEL_TRANSFER = 0xa9059cbb; // transfer(address,uint256)
@@ -423,10 +426,13 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     ///         settings stay. Takes max(2 × delay, UPGRADE_DELAY_FLOOR); any guardian (or the recovery
     ///         key) can veto; a panic cancels it. The new release's `migrate()` always runs with it;
     ///         no other code can be attached to an upgrade.
+    ///         The release must be listed in the registry; it may still be in its public release window
+    ///         (both clocks run in parallel), but it can only be EXECUTED once the registry approves it.
     function scheduleUpgrade(address newImplementation, bytes32 salt) external onlyAdmin returns (bytes32 id) {
-        _requireUpgradeAllowed(newImplementation);
+        _requireUpgradeAllowed(newImplementation, false);
         uint256 wait = delay * 2;
         if (wait < UPGRADE_DELAY_FLOOR) wait = UPGRADE_DELAY_FLOOR;
+        if (EPKChains.isTestChain()) wait = TEST_UPGRADE_WAIT;
         id = _schedule(_upgradeCall(newImplementation), salt, wait, false, false, address(0));
     }
 
@@ -871,13 +877,17 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     ///      calling itself), and only to a newer implementation the registry approves at that moment.
     function _authorizeUpgrade(address newImplementation) internal view override {
         if (msg.sender != address(this)) revert NotTimelocked();
-        _requireUpgradeAllowed(newImplementation);
+        _requireUpgradeAllowed(newImplementation, true);
     }
 
-    function _requireUpgradeAllowed(address newImplementation) internal view {
+    /// @param approvedNow true when the code is about to run (it must be approved and not revoked right
+    ///        now); false when an upgrade is only being scheduled (it must be listed).
+    function _requireUpgradeAllowed(address newImplementation, bool approvedNow) internal view {
         IEPKRegistry r = IEPKRegistry(registry);
-        if (!r.isApproved(newImplementation)) revert ImplementationNotApproved(newImplementation);
         uint64 v = r.versionOf(newImplementation);
+        if (v == 0 || (approvedNow && !r.isApproved(newImplementation))) {
+            revert ImplementationNotApproved(newImplementation);
+        }
         if (v <= vaultVersion()) revert NotNewerVersion(vaultVersion(), v);
     }
 

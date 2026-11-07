@@ -1,0 +1,11 @@
+{
+  "createdAtBlock": 141405009,
+  "factory": "0x6f1BAE153931a618878DFe4323e5bE5d9b69B1d6",
+  "genesis_2_1_0": "0x09BA5c906D8981713b26997F8776c83d1C45FD67",
+  "operationId": "0x5cab323713aa0fe68e54c8da6b55b2e10470f39052cff1e6d9f027efd0a675c2",
+  "registry": "0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db",
+  "registryApprovalDelay": 300,
+  "release_2_1_1": "0xf4771af722E0380CE241d38E49cD0f8d2EEa90ED",
+  "token": "0xc58699856ED5c978F7bf47e46650Bdb23d9bB119",
+  "vault": "0x9248fb523dE74420b56c733fB9FA14917A054FEb"
+}
