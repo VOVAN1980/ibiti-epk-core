@@ -13,10 +13,10 @@ import {TestToken} from "./V2Mocks.sol";
 
 /// A future release: new feature + appended storage + one-time migration.
 contract EPKVaultV21 is EPKVault {
-    uint256 public newSetting; // appended after all v2.0.0 storage
+    uint256 public newSetting; // appended after all v2.1.0 storage
 
     function vaultVersion() public pure virtual override returns (uint64) {
-        return 20_100; // 2.1.0
+        return 20_200; // 2.2.0
     }
 
     function _migrate(uint64 from) internal virtual override reinitializer(2) {
@@ -28,31 +28,31 @@ contract EPKVaultV21 is EPKVault {
     }
 }
 
-/// The release after it: migrates cumulatively, so vaults that skipped 2.1.0 still get its step.
+/// The release after it: migrates cumulatively, so vaults that skipped 2.2.0 still get its step.
 contract EPKVaultV22 is EPKVaultV21 {
     uint256 public v22Setting;
 
     function vaultVersion() public pure override returns (uint64) {
-        return 20_200; // 2.2.0
+        return 20_300; // 2.3.0
     }
 
     function _migrate(uint64 from) internal override reinitializer(3) {
-        if (from < 2) newSetting = 42; // 2.1.0 step
-        if (from < 3) v22Setting = 7; // 2.2.0 step
+        if (from < 2) newSetting = 42; // 2.2.0 step
+        if (from < 3) v22Setting = 7; // 2.3.0 step
     }
 }
 
 /// A release whose author forgot the migration: it can never be installed.
 contract NoMigrationVault is EPKVault {
     function vaultVersion() public pure override returns (uint64) {
-        return 20_100;
+        return 20_200;
     }
 }
 
 /// What an attacker would like to install.
 contract MaliciousVault is EPKVault {
     function vaultVersion() public pure override returns (uint64) {
-        return 20_200;
+        return 20_300;
     }
 
     function drain(address token, address to) external {
@@ -184,9 +184,9 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 
     function test_vaultIsProxyOnGenesis() public view {
         assertEq(_impl(), address(genesis));
-        assertEq(vault.vaultVersion(), 20_000);
+        assertEq(vault.vaultVersion(), 20_100);
         assertEq(vault.registry(), address(registry));
-        assertEq(registry.versionOf(address(genesis)), 20_000);
+        assertEq(registry.versionOf(address(genesis)), 20_100);
     }
 
     function test_upgradeKeepsAddressFundsAndSettings() public {
@@ -196,7 +196,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 
         // same address, new code, migrated state
         assertEq(_impl(), address(v21));
-        assertEq(vault.vaultVersion(), 20_100);
+        assertEq(vault.vaultVersion(), 20_200);
         assertEq(EPKVaultV21(payable(address(vault))).hello(), "2.1");
         assertEq(EPKVaultV21(payable(address(vault))).newSetting(), 42);
 
@@ -238,8 +238,8 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         _listV21();
         _list(address(v22));
 
-        _upgradeTo(address(v22)); // 2.0.0 -> 2.2.0 directly
-        assertEq(vault.vaultVersion(), 20_200);
+        _upgradeTo(address(v22)); // 2.1.0 -> 2.3.0 directly
+        assertEq(vault.vaultVersion(), 20_300);
         assertEq(EPKVaultV22(payable(address(vault))).newSetting(), 42);
         assertEq(EPKVaultV22(payable(address(vault))).v22Setting(), 7);
     }
@@ -378,7 +378,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         _listV21();
         _upgradeV21();
         vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSelector(EPKVault.NotNewerVersion.selector, 20_100, 20_000));
+        vm.expectRevert(abi.encodeWithSelector(EPKVault.NotNewerVersion.selector, 20_200, 20_100));
         vault.scheduleUpgrade(address(genesis), bytes32(0));
     }
 
@@ -534,9 +534,9 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         registry.proposeRelease(address(v21));
 
         vm.startPrank(registryOwner);
-        vm.expectRevert(abi.encodeWithSelector(EPKRegistry.VersionNotHigher.selector, 20_000, 20_000));
+        vm.expectRevert(abi.encodeWithSelector(EPKRegistry.VersionNotHigher.selector, 20_100, 20_100));
         registry.proposeRelease(address(same));
-        vm.expectRevert(abi.encodeWithSelector(EPKRegistry.VersionStepTooLarge.selector, 20_000, 90_000));
+        vm.expectRevert(abi.encodeWithSelector(EPKRegistry.VersionStepTooLarge.selector, 20_100, 90_000));
         registry.proposeRelease(address(far));
         vm.expectRevert(abi.encodeWithSelector(EPKRegistry.NoCode.selector, attacker));
         registry.proposeRelease(attacker);
@@ -552,7 +552,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 
         assertFalse(registry.isApproved(address(v21))); // still in its public delay
         assertTrue(registry.isApproved(address(genesis)));
-        assertEq(registry.versionOf(address(v21)), 20_100);
+        assertEq(registry.versionOf(address(v21)), 20_200);
 
         vm.prank(guardian);
         vm.expectRevert(EPKRegistry.NotPendingOwner.selector);

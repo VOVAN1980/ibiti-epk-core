@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IPolicyValidator} from "../epk/IPolicyValidator.sol";
+import {IEPKGuard} from "./guards/IEPKGuard.sol";
 import {IEPKRegistry, IVersionedVault} from "./IEPK.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
@@ -176,6 +177,10 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
 
     // Future versions: append new state variables BELOW this line only.
 
+    // 2.1.0: guard for every session of an envelope (IEPKGuard; 0 = none: sessions may then make only the
+    //        calls the vault inspects itself — token transfers / approvals and plain native transfers).
+    mapping(uint256 => address) public envelopeGuard;
+
     // ---------------------------------------------------------------------
     // Events
     // ---------------------------------------------------------------------
@@ -187,6 +192,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     event EnvelopeSet(uint256 indexed envelopeId, bool active, uint48 maxTtl, uint128 maxValuePerCall);
     event EnvelopeCallSet(uint256 indexed envelopeId, address indexed target, bytes4 indexed selector, bool allowed);
     event EnvelopeBudgetCapSet(uint256 indexed envelopeId, address indexed asset, uint128 cap);
+    event EnvelopeGuardSet(uint256 indexed envelopeId, address indexed guard);
     event SessionOpened(
         uint256 indexed policyId, uint256 indexed envelopeId, address signer, address indexed agent, uint48 validUntil
     );
@@ -269,6 +275,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     error OutsideEnvelope();
     error BudgetExceeded(address token, uint256 amount, uint256 available);
     error NotNewerVersion(uint64 current, uint64 proposed);
+    error GuardRequired();
 
     // ---------------------------------------------------------------------
     // Modifiers
@@ -358,7 +365,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
 
     /// @notice Implementation version: major * 10_000 + minor * 100 + patch.
     function vaultVersion() public pure virtual override returns (uint64) {
-        return 20_000; // 2.0.0
+        return 20_100; // 2.1.0
     }
 
     receive() external payable {}
@@ -657,6 +664,16 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         emit EnvelopeSet(envelopeId, active, maxTtl, maxValuePerCall);
     }
 
+    /// @notice Guard (IEPKGuard) for every session of the envelope, applied live to open sessions.
+    ///         Adding one where there was none is instant (it can only reject); replacing or removing one
+    ///         is a loosening and goes through the timelock.
+    function setEnvelopeGuard(uint256 envelopeId, address guard) external {
+        _checkChange(envelopeGuard[envelopeId] != address(0));
+        if (guard == address(this)) revert BadRole(guard);
+        envelopeGuard[envelopeId] = guard;
+        emit EnvelopeGuardSet(envelopeId, guard);
+    }
+
     /// @notice A call sessions of this envelope may be given. Allowing is timelocked; removing is instant.
     function setEnvelopeCall(uint256 envelopeId, address target, bytes4 selector, bool allowed) external {
         _checkChange(allowed);
@@ -900,14 +917,16 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         // 1) vault, policy, deadline and agent checks
         Policy memory p = _loadExecutablePolicy(policyId, calls.length, deadline);
         // 2) static rules for every call; remember allowances that must be zero at the end
-        Approvals memory approvals = _checkCalls(policyId, p.envelope, p.maxValuePerCall, calls);
+        Approvals memory approvals = _checkCalls(policyId, p, calls);
         // 3) operator signature (bound to policy, agent, calls, nonce, deadline, vault, chain),
         //    optional validator, nonce increment
         bytes32 digest = _authorize(policyId, p, calls, deadline, signature);
         // 4) run the batch, measuring real balance changes
         uint256[] memory balancesBefore = _snapshotBalances();
         results = _runCalls(policyId, calls);
-        // 5) charge outflows; no allowance may survive the batch
+        // 5) the guard checks the real result of the batch (e.g. swap outputs actually received)
+        if (p.validator != address(0)) IEPKGuard(p.validator).afterBatch(policyId);
+        // 6) charge outflows; no allowance may survive the batch
         _settleOutflows(policyId, p.envelope, balancesBefore, digest, coSignature);
         _requireAllowancesCleared(approvals);
 
@@ -944,11 +963,12 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
 
     /// @dev Sessions follow their envelope live: switched off (or switched off and back on) ends them,
-    ///      and a lowered value cap applies at once.
+    ///      a lowered value cap applies at once, and the envelope's guard is the session's guard.
     function _applyEnvelope(Policy memory p) internal view {
         Envelope memory e = envelopes[p.envelope - 1];
         if (!e.active || e.generation != p.generation) revert PolicyInactive();
         if (e.maxValuePerCall < p.maxValuePerCall) p.maxValuePerCall = e.maxValuePerCall;
+        p.validator = envelopeGuard[p.envelope - 1];
     }
 
     function _requireAgent(uint256 policyId) internal view {
@@ -958,7 +978,9 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
     // slither-disable-end timestamp
 
-    function _checkCalls(uint256 policyId, uint64 envelope, uint256 maxValuePerCall, Call[] calldata calls)
+    /// @dev An unguarded session may only make the calls the vault inspects itself: any other call
+    ///      (a swap, a lending call, anything the vault cannot read) needs the envelope's guard.
+    function _checkCalls(uint256 policyId, Policy memory p, Call[] calldata calls)
         internal
         view
         returns (Approvals memory a)
@@ -966,8 +988,10 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         uint256 n = calls.length;
         a.tokens = new address[](n);
         a.spenders = new address[](n);
+        bool unguardedSession = p.envelope != 0 && p.validator == address(0);
         for (uint256 i = 0; i < n; i++) {
-            address spender = _checkCall(policyId, envelope, maxValuePerCall, calls[i]);
+            if (unguardedSession && !_isInspected(calls[i].data)) revert GuardRequired();
+            address spender = _checkCall(policyId, p.envelope, p.maxValuePerCall, calls[i]);
             if (spender != address(0)) {
                 a.tokens[a.count] = calls[i].target;
                 a.spenders[a.count] = spender;
@@ -1125,6 +1149,14 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         } else if (sel == _SEL_SET_APPROVAL_FOR_ALL) {
             if (_uintArg(data, 1) != 0) revert ForbiddenApproval();
         }
+    }
+
+    /// @dev Plain native transfers and the token calls `_checkTokenCall` understands.
+    function _isInspected(bytes calldata data) internal pure returns (bool) {
+        if (data.length < 4) return true;
+        bytes4 sel = bytes4(data[:4]);
+        return sel == _SEL_TRANSFER || sel == _SEL_TRANSFER_FROM || sel == _SEL_APPROVE
+            || sel == _SEL_INCREASE_ALLOWANCE || sel == _SEL_SET_APPROVAL_FOR_ALL;
     }
 
     function _requireDestination(address d) internal view {
