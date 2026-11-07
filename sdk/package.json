@@ -33,7 +33,8 @@
     "example:setup": "tsx -r dotenv/config examples/setup.ts",
     "test:v2": "tsx --test test/v2/*.test.ts",
     "example:v2": "tsx examples/v2-guarded-swap.ts",
-    "example:v2-upgrade": "tsx examples/v2-upgrade.ts"
+    "example:v2-upgrade": "tsx examples/v2-upgrade.ts",
+    "example:v2-quickstart": "tsx examples/v2-quickstart.ts"
   },
   "dependencies": {
     "viem": "^2.21.0"

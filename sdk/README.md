@@ -6,6 +6,20 @@ TypeScript SDK for **EPK** (IBITI Labs) built on **viem**.
   (DexGuard, ThreatFeed V2, CompositeGuard). In development, like EPK 2.1 itself.
 - `@ibiti/epk-sdk` — EPK v1 kernel (legacy reference), documented further below.
 
+## Start here
+
+**[Developer guide: integrate EPK v2](../docs/INTEGRATION_v2.md)** — create your own vault, configure it, let a
+bot or AI agent act, trade safely, watch and upgrade.
+
+```bash
+ADMIN_PRIVATE_KEY=0x… npm run example:v2-quickstart   # your own vault on BSC Testnet from zero, ~40 s, ~0.005 tBNB
+```
+
+New in the SDK for integrators: `EPKFactoryClient` (create / predict your vault), `VaultAdmin` + `vaultActions`
+(configure during setup, the timelock afterwards), `deployDexGuard` / `deployThreatFeed` / `deployCompositeGuard`,
+`networks` (public BSC Testnet addresses, PancakeSwap, Chainlink feeds), `explainEpkError` (every error in one
+sentence plus what to do).
+
 ## SDK v2 in five calls
 
 ```ts

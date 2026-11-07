@@ -126,6 +126,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Specification — EPK v2 (EPKVault)](docs/SPEC_v2.md)
 - [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
+- [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
 - [BSC Testnet demo and evidence](docs/TESTNET_V2.md)
 - [Roadmap](docs/ROADMAP.md)
 
