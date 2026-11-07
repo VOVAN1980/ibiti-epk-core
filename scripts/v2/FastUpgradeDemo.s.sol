@@ -9,6 +9,7 @@ import {EPKVaultFactory} from "../../contracts/v2/EPKVaultFactory.sol";
 import {EPKRegistry} from "../../contracts/v2/EPKRegistry.sol";
 import {EPKTestUSD} from "./demo/EPKTestUSD.sol";
 import {EPKVaultDemoRelease211} from "./demo/EPKVaultDemoRelease211.sol";
+import {EPKVaultDemoRelease212} from "./demo/EPKVaultDemoRelease212.sol";
 
 /// @title Full opt-in upgrade on BSC Testnet in minutes (test-network delays, same code as mainnet)
 /// @notice A separate stack (the 2.0.x demo vault and the 2.1 guard demo vault are not touched):
@@ -60,6 +61,19 @@ contract FastUpgradeDemo is Script {
         console2.log("vault:", address(vault));
         console2.log("release 2.1.1:", address(release));
         console2.log("release window (s):", registry.approvalDelay());
+    }
+
+    /// @notice Registry owner publishes release 2.1.2 for the same vault; the vault's admin then schedules and
+    ///         executes the upgrade with SDK v2 (sdk/examples/v2-upgrade.ts).
+    function proposeNext() external {
+        string memory j = vm.readFile(OUT);
+        EPKRegistry registry = EPKRegistry(vm.parseJsonAddress(j, ".registry"));
+        vm.startBroadcast(vm.envUint("V21_ADMIN_PRIVATE_KEY"));
+        EPKVaultDemoRelease212 release = new EPKVaultDemoRelease212();
+        registry.proposeRelease(address(release));
+        vm.stopBroadcast();
+        vm.writeJson(vm.toString(address(release)), OUT, ".release_2_1_2");
+        console2.log("release 2.1.2:", address(release));
     }
 
     function execute() external {

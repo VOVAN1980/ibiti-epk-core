@@ -48,6 +48,7 @@ const v2 = [
   { name: "dexGuardAbi", in: path.join(OUT, "DexGuard.sol", "DexGuard.json") },
   { name: "threatFeedGuardAbi", in: path.join(OUT, "ThreatFeedGuard.sol", "ThreatFeedGuard.json") },
   { name: "compositeGuardAbi", in: path.join(OUT, "CompositeGuard.sol", "CompositeGuard.json") },
+  { name: "epkRegistryAbi", in: path.join(OUT, "EPKRegistry.sol", "EPKRegistry.json") },
 ];
 const v2Dir = path.join(process.cwd(), "src", "v2", "abi");
 ensureDir(v2Dir);

@@ -29,6 +29,21 @@ if (sim.ok) await new EPKVaultClient({ address: VAULT, publicClient, walletClien
   .execute({ policyId, calls: plan.calls, deadline: signed.deadline, signature: signed.signature });
 ```
 
+### Opt-in upgrades and live events
+
+```ts
+import { EPKUpgrader, watchVault } from "@ibiti/epk-sdk/v2";
+
+const upgrader = new EPKUpgrader(VAULT, publicClient, adminWallet);
+const stop = watchVault(publicClient, VAULT, (e) => console.log(e)); // scheduled changes arrive decoded and labelled
+const { operationId } = await upgrader.schedule(NEW_RELEASE, salt);   // may run during the release window
+const s = await upgrader.status(NEW_RELEASE, salt, fromBlock);        // "waiting" | "ready" | …, executableAt
+if (s.state === "ready") await upgrader.execute(NEW_RELEASE, salt);   // same address, same funds
+```
+
+On public test networks the whole cycle takes about 5 minutes (same code as mainnet, minute-scale
+delays); on mainnet the release window is 7 days and the vault's own wait runs in parallel.
+
 Also: `availableToSpend` / `budgetAvailable` (limits left), `openSession` (AI-agent sessions),
 `schedule` / `executeScheduled` / `cancel` + `hashOperation` (timelock), `envelopeGuard`, `DexGuardClient`
 (`minimumOut`, `maximumIn`, `price`), `isCallBlocked` (ThreatFeed V2), batch builders `v2SwapExactTokens`,
@@ -37,6 +52,7 @@ Also: `availableToSpend` / `budgetAvailable` (limits left), `openSession` (AI-ag
 ```bash
 npm run test:v2      # offline: digest and operation ids equal the live vault's; all 11 on-chain rejections decode
 npm run example:v2   # read-only walkthrough against the EPK 2.1 demo vault on BSC Testnet (signs and simulates, sends nothing)
+npm run example:v2-upgrade   # opt-in upgrade on BSC Testnet driven by the SDK (needs the demo admin key; sends transactions)
 ```
 
 How the guards work and what they do not cover: [`docs/GUARDS_v2.md`](../docs/GUARDS_v2.md).

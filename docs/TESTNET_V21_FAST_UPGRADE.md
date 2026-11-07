@@ -21,10 +21,22 @@ Done on 2026-11-07 on a **separate** vault (the 2.0.x demo vault and the 2.1 gua
 | EPKRegistry | [0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db](https://testnet.bscscan.com/address/0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db) |
 | EPKVaultFactory | [0x6f1BAE153931a618878DFe4323e5bE5d9b69B1d6](https://testnet.bscscan.com/address/0x6f1BAE153931a618878DFe4323e5bE5d9b69B1d6) |
 
+### Second upgrade, driven by SDK v2 (2.1.1 → 2.1.2)
+
+The vault's admin used only the TypeScript SDK (`sdk/examples/v2-upgrade.ts`: `EPKUpgrader` schedules, checks
+the status and executes; `watchVault` reported the scheduled call decoded as "UPGRADE the vault's code").
+Log: `deployments/bsc-testnet/v2.1/2026-11-07-sdk-upgrade.log`.
+
+| Step | Time (UTC) | Transaction |
+|---|---|---|
+| Release 2.1.2 proposed ([0x938C220B…](https://testnet.bscscan.com/address/0x938C220B8cec1e6979cbCe53AD51bc9B1E7b3F25)) | 21:14 | [0x9797166f…](https://testnet.bscscan.com/tx/0x9797166f32e80a4a2154ff446e111bfd8e1d4d8bd43be4ae5cf7c8009fad3c84) |
+| SDK: upgrade scheduled | 21:14:54 | [0xc687738e…](https://testnet.bscscan.com/tx/0xc687738ee95353b44a5d7690ae1c1a360a36bee99f2949d65a17831551e40573) |
+| SDK: upgrade executed — vault now runs 2.1.2, same address | 21:20:02 | [0x7ec2f788…](https://testnet.bscscan.com/tx/0x7ec2f788e709a4f31e4ad82e98d3f2eb9c7ae9cf1e8db2a7d8770fceac421377) |
+
 Check it yourself (no keys needed):
 
 ```bash
-cast call 0x9248fb523dE74420b56c733fB9FA14917A054FEb "vaultVersion()(uint64)" --rpc-url https://bsc-testnet-rpc.publicnode.com   # 20101
+cast call 0x9248fb523dE74420b56c733fB9FA14917A054FEb "vaultVersion()(uint64)" --rpc-url https://bsc-testnet-rpc.publicnode.com   # 20102 (after both upgrades)
 cast call 0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db "approvalDelay()(uint256)" --rpc-url https://bsc-testnet-rpc.publicnode.com # 300 on testnet
 ```
 
