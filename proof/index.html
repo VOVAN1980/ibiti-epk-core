@@ -71,7 +71,9 @@ vulnerabilities exist. EPK v2 has not yet been independently audited; nothing go
   <p>What a hacked agent or a stranger would try. Each attempt was really sent to the vault and failed on-chain.
   <b>STRICT</b> = the reason is read from the execution trace of that exact transaction.
   <b>REPLAY</b> = the transaction is replayed against the chain state right before its block, and no earlier
-  transaction in that block touched the vault or the token (a replay is strong evidence, not a trace).</p>
+  transaction in that block touched the vault or the token (a replay is strong evidence, not a trace).
+  <b>Archived</b> = free public nodes no longer keep that old state; the rejection itself is still checked on-chain,
+  and its reason was replayed while nodes still had the state (reports archived in the repository).</p>
   <div class="scroll"><table id="tbl-attacks"><thead><tr><th>Step</th><th>Attempt</th><th>Vault's answer</th><th>Proof</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -83,7 +85,10 @@ vulnerabilities exist. EPK v2 has not yet been independently audited; nothing go
 
 <section id="s-state">
   <h2>Vault state at fixed blocks</h2>
-  <p>Historical state read directly from the chain at the listed block numbers — reproducible forever, even after upgrades.</p>
+  <p>Historical state read directly from the chain at the listed block numbers, so it stays checkable after later
+  upgrades. This works while public nodes keep BSC Testnet history; in case they stop, the traces, verification
+  reports and a snapshot of the raw node answers are archived in the repository
+  (<a data-tree="deployments/bsc-testnet/verification">verification archive</a>).</p>
   <div class="scroll"><table id="tbl-cp"><thead><tr><th>Block</th><th>Moment</th><th>Claims</th><th>Result</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -97,14 +102,19 @@ vulnerabilities exist. EPK v2 has not yet been independently audited; nothing go
 
 <section id="s-self">
   <h2>Run it yourself, without this page</h2>
-  <p>Same checks from the command line (Python 3 only, no keys). With <code>--build</code> it also proves the on-chain
-  bytecode equals the bytecode compiled from the open-source repository.</p>
-  <div class="cmd">git clone https://github.com/VOVAN1980/ibiti-epk-core && cd ibiti-epk-core && git checkout feature/epk-v2
-python scripts/v2/verify_evidence.py
-forge build && python scripts/v2/verify_evidence.py --build</div>
-  <p>Evidence file: <a id="ev-link" href="#">epk-v2-evidence.json</a> · Runbook and tables:
-  <a href="https://github.com/VOVAN1980/ibiti-epk-core/blob/feature/epk-v2/docs/TESTNET_V2.md">docs/TESTNET_V2.md</a> ·
-  Source: <a href="https://github.com/VOVAN1980/ibiti-epk-core/tree/feature/epk-v2/contracts/v2">contracts/v2</a></p>
+  <p>Everything on this page comes from one fixed public Git commit,
+  <a class="mono" id="commit-link" href="#">–</a>. A commit cannot be changed afterwards, so the claims you check here
+  are exactly the claims that were published.</p>
+  <p><b>This page and the command line run the same checks:</b> network, the document vs the evidence file, code
+  hashes and registry pins, versions, every transaction with its events or rejection reason, the vault at fixed
+  blocks and the attack windows. The command line with <code>--build</code> adds one more check per contract (6 in
+  total): it compiles the open-source contracts and compares them byte for byte with the code on chain — a browser
+  cannot compile Solidity. Both counts depend a little on the node: a detail whose history the node no longer keeps
+  is reported as <i>archived</i> instead of being checked, never as passed.</p>
+  <div class="cmd" id="cmds"></div>
+  <p>Evidence file: <a data-blob="deployments/bsc-testnet/epk-v2-evidence.json">epk-v2-evidence.json</a> · Runbook and tables:
+  <a data-blob="docs/TESTNET_V2.md">docs/TESTNET_V2.md</a> ·
+  Source: <a data-tree="contracts/v2">contracts/v2</a></p>
   <details><summary>Use another RPC node</summary>
     <p>Checkpoints and replays need a node with historical state. <input id="rpc" class="mono" style="width:100%;max-width:520px" value="https://bsc-testnet-rpc.publicnode.com"></p>
   </details>
@@ -117,9 +127,13 @@ Test network only, test token only.</footer>
 <script>
 "use strict";
 { const th = new URLSearchParams(location.search).get("theme"); if (th === "dark" || th === "light") document.documentElement.dataset.theme = th; }
-// ---------- where the evidence lives ----------
-const REPO_RAW = "https://raw.githubusercontent.com/VOVAN1980/ibiti-epk-core/feature/epk-v2/";
+// ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
+const REPO = "VOVAN1980/ibiti-epk-core";
+const EVIDENCE_COMMIT = "3517e7d30a4b9e4227ce69842303eb0f6f11eb67";
+const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
+const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
 const EV_PATH = "deployments/bsc-testnet/epk-v2-evidence.json";
+const DOC_PATH = "docs/TESTNET_V2.md";
 const TRACE_DIR = "deployments/bsc-testnet/traces/";
 const EXPLORER = "https://testnet.bscscan.com";
 const IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
@@ -172,10 +186,8 @@ async function rpc(method, ...params) {
   return j.result;
 }
 const call = (to, data, block = "latest") => rpc("eth_call", {to, data}, block);
-async function getJson(path) {
-  for (const base of ["../", REPO_RAW]) {
-    try { const r = await fetch(base + path, {cache: "no-store"}); if (r.ok) return {json: await r.json(), url: new URL(base + path, location.href).href}; } catch (e) {}
-  }
+async function getFile(path, asJson = true) {
+  try { const r = await fetch(REPO_RAW + path, {cache: "no-store"}); if (r.ok) return asJson ? await r.json() : await r.text(); } catch (e) {}
   return null;
 }
 
@@ -184,9 +196,9 @@ const $ = id => document.getElementById(id);
 const logEl = $("log");
 let counts;
 function log(kind, text) {
-  if (kind === "ok") counts.ok++; else if (kind === "bad") counts.bad++; else if (kind === "skip") counts.skip++;
-  const tag = {ok: "OK  ", bad: "BAD ", skip: "SKIP", info: "    "}[kind];
-  const span = document.createElement("span"); span.className = {ok: "ok", bad: "bad", skip: "warn", info: ""}[kind];
+  if (kind in counts) counts[kind]++;
+  const tag = {ok: "OK  ", bad: "BAD ", skip: "SKIP", old: "OLD ", info: "    "}[kind];
+  const span = document.createElement("span"); span.className = {ok: "ok", bad: "bad", skip: "warn", old: "warn", info: ""}[kind];
   span.textContent = `${tag} ${text}\n`; logEl.appendChild(span); logEl.scrollTop = logEl.scrollHeight;
   return kind === "ok";
 }
@@ -218,7 +230,7 @@ function renderClaims(ev) {
 }
 
 async function verify() {
-  counts = {ok: 0, bad: 0, skip: 0}; logEl.textContent = ""; rpcUrl = $("rpc").value.trim();
+  counts = {ok: 0, bad: 0, skip: 0, old: 0}; logEl.textContent = ""; rpcUrl = $("rpc").value.trim(); HIST = null;
   const ev = EV, C = Object.fromEntries(Object.entries(ev.contracts).map(([k, v]) => [k, v.address]));
   const roles = ev.roles, sessions = ev.sessions || {};
   const names = {}; for (const [k, a] of Object.entries({...C, ...roles})) names[a.toLowerCase()] = k;
@@ -235,6 +247,17 @@ async function verify() {
   const cid = parseInt(await rpc("eth_chainId"), 16);
   if (!log(cid === ev.chainId ? "ok" : "bad", `chainId ${cid} (expected ${ev.chainId}, BSC Testnet)`)) return;
 
+  // the human document and the evidence file (same commit) say the same thing
+  const doc = await getFile(DOC_PATH, false);
+  if (doc === null) { log("skip", `could not load ${DOC_PATH} from commit ${EVIDENCE_COMMIT.slice(0, 7)}`); log("skip", "document links not compared"); }
+  else {
+    const docTx = new Set([...doc.matchAll(/\/tx\/(0x[0-9a-fA-F]{64})/g)].map(m => m[1].toLowerCase()));
+    const evTx = new Set(ev.transactions.map(t => t.tx.toLowerCase()));
+    log(docTx.size === evTx.size && [...evTx].every(x => docTx.has(x)) ? "ok" : "bad", `${DOC_PATH} and the evidence file list the same ${evTx.size} transactions`);
+    const addrs = new Set(Object.values(C).map(a => a.toLowerCase()));
+    log([...doc.matchAll(/\/address\/(0x[0-9a-fA-F]{40})/g)].every(m => addrs.has(m[1].toLowerCase())) ? "ok" : "bad", "every contract linked in the document is in the evidence file");
+  }
+
   // code
   const codehash = {}; let codeOk = 0;
   for (const [k, c] of Object.entries(ev.contracts)) {
@@ -246,7 +269,10 @@ async function verify() {
     if (h && c.pinnedInRegistry) {
       const r = (await call(C.registry, selector("releases(address)") + word(c.address))).slice(2);
       const pinned = "0x" + r.slice(192, 256), revoked = BigInt("0x" + r.slice(128, 192)) !== 0n;
-      good = log(pinned === h && !revoked ? "ok" : "bad", `  registry pins this exact code hash (version ${BigInt("0x" + r.slice(0, 64))})`) && good;
+      const version = Number(BigInt("0x" + r.slice(0, 64)));
+      good = log(pinned === h && !revoked ? "ok" : "bad", `  registry pins this exact code hash (version ${version})`) && good;
+      const vv = Number(BigInt(await call(c.address, selector("vaultVersion()"))));
+      good = log(vv === c.vaultVersion && vv === version ? "ok" : "bad", `  vaultVersion() = ${vv} (claimed ${c.vaultVersion})`) && good;
     }
     if (c.proxyImplementation) {
       const impl = "0x" + (await rpc("eth_getStorageAt", c.address, IMPL_SLOT, "latest")).slice(-40);
@@ -281,18 +307,19 @@ async function verify() {
     const gasUsed = parseInt(rc.gasUsed, 16), gasLimit = parseInt(tx.gas, 16);
     good = log(status === 0 && gasUsed < gasLimit ? "ok" : "bad", `  rejected by revert, not out of gas (${gasUsed.toLocaleString()} of ${gasLimit.toLocaleString()} gas)`) && good;
     const want = selector(t.error); let method = "", detail = "";
-    const saved = await getJson(TRACE_DIR + t.tx.toLowerCase() + ".json");
+    const saved = await getFile(TRACE_DIR + t.tx.toLowerCase() + ".json");
     if (saved) {
-      const tr = saved.json.trace, out = tr.output || "";
+      const tr = saved.trace, out = tr.output || "";
       const bound = tr.from.toLowerCase() === tx.from.toLowerCase() && tr.to.toLowerCase() === tx.to.toLowerCase() && tr.input.toLowerCase() === tx.input.toLowerCase();
       method = "STRICT"; detail = showError(t.error, out);
-      good = log(bound && out.slice(0, 10) === want ? "ok" : "bad", `  STRICT saved execution trace (${saved.json.node}, ${saved.json.capturedAt}): ${detail}`) && good;
+      good = log(bound && out.slice(0, 10) === want ? "ok" : "bad", `  STRICT saved execution trace (${saved.node}, ${saved.capturedAt}): ${detail}`) && good;
     } else {
       method = "REPLAY";
       try { await rpc("eth_call", {from: tx.from, to: tx.to, data: tx.input, gas: tx.gas}, "0x" + (block - 1).toString(16)); good = log("bad", "  REPLAY did not revert") && false; }
       catch (err) {
         const data = typeof err.data === "string" ? err.data : "";
-        if (!data) { log("skip", `  REPLAY needs a node with historical state (${err.message})`); good = false; }
+        if (!data && isOld(err)) { log("old", `  REPLAY the node no longer keeps block ${block - 1}'s state — the reason was replayed while it did (archived reports) and can be re-checked with an archive node`); method = "ARCHIVED"; }
+        else if (!data) { log("skip", `  REPLAY failed (${err.message})`); good = false; }
         else {
           detail = showError(t.error, data);
           good = log(data.slice(0, 10) === want ? "ok" : "bad", `  REPLAY against the state before block ${block}: ${detail}`) && good;
@@ -303,48 +330,98 @@ async function verify() {
       }
     }
     rejected += good;
-    set("a-" + t.tx, pill(good ? "ok" : "bad", good ? `${method} ✓` : "mismatch"));
+    set("a-" + t.tx, good ? (method === "ARCHIVED" ? pill("warn", "REPLAY · archived") : pill("ok", `${method} ✓`)) : pill("bad", "mismatch"));
     set("x-" + t.tx, pill(good ? "ok" : "bad", good ? "rejected ✓" : "mismatch"));
   }
   $("t-attacks").textContent = `${rejected}/${ev.transactions.filter(t => t.expect === "reverted").length}`;
 
-  // checkpoints
+  // checkpoints: historical STATE if the node still keeps it, otherwise derived from permanent EVENTS
   const v = C.vault, tok = C.token;
+  const atBlock = async (n, stateFn, eventFn) => {
+    try { return {val: await stateFn("0x" + n.toString(16)), how: "STATE"}; } catch (err) { if (!isOld(err)) throw err; }
+    if (!eventFn) return {how: null};
+    const val = eventFn(await history(v, tok, ev.contracts.vault.createdAtBlock), n);
+    return val === null || val === undefined ? {how: null} : {val, how: "EVENTS"};
+  };
   for (const [i, cp] of ev.checkpoints.entries()) {
     $("status").textContent = `Reading the vault at block ${cp.block}…`;
-    const b = "0x" + cp.block.toString(16); let good = true; log("info", `block ${cp.block}: ${cp.label}`);
-    try {
-      if ("paused" in cp) { const p = BigInt(await call(v, selector("paused()"), b)) !== 0n; good = log(p === cp.paused ? "ok" : "bad", `  paused = ${p}`) && good; }
-      if ("implementation" in cp) { const impl = "0x" + (await rpc("eth_getStorageAt", v, IMPL_SLOT, b)).slice(-40); good = log(impl.toLowerCase() === C[cp.implementation].toLowerCase() ? "ok" : "bad", `  implementation = ${who(impl)}`) && good; }
-      if ("eUSD" in cp) { const bal = BigInt(await call(tok, selector("balanceOf(address)") + word(v), b)); good = log(bal === wei(cp.eUSD) ? "ok" : "bad", `  balance = ${eusd(bal)} eUSD`) && good; }
-      if ("vaultLimitLeft" in cp) { const l = BigInt(await call(v, selector("availableToSpend(address)") + word(tok), b)); good = log(l === wei(cp.vaultLimitLeft) ? "ok" : "bad", `  vault limit left = ${eusd(l)} eUSD`) && good; }
-      if (cp.sessionBudgetLeft) { const s = cp.sessionBudgetLeft; const l = BigInt(await call(v, selector("budgetAvailable(uint256,address)") + word(sessions[s.session]) + word(tok), b)); good = log(l === wei(s.value) ? "ok" : "bad", `  session budget left = ${eusd(l)} eUSD`) && good; }
-    } catch (err) { log("skip", `  needs a node with historical state (${err.message})`); good = false; }
-    set("c-" + i, pill(good ? "ok" : "bad", good ? "verified" : "not verified"));
+    let good = true, old = 0; const n = cp.block; log("info", `block ${n}: ${cp.label}`);
+    const check = async (label, stateFn, eventFn, expect, show) => {
+      const r = await atBlock(n, stateFn, eventFn);
+      if (!r.how) { old++; log("old", `  ${label}: the node no longer keeps this block's state and it cannot be derived from events (archived reports)`); return; }
+      good = log(r.val === expect ? "ok" : "bad", `  ${r.how} ${label} = ${show(r.val)}`) && good;
+    };
+    if ("paused" in cp) await check("paused", async b => BigInt(await call(v, selector("paused()"), b)) !== 0n, (h, n) => h.paused(n), cp.paused, String);
+    if ("implementation" in cp) await check("implementation", async b => ("0x" + (await rpc("eth_getStorageAt", v, IMPL_SLOT, b)).slice(-40)).toLowerCase(), (h, n) => h.implementation(n), C[cp.implementation].toLowerCase(), who);
+    if ("eUSD" in cp) await check("balance (eUSD)", async b => BigInt(await call(tok, selector("balanceOf(address)") + word(v), b)), (h, n) => h.balance(n), wei(cp.eUSD), eusd);
+    if ("vaultLimitLeft" in cp) await check("vault limit left (eUSD)", async b => BigInt(await call(v, selector("availableToSpend(address)") + word(tok), b)), (h, n) => h.limitLeft(n), wei(cp.vaultLimitLeft), eusd);
+    if (cp.sessionBudgetLeft) { const s = cp.sessionBudgetLeft; await check("session budget left (eUSD)", async b => BigInt(await call(v, selector("budgetAvailable(uint256,address)") + word(sessions[s.session]) + word(tok), b)), null, wei(s.value), eusd); }
+    set("c-" + i, !good ? pill("bad", "mismatch") : old ? pill("warn", `verified · ${old} archived`) : pill("ok", "verified"));
   }
 
   // money moved while the attacks ran: vault balance before the first and after the last attack
-  let moved = 0n, windowsOk = true;
+  let moved = 0n;
   for (const aw of ev.attackWindows || []) {
+    let a, b, d, how = "STATE";
     try {
-      const [a, b] = await Promise.all([aw.fromBlock, aw.toBlock].map(n => call(tok, selector("balanceOf(address)") + word(v), "0x" + n.toString(16))));
-      const d = BigInt(a) - BigInt(b); moved += d;
-      log(d === 0n ? "ok" : "bad", `${aw.label}: ${eusd(BigInt(a))} -> ${eusd(BigInt(b))} eUSD between blocks ${aw.fromBlock} and ${aw.toBlock}`);
-    } catch (err) { windowsOk = false; log("skip", `${aw.label}: needs a node with historical state`); }
+      [a, b] = (await Promise.all([aw.fromBlock, aw.toBlock].map(n => call(tok, selector("balanceOf(address)") + word(v), "0x" + n.toString(16))))).map(BigInt); d = a - b;
+    } catch (err) {
+      if (!isOld(err)) throw err;
+      const h = await history(v, tok, ev.contracts.vault.createdAtBlock); how = "EVENTS";
+      a = h.balance(aw.fromBlock); b = h.balance(aw.toBlock); d = h.movedOut(aw.fromBlock, aw.toBlock);
+    }
+    moved += d;
+    log(d === 0n && a === b ? "ok" : "bad", `${how} ${aw.label}: ${eusd(a)} -> ${eusd(b)} eUSD between blocks ${aw.fromBlock} and ${aw.toBlock}`);
   }
-  $("t-stolen").textContent = windowsOk ? eusd(moved) : "?";
+  $("t-stolen").textContent = eusd(moved);
   const bal = BigInt(await call(tok, selector("balanceOf(address)") + word(v)));
   log("info", `vault now: ${eusd(bal)} eUSD`);
   $("t-checks").textContent = `${counts.ok}/${counts.ok + counts.bad + counts.skip}`;
+  const oldNote = counts.old ? ` ${counts.old} older details need a full-history node; they were checked while public nodes still had them (archived).` : "";
   $("status").innerHTML = counts.bad || counts.skip
     ? `<span class="bad">${counts.bad} mismatches, ${counts.skip} not checkable — see the live log.</span>`
-    : `<span class="ok">All ${counts.ok} checks passed against BSC Testnet, in your browser, just now.</span>`;
+    : `<span class="ok">All ${counts.ok} checks passed against BSC Testnet, in your browser, just now.</span><span class="warn">${esc(oldNote)}</span>`;
+}
+
+// ---------- history from event logs (full nodes keep logs; free nodes prune old state after a few hours) ----------
+const isOld = e => /pruned|missing trie node|unknown state|historical state|not available/i.test((e && e.message) || "");
+let HIST = null;
+async function history(v, tok, start) {
+  if (HIST) return HIST;
+  const latest = parseInt(await rpc("eth_blockNumber"), 16);
+  const logs = async (address, topics) => {
+    let out = [];
+    for (let b = start; b <= latest; b += 10000)
+      out = out.concat(await rpc("eth_getLogs", {address, topics, fromBlock: "0x" + b.toString(16), toBlock: "0x" + Math.min(b + 9999, latest).toString(16)}));
+    return out.sort((x, y) => (parseInt(x.blockNumber, 16) - parseInt(y.blockNumber, 16)) || (parseInt(x.logIndex, 16) - parseInt(y.logIndex, 16)));
+  };
+  const TR = topic0("Transfer(address,address,uint256)"), vw = "0x" + word(v), PAUSED = topic0("Paused(address)");
+  const [tin, tout, pause, upg, outflow] = await Promise.all([
+    logs(tok, [TR, null, vw]), logs(tok, [TR, vw, null]), logs(v, [[PAUSED, topic0("Unpaused()")]]),
+    logs(v, [topic0("Upgraded(address)")]), logs(v, [topic0("Outflow(address,uint256,uint256)"), "0x" + word(tok)])]);
+  const upto = (L, n, after = -1) => L.filter(l => { const b = parseInt(l.blockNumber, 16); return b > after && b <= n; });
+  const sum = L => L.reduce((s, l) => s + BigInt(l.data), 0n);
+  HIST = {
+    paused: n => { const e = upto(pause, n); return e.length > 0 && e[e.length - 1].topics[0] === PAUSED; },
+    implementation: n => { const e = upto(upg, n); return e.length ? ("0x" + e[e.length - 1].topics[1].slice(-40)).toLowerCase() : null; },
+    balance: n => sum(upto(tin, n)) - sum(upto(tout, n)),
+    movedOut: (a, b) => sum(upto(tout, b, a)),
+    limitLeft: n => { const e = outflow.filter(l => parseInt(l.blockNumber, 16) === n); return e.length ? BigInt("0x" + e[e.length - 1].data.slice(66, 130)) : null; },
+  };
+  return HIST;
 }
 
 (async () => {
-  const got = await getJson(EV_PATH);
-  if (!got) { $("status").textContent = "Could not load the evidence file."; $("go").disabled = true; return; }
-  EV = got.json; $("ev-link").href = got.url; renderClaims(EV);
+  // every link points at the same fixed commit
+  for (const a of document.querySelectorAll("a[data-blob]")) a.href = REPO_BLOB + a.dataset.blob;
+  for (const a of document.querySelectorAll("a[data-tree]")) a.href = `https://github.com/${REPO}/tree/${EVIDENCE_COMMIT}/${a.dataset.tree}`;
+  const cl = $("commit-link"); cl.textContent = EVIDENCE_COMMIT.slice(0, 12); cl.href = `https://github.com/${REPO}/commit/${EVIDENCE_COMMIT}`;
+  $("cmds").textContent = `git clone https://github.com/${REPO} && cd ibiti-epk-core && git checkout ${EVIDENCE_COMMIT}\n`
+    + "python scripts/v2/verify_evidence.py                      # same checks as this page\n"
+    + "forge build && python scripts/v2/verify_evidence.py --build  # + bytecode equals the compiled source";
+  EV = await getFile(EV_PATH);
+  if (!EV) { $("status").textContent = `Could not load the evidence file from GitHub (commit ${EVIDENCE_COMMIT.slice(0, 7)}).`; $("go").disabled = true; return; }
+  renderClaims(EV);
   $("go").onclick = async () => {
     $("go").disabled = true; document.body.dataset.state = "running";
     try { await verify(); } catch (e) { log("bad", "error: " + e.message); $("status").textContent = "Check stopped: " + e.message; }
