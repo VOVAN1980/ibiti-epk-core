@@ -5,8 +5,7 @@ trades — for an ordinary trading policy and for autonomous AI-agent sessions �
 PancakeSwap V2 router** and **real Chainlink price feeds** on BSC Testnet (chainId 97).
 
 Status: **done on 2026-11-07**, on a **separate** EPKVault 2.1.0 with its own registry, factory and keys.
-The 2.0.x demo vault (`docs/TESTNET_V2.md`, 9,940 eUSD) and its 2.0.1 upgrade on 14–16 November are not
-touched. Testnet only, test funds only, **not audited**. Source code of every contract we deployed is
+The 2.0.x demo vault (`docs/TESTNET_V2.md`, 9,940 eUSD) is not touched. Testnet only, test funds only, **not audited**. Source code of every contract we deployed is
 verified on [Sourcify](https://sourcify.dev) (chain 97).
 
 What this proves: the listed attacks were rejected on-chain in these scenarios, and allowed trades went

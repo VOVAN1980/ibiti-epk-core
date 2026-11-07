@@ -31,8 +31,7 @@ to pay: bots and agents that trade.
 **Agent sessions need a vault release.** Sessions are opened today with no validator, so guards
 cannot cover them yet. Vault release **2.1.0** adds a guard to each session envelope (set through the
 timelock; applies to every session of the envelope). `EPKVault` is 23,776 of 24,576 bytes, so the
-change is kept small. It ships after the 2.0.1 upgrade demo, through the registry's 7-day public
-window, and each vault opts in — exactly like 2.0.1.
+change is kept small. Each vault opts in through the registry and its own timelock.
 
 ## 3. DEX Guard
 
@@ -90,7 +89,7 @@ invoice", "trading bot swaps through DEX Guard", "owner reacts to an alert".
 ## 7. Order
 
 1. DEX Guard, CompositeGuard and ThreatFeed V2 for ordinary policies — contracts, unit, fuzz and fork tests.
-2. 2026-11-14 / 16: finish the 2.0.1 upgrade demo on testnet (unchanged).
+2. ~~2026-11-14 / 16: the 2.0.1 upgrade demo~~ — cancelled; the opt-in upgrade was shown on 2.1 in 5 minutes.
 3. Vault release 2.1.0: guards for agent sessions.
 4. SDK v2 covering the vault, sessions and guards.
 5. Watchtower as a service.

@@ -47,8 +47,9 @@ every step a real transaction:
 | A **stolen admin key** schedules a new withdrawal address | 🛡 the Watchtower cancelled it **5 blocks later**; executing it anyway was rejected (`UnknownOperation`) |
 
 **7 of 7** attack transactions rejected · **0 eUSD** left the vault during the attacks.
-Next on testnet: the upgrade 2.0.0 → 2.0.1 at the same address through the timelock
-(scheduled from 2026-11-14).
+Opt-in upgrades are shown live on EPK 2.1: a vault upgraded at the same address with the same funds in
+5 minutes on BSC Testnet (test networks use minute-scale delays; mainnet keeps 7 days) —
+[`docs/TESTNET_V21_FAST_UPGRADE.md`](docs/TESTNET_V21_FAST_UPGRADE.md).
 
 ### Check it yourself
 

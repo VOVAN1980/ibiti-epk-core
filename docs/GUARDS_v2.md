@@ -4,7 +4,7 @@ Status (2026-11-07): **built and tested on the branch `feature/epk-v2.1`**, toge
 **2.1.0**, and **running on BSC Testnet on a separate demo vault**: allowed trades and 11 attacks through
 the real PancakeSwap V2 router with real Chainlink feeds, every claim re-checkable —
 [`TESTNET_V21.md`](TESTNET_V21.md), live check in the browser: `docs/proof/guards.html`. Not audited, not on
-mainnet. The EPK v2 demo vault keeps running 2.0.x and its 2.0.1 upgrade test is unaffected.
+mainnet. The EPK v2 demo vault keeps running 2.0.x, untouched.
 
 | Module | File | What it does |
 |---|---|---|

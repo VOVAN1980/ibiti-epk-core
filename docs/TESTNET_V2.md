@@ -8,9 +8,11 @@ Status: **live on BSC Testnet since 2026-11-07** — steps 1–6 done (deploy, v
 5 attacks rejected on-chain, panic, recovery with a new session; the pre-panic session stays
 dead), plus the **Watchtower demo** (W1–W3: a change scheduled with the stolen admin key was
 cancelled automatically 5 blocks later; see [`watchtower/README.md`](../watchtower/README.md)).
-Steps 7–8 (upgrade to 2.0.1) follow the 7-day release window: schedule from 2026-11-14,
-execute 2 days later. Evidence (addresses, tx hashes) is in `deployments/bsc-testnet/` and
-summarised below.
+Steps 7–8 (upgrade to 2.0.1 after the 7-day release window, planned for 14–16 November) were
+**cancelled on 2026-11-07 by the owner's decision**: the opt-in upgrade at the same address was shown on
+EPK 2.1 instead, in 5 minutes with test-network delays ([`TESTNET_V21_FAST_UPGRADE.md`](TESTNET_V21_FAST_UPGRADE.md)).
+This vault stays as it is (9,940 eUSD) and its history is kept. Evidence (addresses, tx hashes) is in
+`deployments/bsc-testnet/` and summarised below.
 
 ## Roles (testnet keys in the local `.env`, never committed)
 
@@ -34,8 +36,8 @@ Run from the repo root (Foundry loads `.env` automatically; `$BSC_RPC_URL` comes
 | 4 | day 0 | `python scripts/v2/demo_attacks.py deployments/bsc-testnet/epk-v2-attacks.json` | 5 attacks rejected on-chain: over budget, unknown destination, forbidden call, forged signature, not the agent |
 | 5 | day 0 | `forge script scripts/v2/DemoPanic.s.sol:DemoPanic --sig "panicAndScheduleUnpause()" --rpc-url $BSC_RPC_URL --broadcast` | a guardian stops everything instantly; unpausing goes through the timelock |
 | 6 | day 0 + 1 h | `forge script scripts/v2/DemoPanic.s.sol:DemoPanic --sig "recover()" --rpc-url $BSC_RPC_URL --broadcast` then `python scripts/v2/demo_attacks.py deployments/bsc-testnet/epk-v2-after-panic.json` | service restored with a new session; the pre-panic session stays dead |
-| 7 | day 7 (from 2026-11-14 12:04:02 UTC by block time) | `python scripts/v2/upgrade_preflight.py schedule` → only if READY and the owner confirms: `forge script scripts/v2/DemoUpgrade.s.sol:DemoUpgrade --sig "schedule()" --rpc-url $BSC_RPC_URL --broadcast` | the vault opts into the approved 2.0.1 release (timelocked, guardians could veto); preflight saves a snapshot of all 29 public vault settings |
-| 8 | day 9 (2 days after step 7, by block time) | `python scripts/v2/upgrade_preflight.py execute` → only if READY and the owner confirms: `forge script scripts/v2/DemoUpgrade.s.sol:DemoUpgrade --sig "execute()" --rpc-url $BSC_RPC_URL --broadcast` → `python scripts/v2/upgrade_preflight.py after` | upgraded to 2.0.1 at the **same address**; all 29 settings, both balances and the vault's own code byte-for-byte unchanged |
+| 7 | cancelled (was: day 7) | `python scripts/v2/upgrade_preflight.py schedule` → only if READY and the owner confirms: `forge script scripts/v2/DemoUpgrade.s.sol:DemoUpgrade --sig "schedule()" --rpc-url $BSC_RPC_URL --broadcast` | the vault opts into the approved 2.0.1 release (timelocked, guardians could veto); preflight saves a snapshot of all 29 public vault settings |
+| 8 | cancelled (was: day 9) | `python scripts/v2/upgrade_preflight.py execute` → only if READY and the owner confirms: `forge script scripts/v2/DemoUpgrade.s.sol:DemoUpgrade --sig "execute()" --rpc-url $BSC_RPC_URL --broadcast` → `python scripts/v2/upgrade_preflight.py after` | upgraded to 2.0.1 at the **same address**; all 29 settings, both balances and the vault's own code byte-for-byte unchanged |
 
 `upgrade_preflight.py` signs nothing. It decides only by block timestamps, checks the registry
 approval, the release's code hash (= registry pin = evidence file), the vault state, a dry run of the
