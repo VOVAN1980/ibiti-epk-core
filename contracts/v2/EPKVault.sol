@@ -48,8 +48,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         bytes data;
     }
 
-    string public constant EIP712_NAME = "EPK Vault";
-    string public constant EIP712_VERSION = "2";
+    string internal constant EIP712_NAME = "EPK Vault";
+    string internal constant EIP712_VERSION = "2";
 
     bytes32 private constant _DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
@@ -63,16 +63,16 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     /// @notice Asset key used for the chain's native coin.
     address public constant NATIVE = address(0);
     /// @notice Selector key used in the call allowlist for a plain native transfer (empty calldata).
-    bytes4 public constant NATIVE_TRANSFER_SELECTOR = bytes4(0);
+    bytes4 internal constant NATIVE_TRANSFER_SELECTOR = bytes4(0);
 
-    uint256 public constant MIN_DELAY = 1 hours;
-    uint256 public constant MAX_DELAY = 30 days;
+    uint256 internal constant MIN_DELAY = 1 hours;
+    uint256 internal constant MAX_DELAY = 30 days;
     /// @notice A ready operation must be executed within this period, otherwise it goes stale.
     uint256 public constant GRACE_PERIOD = 14 days;
-    uint256 public constant MAX_TRACKED_ASSETS = 16;
-    uint256 public constant MAX_CALLS = 16;
+    uint256 internal constant MAX_TRACKED_ASSETS = 16;
+    uint256 internal constant MAX_CALLS = 16;
     /// @notice Guardians required before the vault can go live (admin is never a guardian).
-    uint256 public constant MIN_GUARDIANS = 2;
+    uint256 internal constant MIN_GUARDIANS = 2;
     /// @notice An upgrade always waits at least this long, whatever the vault delay is.
     uint256 public constant UPGRADE_DELAY_FLOOR = 2 days;
 
@@ -90,6 +90,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         uint64 epoch; // policy is valid only while epoch == vault epoch
         uint128 maxValuePerCall; // native value cap per call
         address validator; // optional extra rules (0 = none)
+        uint64 envelope; // sessions: envelopeId + 1 (calls and budgets come from that envelope); 0 = policy
     }
 
     struct AgentPermission {
@@ -113,6 +114,21 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         bool adminCannotCancel; // recovery operations
         address shielded; // this guardian cannot cancel the operation (it is the one being removed)
         uint64 version; // vaultVersion() at scheduling; ordinary operations go stale after an upgrade
+    }
+
+    /// @notice Session template ("envelope"): set through the timelock, narrowing is instant and applies
+    ///         to every open session of the envelope at once. Calls and per-asset budgets of the
+    ///         envelope live in `envelopeCallAllowed` / `envelopeBudgetCap`.
+    struct Envelope {
+        bool active;
+        uint48 maxTtl; // longest session that may be opened
+        uint128 maxValuePerCall; // native value cap of every session
+    }
+
+    /// @notice A session's own spending bucket for one asset (capacity = envelope budget cap).
+    struct Budget {
+        uint128 available;
+        uint64 lastUpdate; // 0 = untouched (full)
     }
 
     // ---------------------------------------------------------------------
@@ -142,7 +158,14 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     mapping(uint256 => mapping(address => AgentPermission)) public agentPermission;
     mapping(uint256 => mapping(bytes32 => bool)) public callAllowed;
 
-    mapping(bytes32 => Operation) public operations;
+    mapping(bytes32 => Operation) internal operations; // watch OperationScheduled / Executed / Cancelled events
+
+    // Agent sessions
+    address public sessionManager;
+    mapping(uint256 => Envelope) public envelopes;
+    mapping(uint256 => mapping(bytes32 => bool)) public envelopeCallAllowed;
+    mapping(uint256 => mapping(address => uint128)) public envelopeBudgetCap;
+    mapping(uint256 => mapping(address => Budget)) public policyBudgets;
 
     // Future versions: append new state variables BELOW this line only.
 
@@ -153,6 +176,13 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     event AdminChanged(address indexed previousAdmin, address indexed newAdmin);
     event RecoverySet(address indexed recovery);
     event RegistrySet(address indexed registry);
+    event SessionManagerSet(address indexed manager);
+    event EnvelopeSet(uint256 indexed envelopeId, bool active, uint48 maxTtl, uint128 maxValuePerCall);
+    event EnvelopeCallSet(uint256 indexed envelopeId, address indexed target, bytes4 indexed selector, bool allowed);
+    event EnvelopeBudgetCapSet(uint256 indexed envelopeId, address indexed asset, uint128 cap);
+    event SessionOpened(
+        uint256 indexed policyId, uint256 indexed envelopeId, address signer, address indexed agent, uint48 validUntil
+    );
     event GuardianSet(address indexed guardian, bool enabled);
     event CoSignerSet(address indexed coSigner);
     event DelaySet(uint256 delay);
@@ -227,27 +257,44 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     error LimitExceeded(address token, uint256 amount, uint256 available);
     error CoSignatureRequired(address token, uint256 amount);
     error ImplementationNotApproved(address implementation);
+    error NotSessionManager();
+    error OutsideEnvelope();
+    error BudgetExceeded(address token, uint256 amount, uint256 available);
     error NotNewerVersion(uint64 current, uint64 proposed);
 
     // ---------------------------------------------------------------------
     // Modifiers
     // ---------------------------------------------------------------------
 
+    // Modifiers delegate to internal functions so their code exists once (bytecode size, EIP-170).
+
     modifier onlyAdmin() {
-        if (msg.sender != admin) revert NotAdmin();
+        _onlyAdmin();
         _;
     }
 
     modifier onlyAdminOrGuardian() {
-        if (msg.sender != admin && !isGuardian[msg.sender]) revert NotAdminOrGuardian();
+        _onlyAdminOrGuardian();
         _;
     }
 
     /// @dev Loosening changes: only through the timelock (the vault calling itself), or directly by
     ///      the admin while the initial setup is still open (no funds can move before setup ends).
     modifier onlyTimelocked() {
-        if (msg.sender != address(this) && (setupDone || msg.sender != admin)) revert NotTimelocked();
+        _onlyTimelocked();
         _;
+    }
+
+    function _onlyAdmin() internal view {
+        if (msg.sender != admin) revert NotAdmin();
+    }
+
+    function _onlyAdminOrGuardian() internal view {
+        if (msg.sender != admin && !isGuardian[msg.sender]) revert NotAdminOrGuardian();
+    }
+
+    function _onlyTimelocked() internal view {
+        if (msg.sender != address(this) && (setupDone || msg.sender != admin)) revert NotTimelocked();
     }
 
     modifier nonReentrant() {
@@ -442,8 +489,10 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         _bumpEpoch();
     }
 
-    /// @notice Deactivates a policy and invalidates any signature already queued for it.
-    function revokePolicy(uint256 policyId) external onlyAdminOrGuardian {
+    /// @notice Deactivates a policy (or closes a session) and invalidates any signature already queued
+    ///         for it. Admin, any guardian or the session manager.
+    function revokePolicy(uint256 policyId) external {
+        if (msg.sender != admin && !isGuardian[msg.sender] && msg.sender != sessionManager) revert NotAdminOrGuardian();
         _requirePolicy(policyId);
         policies[policyId].active = false;
         uint256 n = nonces[policyId] + 1;
@@ -518,7 +567,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
             validUntil: validUntil,
             epoch: epoch,
             maxValuePerCall: maxValuePerCall,
-            validator: validator
+            validator: validator,
+            envelope: 0
         });
         emit PolicyCreated(policyId, signer);
         emit PolicyUpdated(policyId, signer, validUntil, maxValuePerCall, validator);
@@ -542,6 +592,88 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         p.validator = validator;
         emit PolicyUpdated(policyId, signer, validUntil, maxValuePerCall, validator);
     }
+
+    // ---------------------------------------------------------------------
+    // Agent sessions: instant, bounded delegation inside a pre-approved envelope
+    // ---------------------------------------------------------------------
+
+    /// @dev Loosening changes need the timelock (or the admin during setup); tightening ones may be done
+    ///      instantly by the admin, any guardian, or the vault itself through an executed operation.
+    function _checkChange(bool loosening) internal view {
+        if (loosening) {
+            _onlyTimelocked();
+        } else if (msg.sender != admin && msg.sender != address(this) && !isGuardian[msg.sender]) {
+            revert NotAdminOrGuardian();
+        }
+    }
+
+    /// @notice Hot key (e.g. the operator's backend) allowed to open and close sessions instantly
+    ///         inside envelopes. Setting one is timelocked; removing it (address(0)) is instant.
+    function setSessionManager(address manager) external {
+        _checkChange(manager != address(0));
+        if (manager == address(this)) revert BadRole(manager);
+        sessionManager = manager;
+        emit SessionManagerSet(manager);
+    }
+
+    /// @notice Outer bounds for sessions. Widening or (re)activating is timelocked; narrowing is instant.
+    function setEnvelope(uint256 envelopeId, bool active, uint48 maxTtl, uint128 maxValuePerCall) external {
+        Envelope memory old = envelopes[envelopeId];
+        _checkChange(active && (!old.active || maxTtl > old.maxTtl || maxValuePerCall > old.maxValuePerCall));
+        envelopes[envelopeId] = Envelope({active: active, maxTtl: maxTtl, maxValuePerCall: maxValuePerCall});
+        emit EnvelopeSet(envelopeId, active, maxTtl, maxValuePerCall);
+    }
+
+    /// @notice A call sessions of this envelope may be given. Allowing is timelocked; removing is instant.
+    function setEnvelopeCall(uint256 envelopeId, address target, bytes4 selector, bool allowed) external {
+        _checkChange(allowed);
+        if (target == address(0) || target == address(this)) revert BadTarget();
+        envelopeCallAllowed[envelopeId][_callKey(target, selector)] = allowed;
+        emit EnvelopeCallSet(envelopeId, target, selector, allowed);
+    }
+
+    /// @notice Per-window budget of `asset` that EACH session of this envelope gets (0 = sessions cannot
+    ///         move this asset). Raising is timelocked; lowering is instant and applies to open sessions.
+    function setEnvelopeBudgetCap(uint256 envelopeId, address asset, uint128 cap) external {
+        _checkChange(cap > envelopeBudgetCap[envelopeId][asset]);
+        if (cap != 0 && !assets[asset].tracked) revert UntrackedAsset(asset);
+        envelopeBudgetCap[envelopeId][asset] = cap;
+        emit EnvelopeBudgetCapSet(envelopeId, asset, cap);
+    }
+
+    // slither-disable-start timestamp
+    // timestamp: session expiry is seconds-to-days; validator skew is irrelevant.
+    /// @notice Open an agent session instantly (admin or session manager), inside an active envelope.
+    ///         The session may make the envelope's calls, with its own budget per asset, until it
+    ///         expires; it dies with `panic`/`revokeAll` and can be closed with `revokePolicy`.
+    /// @param signer session key that signs batches (can be the agent's own key)
+    /// @param agent the only address allowed to submit the session's batches
+    function openSession(uint256 envelopeId, address signer, address agent, uint48 ttl)
+        external
+        returns (uint256 policyId)
+    {
+        if (msg.sender != admin && msg.sender != sessionManager) revert NotSessionManager();
+        if (paused) revert IsPaused();
+        Envelope memory env = envelopes[envelopeId];
+        if (!env.active || ttl == 0 || ttl > env.maxTtl) revert OutsideEnvelope();
+        if (signer == address(0) || agent == address(0)) revert ZeroAddress();
+        if (signer == address(this)) revert BadRole(signer);
+
+        uint48 until = uint48(block.timestamp) + ttl;
+        policyId = nextPolicyId++;
+        policies[policyId] = Policy({
+            signer: signer,
+            active: true,
+            validUntil: until,
+            epoch: epoch,
+            maxValuePerCall: env.maxValuePerCall,
+            validator: address(0),
+            envelope: uint64(envelopeId) + 1
+        });
+        agentPermission[policyId][agent] = AgentPermission({allowed: true, validUntil: uint40(until)});
+        emit SessionOpened(policyId, envelopeId, signer, agent, until);
+    }
+    // slither-disable-end timestamp
 
     function setPolicyActive(uint256 policyId, bool active) external onlyTimelocked {
         _requirePolicy(policyId);
@@ -724,7 +856,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         // 1) vault, policy, deadline and agent checks
         Policy memory p = _loadExecutablePolicy(policyId, calls.length, deadline);
         // 2) static rules for every call; remember allowances that must be zero at the end
-        Approvals memory approvals = _checkCalls(policyId, p.maxValuePerCall, calls);
+        Approvals memory approvals = _checkCalls(policyId, p.envelope, p.maxValuePerCall, calls);
         // 3) operator signature (bound to policy, agent, calls, nonce, deadline, vault, chain),
         //    optional validator, nonce increment
         bytes32 digest = _authorize(policyId, p, calls, deadline, signature);
@@ -732,7 +864,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         uint256[] memory balancesBefore = _snapshotBalances();
         results = _runCalls(policyId, calls);
         // 5) charge outflows; no allowance may survive the batch
-        _settleOutflows(balancesBefore, digest, coSignature);
+        _settleOutflows(policyId, p.envelope, balancesBefore, digest, coSignature);
         _requireAllowancesCleared(approvals);
 
         emit Executed(policyId, p.signer, msg.sender, nonces[policyId] - 1, calls.length);
@@ -759,6 +891,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         p = policies[policyId];
         if (p.signer == address(0)) revert PolicyNotFound();
         if (!p.active || p.epoch != epoch) revert PolicyInactive();
+        // switching an envelope off stops every open session of it at once
+        if (p.envelope != 0 && !envelopes[p.envelope - 1].active) revert PolicyInactive();
 
         if (deadline == 0) revert DeadlineRequired();
         if (deadline <= block.timestamp) revert Expired();
@@ -770,7 +904,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
     // slither-disable-end timestamp
 
-    function _checkCalls(uint256 policyId, uint256 maxValuePerCall, Call[] calldata calls)
+    function _checkCalls(uint256 policyId, uint64 envelope, uint256 maxValuePerCall, Call[] calldata calls)
         internal
         view
         returns (Approvals memory a)
@@ -779,7 +913,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         a.tokens = new address[](n);
         a.spenders = new address[](n);
         for (uint256 i = 0; i < n; i++) {
-            address spender = _checkCall(policyId, maxValuePerCall, calls[i]);
+            address spender = _checkCall(policyId, envelope, maxValuePerCall, calls[i]);
             if (spender != address(0)) {
                 a.tokens[a.count] = calls[i].target;
                 a.spenders[a.count] = spender;
@@ -863,6 +997,14 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         return _available(a);
     }
 
+    /// @notice How much of `token` a budgeted policy (session) may still move right now.
+    function budgetAvailable(uint256 policyId, address token) external view returns (uint256) {
+        uint64 envelope = policies[policyId].envelope;
+        Asset storage a = assets[token];
+        if (envelope == 0 || !a.tracked) return 0;
+        return _sessionAvailable(policyBudgets[policyId][token], envelopeBudgetCap[envelope - 1][token], a.window);
+    }
+
     function domainSeparator() external view returns (bytes32) {
         return _domainSeparator();
     }
@@ -886,7 +1028,9 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     // ---------------------------------------------------------------------
 
     /// @return spender non-zero when this call grants an allowance that must be gone at the end.
-    function _checkCall(uint256 policyId, uint256 maxValuePerCall, Call calldata c)
+    /// @dev Policies use their own call allowlist; sessions use their envelope's (live: narrowing the
+    ///      envelope narrows every open session).
+    function _checkCall(uint256 policyId, uint64 envelope, uint256 maxValuePerCall, Call calldata c)
         internal
         view
         returns (address spender)
@@ -894,7 +1038,10 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         address target = c.target;
         if (target == address(0) || target == address(this)) revert BadTarget();
         bytes4 sel = _selectorOf(c.data);
-        if (!callAllowed[policyId][_callKey(target, sel)]) revert CallNotAllowed();
+        bytes32 key = _callKey(target, sel);
+        if (!(envelope == 0 ? callAllowed[policyId][key] : envelopeCallAllowed[envelope - 1][key])) {
+            revert CallNotAllowed();
+        }
         if (c.value > maxValuePerCall) revert ValueTooHigh();
 
         if (c.value > 0) {
@@ -950,8 +1097,15 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
 
     // slither-disable-start timestamp
     // timestamp: the limit refills over windows of hours/days; seconds of validator skew are irrelevant.
-    /// @dev Charges every real decrease of a tracked balance against that asset's bucket.
-    function _settleOutflows(uint256[] memory balancesBefore, bytes32 digest, bytes calldata coSignature) internal {
+    /// @dev Charges every real decrease of a tracked balance against that asset's vault-wide bucket and,
+    ///      for budgeted policies (sessions), against the policy's own budget for that asset.
+    function _settleOutflows(
+        uint256 policyId,
+        uint64 envelope,
+        uint256[] memory balancesBefore,
+        bytes32 digest,
+        bytes calldata coSignature
+    ) internal {
         bool coSigned = false;
         uint256 n = balancesBefore.length;
         for (uint256 i = 0; i < n; i++) {
@@ -978,14 +1132,40 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
             a.available = uint128(avail);
             a.lastUpdate = uint64(block.timestamp);
             emit Outflow(token, amount, avail);
+
+            if (envelope != 0) _chargeBudget(policyId, envelope - 1, token, amount, a.window);
         }
     }
 
+    /// @dev A session can only move assets its envelope gives a budget for (fail closed).
+    function _chargeBudget(uint256 policyId, uint256 envelopeId, address token, uint256 amount, uint32 window)
+        internal
+    {
+        Budget storage b = policyBudgets[policyId][token];
+        uint256 avail = _sessionAvailable(b, envelopeBudgetCap[envelopeId][token], window);
+        if (amount > avail) revert BudgetExceeded(token, amount, avail);
+        unchecked {
+            avail -= amount;
+        }
+        b.available = uint128(avail);
+        b.lastUpdate = uint64(block.timestamp);
+    }
+
     function _available(Asset storage a) internal view returns (uint256) {
-        uint256 cap = a.maxPerWindow;
-        uint256 refill = (block.timestamp - uint256(a.lastUpdate)) * cap / uint256(a.window);
-        uint256 avail = uint256(a.available) + refill;
-        return avail < cap ? avail : cap;
+        return _refilled(a.maxPerWindow, a.available, a.lastUpdate, a.window);
+    }
+
+    /// @dev An untouched session bucket is full; the envelope's current cap always bounds it.
+    function _sessionAvailable(Budget storage b, uint256 cap, uint32 window) internal view returns (uint256) {
+        if (b.lastUpdate == 0) return cap;
+        return _refilled(cap, b.available, b.lastUpdate, window);
+    }
+
+    /// @dev Token bucket: refills linearly from empty to `cap` over `window` seconds.
+    function _refilled(uint256 cap, uint256 avail, uint64 lastUpdate, uint32 window) internal view returns (uint256) {
+        if (cap == 0) return 0;
+        uint256 v = avail + (block.timestamp - uint256(lastUpdate)) * cap / uint256(window);
+        return v < cap ? v : cap;
     }
     // slither-disable-end timestamp
 

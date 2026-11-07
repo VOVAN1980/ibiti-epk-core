@@ -13,6 +13,10 @@ ffi = false
 verbosity = 2
 # keep storage layouts in artifacts: upgradeable EPKVault releases must be append-only
 extra_output = ["storageLayout"]
+# EPK v2 is optimized for bytecode size (EIP-170 limit); EPK v1 keeps optimizer_runs = 200 so its
+# deployed bytecode stays reproducible.
+additional_compiler_profiles = [{ name = "v2-size", via_ir = true, optimizer = true, optimizer_runs = 1 }]
+compilation_restrictions = [{ paths = "contracts/v2/**", max_optimizer_runs = 1 }]
 
 [profile.coverage]
 via_ir = true
