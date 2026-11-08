@@ -11,8 +11,8 @@ Release 2.2.0 closes the two vault findings of the fifth internal review
 
 It went out on 2026-11-08 exactly the way a release goes out on mainnet — deploy, list in the registry, each
 vault opts in through its own timelock — only with the minute-scale clocks of public test networks where the
-deployed code has them. Testnet only, test funds only, **not audited**. The 2.0.x demo vault
-([`TESTNET_V2.md`](TESTNET_V2.md), 9,940 eUSD) is not touched.
+deployed code has them. Testnet only, test funds only, **not audited**. The main demo
+([`TESTNET_V2.md`](TESTNET_V2.md)) runs on a vault created through the 2.2.0 factory below.
 
 ## Contracts
 

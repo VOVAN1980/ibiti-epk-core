@@ -72,7 +72,7 @@
       <div class="stats" data-live-stats>
         <div class="crystal stat reveal d1"><div class="n" data-stat="attacks">7/7</div><div class="l">attacks rejected on-chain</div><div class="src" data-src="attacks"><span class="dot"></span>checking…</div></div>
         <div class="crystal stat reveal d2"><div class="n"><span data-stat="moved">0</span> <small style="font-size:.45em;color:var(--dim)">eUSD</small></div><div class="l">moved by those attacks</div><div class="src" data-src="moved"><span class="dot"></span>checking…</div></div>
-        <div class="crystal stat reveal d3"><div class="n"><span data-stat="blocks">5</span> <small style="font-size:.45em;color:var(--dim)">blocks</small></div><div class="l">until the Watchtower cancelled a thief's change</div><div class="src" data-src="blocks"><span class="dot"></span>checking…</div></div>
+        <div class="crystal stat reveal d3"><div class="n"><span data-stat="blocks">4</span> <small style="font-size:.45em;color:var(--dim)">blocks</small></div><div class="l">until the Watchtower cancelled a thief's change</div><div class="src" data-src="blocks"><span class="dot"></span>checking…</div></div>
         <div class="crystal stat reveal d4"><div class="n"><span data-stat="balance">9,940</span> <small style="font-size:.45em;color:var(--dim)">eUSD</small></div><div class="l">still in the demo vault</div><div class="src" data-src="balance"><span class="dot"></span>checking…</div></div>
       </div>
     </div>
@@ -166,7 +166,7 @@
           cancel it while it waits. The EPK Watchtower is a guardian that keeps watching while it runs; an always-on service is next.</p>
         <ol class="steps">
           <li class="bad"><strong>The thief uses the real admin key</strong> to schedule "allow payments to my address".</li>
-          <li class="good"><strong>The Watchtower cancels it 5 blocks later</strong> — no human involved.</li>
+          <li class="good"><strong>The Watchtower cancels it 4 blocks later</strong> — no human involved.</li>
           <li class="bad"><strong>The thief tries to push it through anyway</strong> and the vault answers <code>UnknownOperation</code>: the change no longer exists.</li>
         </ol>
         <div class="cta" style="justify-content:flex-start;margin-top:28px">
@@ -175,16 +175,16 @@
       </div>
       <div class="crystal terminal reveal d2" data-type data-tilt>
         <div class="term-bar"><div class="term-dots"><i></i><i></i><i></i></div><div class="term-title">epk watchtower · live log · UTC</div></div>
-        <div class="term-body"><span class="ln c-dim">14:05:17  watching vault 0xB216…A340</span>
+        <div class="term-body"><span class="ln c-dim">18:09:34  watching vault 0x1402…43fa</span>
 <span class="ln c-dim">          guardian 0xD1e7…7Fa0 · confirmed by the vault</span>
-<span class="ln c-dim">          1 approved change: upgrade to 2.0.1 (planned then, later cancelled)</span>
+<span class="ln c-dim">          0 approved changes</span>
 <span class="ln"> </span>
-<span class="ln c-bad">14:05:33  UNEXPECTED change by 0xa2bd…15f8</span>
+<span class="ln c-bad">18:09:44  UNEXPECTED change by 0xa2bd…15f8</span>
 <span class="ln c-bad">          addDestination(0x…bad1)</span>
 <span class="ln c-bad">          "allow payments to a new address"</span>
 <span class="ln"> </span>
-<span class="ln c-ok">14:05:36  STOPPED — change cancelled</span>
-<span class="ln c-ok">          tx 0x6b08…1714 · block 141354347</span>
+<span class="ln c-ok">18:09:47  STOPPED — change cancelled</span>
+<span class="ln c-ok">          tx 0x22c8…59b9 · block 141578902</span>
 <span class="ln"> </span>
 <span class="ln c-warn">thief: executeScheduled(…) → UnknownOperation</span>
 <span class="ln c-ok">moved: 0 eUSD <span class="caret"></span></span></div>
@@ -257,14 +257,14 @@
           <h3>From the command line</h3>
           <div class="cmd"><span class="c-dim"># Python 3 only — no packages, no keys</span>
 git clone https://github.com/VOVAN1980/ibiti-epk-core
-cd ibiti-epk-core &amp;&amp; git checkout bd3cf19   <span class="c-dim"># the commit the evidence was published with</span>
+cd ibiti-epk-core &amp;&amp; git checkout d99008c   <span class="c-dim"># the commit the evidence was published with</span>
 git checkout master -- scripts/v2/verify_evidence.py   <span class="c-dim"># today's checker: asks several public nodes</span>
 python scripts/v2/verify_evidence.py
 
 <span class="c-dim"># + byte-for-byte: on-chain code = open-source build</span>
 forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
-          <p class="card-text" style="margin-top:16px">Last run (2026-11-08): <b style="color:#fff">118 checks OK, 0 mismatches</b>;
-            with <code>--build</code> (2026-11-07) the bytecode of all 6 contracts equals the repository's build.</p>
+          <p class="card-text" style="margin-top:16px">Last run (2026-11-08): <b style="color:#fff">110 checks OK, 0 mismatches</b>;
+            with <code>--build</code> the vault implementation, the factory and the vault proxy equal the repository's build.</p>
         </div>
       </div>
     </div>
@@ -305,7 +305,7 @@ forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
         <h2>Honest status.</h2>
       </div>
       <div class="road r4">
-        <div class="crystal st now reveal"><div class="when">Nov 2026 · now</div><h3>EPK 2.2 on testnet</h3><p>Per-customer vaults, agent sessions, Watchtower, guarded swaps, opt-in upgrades at the same address in minutes on test networks, TypeScript SDK on npm (preview), public proof.</p></div>
+        <div class="crystal st now reveal"><div class="when">Nov 2026 · now</div><h3>EPK 2.2 on testnet</h3><p>Per-customer vaults, agent sessions, Watchtower, guarded swaps, opt-in upgrades at the same address in minutes on test networks, TypeScript SDK, public proof.</p></div>
         <div class="crystal st reveal d1"><div class="when">next</div><h3>Watchtower service &amp; emergency response</h3><p>Always-on Watchtower with alerts, emergency evacuation to the owner's cold wallet.</p></div>
         <div class="crystal st reveal d2"><div class="when">then</div><h3>Independent audit</h3><p>Professional audit of vault, sessions and upgrades; public bug bounty.</p></div>
         <div class="crystal st reveal d3"><div class="when">after the audit</div><h3>Mainnet</h3><p>Production deployments under commercial licenses.</p></div>
@@ -379,7 +379,7 @@ forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
         <a href="pilot.html">Pilot &amp; licensing</a>
         <a href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" rel="noopener">GitHub</a>
         <a href="https://x.com/IBITILabs" target="_blank" rel="noopener">X</a>
-        <a href="https://www.npmjs.com/package/@ibiti/epk-sdk" target="_blank" rel="noopener">SDK on npm</a>
+        <a href="https://github.com/VOVAN1980/ibiti-epk-core/tree/master/sdk" target="_blank" rel="noopener">SDK</a>
         <a href="https://vovan1980.github.io/IBITILabs">IBITI Labs</a>
       </nav>
     </div>

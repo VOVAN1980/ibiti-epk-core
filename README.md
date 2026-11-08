@@ -5,8 +5,8 @@
 
 **Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.**
 
-> **Status: EPK 2.1 preview — BSC Testnet only. Not independently audited, not on any mainnet; do not use it
-> with real funds.** TypeScript SDK: `npm install @ibiti/epk-sdk@preview viem` ·
+> **Status: EPK 2.2 in development — BSC Testnet only. Not independently audited, not on any mainnet; do not use it
+> with real funds.** TypeScript SDK: [`sdk/`](sdk/) ·
 > [developer guide](docs/INTEGRATION_v2.md)
 
 EPK (Eternal Permission Kernel) by IBITI Labs gives every customer their own on-chain vault. AI
@@ -30,7 +30,7 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 |---|---|
 | **EPK v2** — `EPKVault` | **Live on BSC Testnet**: 2.1 since 2026-11-07, release 2.2.0 (the fifth review's fixes) since 2026-11-08 — the public factory creates vaults on 2.2.0 and existing demo vaults opt in ([`docs/TESTNET_V22.md`](docs/TESTNET_V22.md)). Five internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
 | **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). BUSL-1.1. |
-| **TypeScript SDK** — `@ibiti/epk-sdk` | Preview on npm, testnet only ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). MIT. |
+| **TypeScript SDK** — `@ibiti/epk-sdk` | In this repository, testnet only; on npm with the finished release ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). MIT. |
 | **EPK Watchtower** | Automatic guardian, working on BSC Testnet. BUSL-1.1. |
 
 What comes next, and in which order, is in the [roadmap](docs/ROADMAP.md) — the single source of
@@ -41,7 +41,7 @@ truth for this README, the website and DoraHacks.
 ## Proven on BSC Testnet
 
 One vault at one address from start to finish
-([`0xB2166241…2FA340`](https://testnet.bscscan.com/address/0xB2166241D29C50F4678aebb5061504ee562FA340)),
+([`0x14026E45…1a43fa`](https://testnet.bscscan.com/address/0x14026E45D119Af294cFb48Ddf7904299641a43fa), EPKVault 2.2.0),
 every step a real transaction:
 
 | What happened | Result |
@@ -50,13 +50,12 @@ every step a real transaction:
 | 5 attacks: over budget, unknown destination, forbidden call, forged signature, not the agent | ❌ all rejected on-chain |
 | A guardian calls `panic()` | everything stops in one transaction |
 | Recovery: unpause through the timelock, new agent session | ✅ service restored; the old session stays dead (`PolicyInactive`) |
-| A **stolen admin key** schedules a new withdrawal address | 🛡 the Watchtower cancelled it **5 blocks later**; executing it anyway was rejected (`UnknownOperation`) |
+| A **stolen admin key** schedules a new withdrawal address | 🛡 the Watchtower cancelled it **4 blocks (about 11 seconds) later**; executing it anyway was rejected (`UnknownOperation`) |
 
 **7 of 7** attack transactions rejected · **0 eUSD** left the vault during the attacks.
-Opt-in upgrades are shown live: a vault upgraded at the same address with the same funds in
-5 minutes on BSC Testnet (test networks use minute-scale delays; mainnet keeps 7 days) —
-[`docs/TESTNET_V21_FAST_UPGRADE.md`](docs/TESTNET_V21_FAST_UPGRADE.md); the same vault took the real
-release 2.2.0 through the SDK on 2026-11-08 ([`docs/TESTNET_V22.md`](docs/TESTNET_V22.md)).
+Opt-in upgrades are shown live: a vault took release 2.2.0 through the SDK at the same address with the
+same funds, 5 minutes after the release was listed (test networks run 5-minute release and upgrade clocks;
+mainnet keeps 7 days + 2 days) — [`docs/TESTNET_V22.md`](docs/TESTNET_V22.md).
 
 ### Check it yourself
 
@@ -112,7 +111,7 @@ python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json 
 | `watchtower/` | automatic guardian and its tests | BUSL-1.1 |
 | `deployments/bsc-testnet/` | evidence: addresses, transactions, saved traces, verification reports | MIT |
 | `docs/` | specifications, security review, roadmap; the website (GitHub Pages) | MIT |
-| `sdk/` | TypeScript SDK [`@ibiti/epk-sdk`](https://www.npmjs.com/package/@ibiti/epk-sdk) (bundled guard bytecode: BUSL-1.1) | MIT |
+| `sdk/` | TypeScript SDK `@ibiti/epk-sdk` (bundled guard bytecode: BUSL-1.1) | MIT |
 
 ## Build and test
 
@@ -134,7 +133,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
-- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_V22_GUARDS.md) · [5-minute upgrade](docs/TESTNET_V21_FAST_UPGRADE.md) · [release 2.2.0](docs/TESTNET_V22.md)
+- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_V22_GUARDS.md) · [release 2.2.0](docs/TESTNET_V22.md)
 - [Guard modules](docs/GUARDS_v2.md)
 - [Roadmap](docs/ROADMAP.md)
 

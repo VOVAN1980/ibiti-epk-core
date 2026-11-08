@@ -10,8 +10,8 @@ registry and vault run the clocks of public test networks (`contracts/v2/EPKChai
 usable after a 5-minute public window and a vault upgrades 5 minutes after scheduling. Production rules
 (7-day window, at least 2 days per upgrade) apply on every other chain. The vault's own timelock for
 loosening its settings is 1 hour (the minimum on every network). The guards are deployed from this
-repository's code. Testnet only, test funds only, **not audited**. The EPK v2 demo vault
-([`TESTNET_V2.md`](TESTNET_V2.md), 9,940 eUSD) is not involved.
+repository's code. Testnet only, test funds only, **not audited**. The main demo vault
+([`TESTNET_V2.md`](TESTNET_V2.md)) is a separate vault.
 
 What this proves: the listed attacks were rejected on-chain in these scenarios, and allowed trades went
 through at fair prices. It is **not** a guarantee that no other attack exists — see

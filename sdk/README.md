@@ -4,7 +4,8 @@
 > Do not use this SDK or EPK v2 to hold or move real funds. Install, integrate on BSC Testnet, and tell us what
 > is missing: info@ibiticoin.com · https://github.com/VOVAN1980/ibiti-epk-core
 >
-> `npm install @ibiti/epk-sdk@preview viem` · developer guide:
+> Not on npm yet (it is published with the finished release): build it from this folder (`npm ci && npm run build`)
+> and install it into your project from the path · developer guide:
 > [INTEGRATION_v2.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/master/docs/INTEGRATION_v2.md) ·
 > licence: SDK code MIT; bundled EPK v2 contract bytecode BUSL-1.1 (see `LICENSE`).
 

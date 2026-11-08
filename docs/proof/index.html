@@ -138,7 +138,8 @@ own live proof on a separate demo vault — <a href="guards.html">Protected swap
   <h2>Code and upgrades without moving funds</h2>
   <p>Each contract's bytecode hash is checked. Vault implementations must match the hash pinned in the public
   EPKRegistry. A new release can only be used after a 7-day public window, and a vault opts in through its own
-  timelock (at least 2 days) — same address, same funds.</p>
+  timelock (at least 2 days) — same address, same funds. On test networks the same code runs these two clocks
+  in 5 minutes each.</p>
   <div class="scroll"><table id="tbl-code"><thead><tr><th>Contract</th><th>Address</th><th>Code hash</th><th>Result</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -183,7 +184,7 @@ own live proof on a separate demo vault — <a href="guards.html">Protected swap
         <p class="fine">© 2026 IBITI Labs (Volodymyr Podkorytov). EPK v2 is licensed under BUSL-1.1 — use in production by agreement.
           Test network only, test token only.</p>
       </div>
-      <nav aria-label="Footer"><a href="../">Home</a><a href="../pilot.html">Pilot &amp; licensing</a><a href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" rel="noopener">GitHub</a><a href="https://www.npmjs.com/package/@ibiti/epk-sdk" target="_blank" rel="noopener">SDK on npm</a></nav>
+      <nav aria-label="Footer"><a href="../">Home</a><a href="../pilot.html">Pilot &amp; licensing</a><a href="https://github.com/VOVAN1980/ibiti-epk-core" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/VOVAN1980/ibiti-epk-core/tree/master/sdk" target="_blank" rel="noopener">SDK</a></nav>
     </div>
   </div>
 </footer>
@@ -192,7 +193,7 @@ own live proof on a separate demo vault — <a href="guards.html">Protected swap
 "use strict";
 // ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
 const REPO = "VOVAN1980/ibiti-epk-core";
-const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT) || "bd3cf198a361d3bc7780806e9cdd54f2be1a0f59";
+const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT) || "d99008c33c8a44632c2779f832db85e6b5599371";
 const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
 const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
 const EV_PATH = "deployments/bsc-testnet/epk-v2-evidence.json";

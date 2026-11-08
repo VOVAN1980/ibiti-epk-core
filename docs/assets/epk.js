@@ -6,9 +6,10 @@
   // ---------- where the public evidence lives (one fixed Git commit) ----------
   var EPK = window.EPK = window.EPK || {};
   EPK.REPO = "VOVAN1980/ibiti-epk-core";
-  EPK.COMMIT = "bd3cf198a361d3bc7780806e9cdd54f2be1a0f59";
+  EPK.COMMIT = "d99008c33c8a44632c2779f832db85e6b5599371";
   EPK.COMMIT_GUARDS = "dfe6d0e0dbf4e803016f76d897e3e776576a33c8"; // evidence of the guard demo (docs/proof/guards.html)
-  EPK.RPC = "https://bsc-testnet-rpc.publicnode.com";
+  // free public BSC Testnet nodes, asked in this order (the next one only when a node has no answer; see docs/TESTNET_V2.md)
+  EPK.NODES = ["https://bsc-testnet.bnbchain.org", "https://97.rpc.thirdweb.com", "https://bsc-testnet-rpc.publicnode.com"];
   EPK.EXPLORER = "https://testnet.bscscan.com";
   EPK.raw = function (path) { return "https://raw.githubusercontent.com/" + EPK.REPO + "/" + EPK.COMMIT + "/" + path; };
 
@@ -142,11 +143,18 @@
   };
 
   // ---------- live numbers from BSC Testnet (home page) ----------
-  var rpc = function (method, params) {
-    return fetch(EPK.RPC, { method: "POST", headers: { "Content-Type": "application/json" },
+  var rpc = function (method, params, i) {
+    i = i || 0;
+    if (i >= EPK.NODES.length) return Promise.reject(new Error("no node answered " + method));
+    var next = function () { return rpc(method, params, i + 1); };
+    return fetch(EPK.NODES[i], { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: method, params: params }) })
       .then(function (r) { return r.json(); })
-      .then(function (j) { if (j.error) throw new Error(j.error.message); return j.result; });
+      .then(function (j) {
+        if (j.error) return next(); // pruned history, a refused request, a rate limit: ask the next node
+        if (j.result === null && method === "eth_getTransactionReceipt") return next(); // node dropped old txs
+        return j.result;
+      }, next);
   };
   var pad = function (a) { return "0x" + a.toLowerCase().replace(/^0x/, "").padStart(64, "0"); };
   var TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
@@ -186,7 +194,7 @@
         // 3) blocks between the thief's change and the Watchtower's cancel
         if (w1 && w2) Promise.all([rpc("eth_getTransactionReceipt", [w1.tx]), rpc("eth_getTransactionReceipt", [w2.tx])])
           .then(function (rs) { EPK.countTo(el("blocks"), parseInt(rs[1].blockNumber, 16) - parseInt(rs[0].blockNumber, 16)); setSrc("blocks", true); })
-          .catch(function () { el("blocks").textContent = "5"; setSrc("blocks", false); });
+          .catch(function () { el("blocks").textContent = "4"; setSrc("blocks", false); });
 
         // 4) what is in the vault right now
         rpc("eth_call", [{ to: token, data: "0x70a08231" + pad(vault).slice(2) }, "latest"])

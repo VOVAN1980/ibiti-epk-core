@@ -7,10 +7,11 @@ Testnet** with `@ibiti/epk-sdk/v2` (`sdk/` in this repository). EPK is **not aud
 production use of the contracts needs a commercial license (BUSL-1.1, see [`LICENSING.md`](../LICENSING.md)).
 The SDK itself is MIT.
 
-**Install** (preview on npm, testnet only):
+**Install** (from this repository; the SDK goes to npm with the finished release; testnet only):
 
 ```bash
-npm install @ibiti/epk-sdk@preview viem
+git clone https://github.com/VOVAN1980/ibiti-epk-core && cd ibiti-epk-core/sdk && npm ci && npm run build
+cd /path/to/your-project && npm install /path/to/ibiti-epk-core/sdk viem
 ```
 
 ```ts
@@ -18,7 +19,7 @@ import { networks, EPKFactoryClient, VaultAdmin, vaultActions, EPKVaultClient } 
 ```
 
 `npm run check:package` (in `sdk/`) proves this works for an outside team: it installs the package into a
-clean empty project — from the local build, or `FROM_NPM=@ibiti/epk-sdk@preview` straight from npm — then
+clean empty project from the local build, then
 type-checks a TypeScript file against it and reads BSC Testnet through it.
 
 **Fastest start:** `sdk/examples/v2-quickstart.ts` creates your own vault from zero with one funded testnet
@@ -145,8 +146,7 @@ What DexGuard blocks and what it does not cover: [`GUARDS_v2.md`](GUARDS_v2.md).
 - `explainEpkError(data)` — every vault and guard error in one sentence plus what to do.
 - `EPKUpgrader` — opt into a newer release: `schedule`, `status`, `execute`. Test networks: ~5 minutes;
   mainnet: 7-day public release window with the vault's own wait running in parallel
-  ([`TESTNET_V21_FAST_UPGRADE.md`](TESTNET_V21_FAST_UPGRADE.md); the real release 2.2.0 this way:
-  [`TESTNET_V22.md`](TESTNET_V22.md)).
+  (release 2.2.0 this way: [`TESTNET_V22.md`](TESTNET_V22.md)).
 
 ## 8. Checklist before real money
 
