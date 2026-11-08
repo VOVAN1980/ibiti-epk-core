@@ -58,6 +58,14 @@ and runs 2.2.0 two days later (`scripts/v2/Release220Testnet.s.sol`: `upgradeGua
 Its DexGuard also predates the 2026-11-08 guard fixes; guards are separate contracts and are replaced by
 deploying new ones (the SDK's `deployDexGuard` ships the fixed bytecode).
 
+**The guard demo does not wait for it.** During development nothing waits for production clocks: on
+2026-11-08 a **new guard demo** started on 2.2.0 — a vault created through the public 2.2.0 factory above
+(5-minute clocks), guarded by DexGuard, ThreatFeed V2 and CompositeGuard deployed from the fixed code; 12
+attacks rejected on-chain ([`TESTNET_V22_GUARDS.md`](TESTNET_V22_GUARDS.md), live check
+`docs/proof/guards.html`). The 2.1 guard demo vault keeps its production clocks, as written into its
+contracts, and stays as history with its proofs (`docs/proof/guards-2.1.html`); whether it still opts in on
+2026-11-15 changes nothing for the current demo.
+
 ## Check it yourself (no keys needed)
 
 ```bash
