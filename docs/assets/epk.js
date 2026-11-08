@@ -6,7 +6,7 @@
   // ---------- where the public evidence lives (one fixed Git commit) ----------
   var EPK = window.EPK = window.EPK || {};
   EPK.REPO = "VOVAN1980/ibiti-epk-core";
-  EPK.COMMIT = "bd3cf198a361d3bc7780806e9cdd54f2be1a0f59";
+  EPK.COMMIT = "d99008c33c8a44632c2779f832db85e6b5599371";
   EPK.COMMIT_GUARDS = "dfe6d0e0dbf4e803016f76d897e3e776576a33c8"; // evidence of the guard demo (docs/proof/guards.html)
   // free public BSC Testnet nodes, asked in this order (the next one only when a node has no answer; see docs/TESTNET_V2.md)
   EPK.NODES = ["https://bsc-testnet.bnbchain.org", "https://97.rpc.thirdweb.com", "https://bsc-testnet-rpc.publicnode.com"];
