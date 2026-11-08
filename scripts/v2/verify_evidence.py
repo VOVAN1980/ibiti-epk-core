@@ -2,7 +2,7 @@
 """Independently re-check the EPK v2 testnet evidence against the chain.
 
 Usage (from the repo root; Python 3.8+ only — no Foundry, no keys, no packages):
-    python scripts/v2/verify_evidence.py [--rpc-url URL] [--build]
+    python scripts/v2/verify_evidence.py [--rpc-url URL[,URL...]] [--build]
     python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.1-evidence.json --doc docs/TESTNET_V21.md
 
 The claims live in deployments/bsc-testnet/epk-v2-evidence.json (and, for people, in
@@ -29,8 +29,14 @@ A public BSC Testnet node is then asked:
                 limits left) — stays reproducible after later upgrades;
   now           the vault's current implementation, version, balance and pause state.
 
-The default node (publicnode) keeps historical state, which checkpoints and replays need. Free
-public nodes do not keep traces of old transactions; Binance's own node traces recent ones, so
+Free public nodes forget old history, each in its own way, so the script asks several of them
+(NODES, or your own list with --rpc-url A,B): every request goes to the first node, and the next one
+is asked only when a node has no answer — a transaction it no longer returns, state it has pruned, a
+request it refuses, or no response. A revert is an answer and is never retried elsewhere. Event logs
+are taken from one node only, and only if they contain every event of the evidence transactions
+(a node that pruned old logs returns an empty list instead of an error). What no node can answer is
+reported as OLD (history no node asked still keeps), never as passed and never as a mismatch.
+No free node keeps traces of old transactions; Binance's own node traces recent ones, so
 right after an attack is sent, `--save-traces` stores its trace for later strict checks.
 Exit code 0 = everything matches, 1 = a mismatch, 2 = something could not be checked.
 """
@@ -38,11 +44,19 @@ import json
 import os
 import re
 import sys
+import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from decimal import Decimal
+from urllib.parse import urlparse
 
-RPC = "https://bsc-testnet-rpc.publicnode.com"
+# Free public BSC Testnet nodes, asked in this order (tested 2026-11-08; all allow browser requests):
+NODES = [
+    "https://bsc-testnet.bnbchain.org",        # BNB Chain's own node: every transaction, but only the latest state, no logs
+    "https://97.rpc.thirdweb.com",             # keeps old state and event logs (archive); strict rate limit, so asked second
+    "https://bsc-testnet-rpc.publicnode.com",  # state of the last hour or so; drops transactions after about a day
+]
 TRACE_RPC = "https://data-seed-prebsc-1-s1.binance.org:8545"  # traces recent transactions only
 TRACES = "deployments/bsc-testnet/traces"
 ARCHIVE_DIR = "deployments/bsc-testnet/verification"
@@ -114,21 +128,80 @@ class RpcError(Exception):
         self.data = err.get("data")
 
 
+def host(url):
+    return urlparse(url).netloc or url
+
+
+def reverted(err):
+    """A node's error that is a real answer: the call reverted (with or without revert data)."""
+    if not isinstance(err, dict):
+        return False
+    data = err.get("data")
+    return (isinstance(data, str) and data.startswith("0x")) or "revert" in str(err.get("message", "")).lower()
+
+
 class Chain:
-    def __init__(self, url, record=None):
-        self.url, self.record = url, record  # record: list collecting raw node answers (--archive)
+    """JSON-RPC over a list of nodes, asked in order (see NODES)."""
+    LOOKUPS = ("eth_getTransactionByHash", "eth_getTransactionReceipt", "eth_getBlockByNumber")
+
+    def __init__(self, urls, record=None, used=None, silent=None):
+        self.urls, self.record = list(urls), record  # record: list collecting raw node answers (--archive)
+        self.used = used if used is not None else {u: 0 for u in self.urls}  # answers per node
+        self.silent = silent if silent is not None else {}  # requests a node never answered (after retries)
+        self.last = None  # the node that gave the last answer
+
+    def only(self, url):
+        return Chain([url], self.record, self.used, self.silent)
+
+    def _post(self, url, method, params):
+        body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": list(params)}).encode()
+        attempt = 0
+        while True:  # a busy node (rate limit, 5xx) is asked again 1, 2, 4, 8, 8 s later; a silent one once more
+            req = urllib.request.Request(url, body, {"Content-Type": "application/json", "User-Agent": "epk-verify/2.0"})
+            try:
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    return json.load(r)
+            except urllib.error.HTTPError as e:
+                try:
+                    out = json.loads(e.read())
+                except ValueError:
+                    out = None
+                if isinstance(out, dict) and "error" in out and e.code != 429 and e.code < 500:
+                    return out  # some nodes send their JSON-RPC errors with HTTP 4xx
+                why, tries = f"HTTP {e.code}", 6
+            except (OSError, ValueError) as e:
+                why, tries = str(e), 2
+            attempt += 1
+            if attempt >= tries:
+                break
+            time.sleep(min(2 ** (attempt - 1), 8))
+        self.silent[url] = self.silent.get(url, 0) + 1
+        return {"error": {"message": f"no response ({why})"}}
 
     def __call__(self, method, *params):
-        body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": list(params)}).encode()
-        req = urllib.request.Request(self.url, body, {"Content-Type": "application/json", "User-Agent": "epk-verify/2.0"})
-        with urllib.request.urlopen(req, timeout=40) as r:
-            out = json.load(r)
-        if self.record is not None:
-            self.record.append({"node": self.url, "method": method, "params": list(params),
-                                **({"error": out["error"]} if "error" in out else {"result": out.get("result")})})
-        if "error" in out:
-            raise RpcError(out["error"])
-        return out["result"]
+        errors = []
+        for url in self.urls:
+            if self.silent.get(url, 0) >= 3:  # a node that stopped answering is not asked again in this run
+                errors.append(f"{host(url)}: not answering")
+                continue
+            out = self._post(url, method, params)
+            if self.record is not None:
+                self.record.append({"node": url, "method": method, "params": list(params),
+                                    **({"error": out["error"]} if "error" in out else {"result": out.get("result")})})
+            err = out.get("error")
+            if err is None and out.get("result") is None and method in self.LOOKUPS:
+                errors.append(f"{host(url)}: not found")
+                continue
+            if err is None or reverted(err):
+                self.used[url] = self.used.get(url, 0) + 1
+                self.last = url
+                if err:
+                    raise RpcError(err)
+                return out.get("result")
+            errors.append(f"{host(url)}: {err.get('message', err) if isinstance(err, dict) else err}")
+        if method in self.LOOKUPS:
+            return None  # no node asked still returns it
+        raise RpcError({"message": "; ".join(errors)})
 
     def call(self, to, data, block="latest"):
         return self("eth_call", {"to": to, "data": data}, block)
@@ -151,36 +224,72 @@ def eusd(v):
 
 def no_history(e):
     m = str(e).lower()
-    return any(k in m for k in ("missing trie node", "unknown state", "historical state", "pruned", "not available"))
+    return any(k in m for k in ("missing trie node", "unknown state", "historical state", "pruned", "not available",
+                                "header not found"))
 
 
 class History:
-    """Vault facts derived from event logs. Unlike historical state, which free public nodes prune after
-    a few hours, logs of old blocks stay available on every full node."""
+    """Vault facts derived from event logs, for when no node keeps the old state. All logs come from one
+    node, which is used only if its logs contain every vault/token event of the evidence transactions:
+    a node that pruned old logs answers with an empty list, which would otherwise look like a real answer."""
 
-    STEP = 10_000  # blocks per eth_getLogs request
+    STEP = 1_000  # blocks per eth_getLogs request (the most some free nodes accept)
+    TRANSFER = topic0("Transfer(address,address,uint256)")
 
-    def __init__(self, chain, vault, token, start):
-        self.chain, self.vault, self.token, self.start, self.loaded = chain, vault, token, start, False
+    def __init__(self, chain, vault, token, start, end, receipts):
+        self.chain, self.vault, self.token = chain, vault.lower(), token.lower()
+        self.start, self.end, self.receipts = start, end, receipts
+        self.loaded, self.node, self.notes = False, None, []
 
-    def _logs(self, address, topics):
-        out, b, latest = [], self.start, int(self.chain("eth_blockNumber"), 16)
-        while b <= latest:
-            e = min(b + self.STEP - 1, latest)
-            out += self.chain("eth_getLogs", {"address": address, "topics": topics, "fromBlock": hex(b), "toBlock": hex(e)})
+    def _logs(self, chain, flt):
+        out, b = [], self.start
+        while b <= self.end:
+            e = min(b + self.STEP - 1, self.end)
+            out += chain("eth_getLogs", {**flt, "fromBlock": hex(b), "toBlock": hex(e)})
             b = e + 1
-        return sorted(out, key=lambda lg: (int(lg["blockNumber"], 16), int(lg["logIndex"], 16)))
+        return out
+
+    def _ours(self, lg):
+        """Every event of the vault, and every Transfer of the token."""
+        a = lg["address"].lower()
+        return a == self.vault or (a == self.token and lg["topics"][:1] == [self.TRANSFER])
 
     def load(self):
+        """Returns self if some node's logs are complete, else None (values cannot be derived: OLD)."""
         if not self.loaded:
-            tr, vw = topic0("Transfer(address,address,uint256)"), "0x" + w(self.vault)
-            self.t_in = self._logs(self.token, [tr, None, vw])
-            self.t_out = self._logs(self.token, [tr, vw, None])
-            self.pause = self._logs(self.vault, [[topic0("Paused(address)"), topic0("Unpaused()")]])
-            self.upgraded = self._logs(self.vault, [topic0("Upgraded(address)")])
-            self.outflow = self._logs(self.vault, [topic0("Outflow(address,uint256,uint256)"), "0x" + w(self.token)])
             self.loaded = True
-        return self
+            key = lambda lg: (lg["transactionHash"].lower(), int(lg["logIndex"], 16))  # noqa: E731
+            want = {key(lg) for rc in self.receipts if self.start <= int(rc["blockNumber"], 16) <= self.end
+                    for lg in rc["logs"] if self._ours(lg)}
+            for url in self.chain.urls:
+                one = self.chain.only(url)
+                try:
+                    logs = self._logs(one, {"address": self.vault}) + \
+                        self._logs(one, {"address": self.token, "topics": [self.TRANSFER]})
+                except RpcError as err:
+                    self.notes.append(str(err)[:120])
+                    continue
+                got = {key(lg) for lg in logs}
+                if not want:
+                    self.notes.append(f"{host(url)}: no evidence transaction in these blocks to cross-check its logs with")
+                    continue
+                if not want <= got:
+                    self.notes.append(f"{host(url)}: its logs miss {len(want - got)} of the {len(want)} events of the evidence transactions")
+                    continue
+                logs.sort(key=lambda lg: (int(lg["blockNumber"], 16), int(lg["logIndex"], 16)))
+                t = lambda lg, i: lg["topics"][i] if len(lg["topics"]) > i else None  # noqa: E731
+                of_vault = [lg for lg in logs if lg["address"].lower() == self.vault]
+                transfers = [lg for lg in logs if lg["address"].lower() == self.token and t(lg, 0) == self.TRANSFER]
+                vw = "0x" + w(self.vault)
+                self.t_in = [lg for lg in transfers if t(lg, 2) == vw]
+                self.t_out = [lg for lg in transfers if t(lg, 1) == vw]
+                self.pause = [lg for lg in of_vault if t(lg, 0) in (topic0("Paused(address)"), topic0("Unpaused()"))]
+                self.upgraded = [lg for lg in of_vault if t(lg, 0) == topic0("Upgraded(address)")]
+                self.outflow = [lg for lg in of_vault if t(lg, 0) == topic0("Outflow(address,uint256,uint256)")
+                                and t(lg, 1) == "0x" + w(self.token)]
+                self.node = url
+                break
+        return self if self.node else None
 
     @staticmethod
     def _upto(logs, n, after=-1):
@@ -228,7 +337,7 @@ class Report:
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    url = sys.argv[sys.argv.index("--rpc-url") + 1] if "--rpc-url" in sys.argv else RPC
+    urls = [u.strip() for u in sys.argv[sys.argv.index("--rpc-url") + 1].split(",") if u.strip()] if "--rpc-url" in sys.argv else NODES
     trace_url = sys.argv[sys.argv.index("--trace-rpc") + 1] if "--trace-rpc" in sys.argv else TRACE_RPC
     build, save_traces = "--build" in sys.argv, "--save-traces" in sys.argv
     methods = {"STRICT": 0, "REPLAY": 0}
@@ -245,7 +354,7 @@ def main():
     names = {a.lower(): k for k, a in {**C, **roles}.items()}
     archive = sys.argv[sys.argv.index("--archive") + 1] if "--archive" in sys.argv else None
     record = [] if archive else None
-    chain, tracer, rep = Chain(url, record), Chain(trace_url, record), Report()
+    chain, tracer, rep = Chain(urls, record), Chain([trace_url], record), Report()
 
     def show_error(sig, data):
         types = [] if sig.endswith("()") else sig[sig.index("(") + 1:-1].split(",")
@@ -268,7 +377,9 @@ def main():
     def who(addr):
         return names.get(addr.lower(), addr)
 
-    print(f"EPK v2 evidence check — node {url}")
+    print("EPK v2 evidence check — nodes, asked in this order (the next one only when a node has no answer):")
+    for i, u in enumerate(urls, 1):
+        print(f"  {i}. {u}")
 
     # ---- network ---------------------------------------------------------------------------
     print("\nNetwork")
@@ -326,18 +437,22 @@ def main():
 
     # ---- transactions ----------------------------------------------------------------------------
     print("\nTransactions")
+    receipts = []
     for t in ev["transactions"]:
         tx = chain("eth_getTransactionByHash", t["tx"])
         rc = chain("eth_getTransactionReceipt", t["tx"])
         head = f"{t['step']:<3} {t['tx'][:12]}...  {t['what']}"
         if not tx or not rc:
-            rep.line(False, f"{head}: not found on chain")
+            rep.line(None, f"{head}: no node asked still returns this transaction (public nodes drop old ones) — "
+                           f"check it on testnet.bscscan.com or put an archive node first (--rpc-url)", pruned=True)
             continue
+        receipts.append(rc)
+        found_on = chain.last
         block = int(rc["blockNumber"], 16)
         ts = int(chain("eth_getBlockByNumber", hex(block), False)["timestamp"], 16)
         when = datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         status = int(rc["status"], 16)
-        print(f"  {head}\n         block {block}, {when}")
+        print(f"  {head}\n         block {block}, {when}" + ("" if found_on == urls[0] else f" (from {host(found_on)})"))
         rep.line(tx["from"].lower() == roles[t["from"]].lower() and (tx["to"] or "").lower() == C[t["to"]].lower(),
                  f"sent by {t['from']} ({tx['from']}) to {t['to']}")
         if t["expect"] == "success":
@@ -392,14 +507,18 @@ def main():
             except RpcError as err:
                 data = err.data if isinstance(err.data, str) else ""
                 if not data and no_history(err):
-                    rep.line(None, f"REPLAY  this node no longer keeps the state of block {block - 1}: re-check the reason "
+                    rep.line(None, f"REPLAY  no node asked still keeps the state of block {block - 1}: re-check the reason "
                                    f"with an archive node (--rpc-url); earlier replays are archived in {ARCHIVE_DIR}/",
                              pruned=True)
+                    continue
+                if not data and not reverted({"message": str(err)}):
+                    rep.line(None, f"REPLAY  no node could replay it ({str(err)[:160]})")
                     continue
             same = data[:10] == want
             methods["REPLAY"] += same
             rep.line(same, f"REPLAY  against the state before block {block}: reverts with {show_error(t['error'], data)}"
-                     + ("" if same else f" — NO: chain returned selector {data[:10] or 'none'}"))
+                     + ("" if same else f" — NO: chain returned selector {data[:10] or 'none'}")
+                     + ("" if chain.last == urls[0] else f" (state from {host(chain.last)})"))
             full = chain("eth_getBlockByNumber", hex(block), True)
             idx = int(rc["transactionIndex"], 16)
             touched = [x for x in full["transactions"][:idx] if (x.get("to") or "").lower() in (C["vault"].lower(), C["token"].lower())]
@@ -409,24 +528,36 @@ def main():
 
     # ---- historical checkpoints ----------------------------------------------------------------
     print("\nCheckpoints — the vault at fixed blocks")
-    print("  STATE  = historical state read from the node (free nodes keep it only for recent blocks)")
-    print("  EVENTS = derived from event logs, which full nodes keep for good")
+    print("  STATE  = historical state read from a node (most free nodes keep it only for recent blocks)")
+    print("  EVENTS = derived from event logs, when no node asked keeps the state")
     v, tok = C["vault"], C["token"]
-    hist = History(chain, v, tok, ev["contracts"]["vault"]["createdAtBlock"])
+    last_block = max([cp["block"] for cp in ev["checkpoints"]] + [aw["toBlock"] for aw in ev.get("attackWindows", [])] or [0])
+    hist = History(chain, v, tok, ev["contracts"]["vault"]["createdAtBlock"], last_block, receipts)
+
+    def events():
+        first = not hist.loaded
+        h = hist.load()
+        if first:
+            for note in hist.notes:
+                print(f"         event logs not used from {note}")
+            print(f"         event logs from {host(h.node)}" if h else "         no node asked has complete event logs")
+        return h
 
     def at(n, state_fn, event_fn):
         try:
-            return state_fn(hex(n)), "STATE "
+            val = state_fn(hex(n))
+            return val, "STATE " if chain.last == urls[0] else f"STATE ({host(chain.last)})"
         except RpcError as err:
             if not no_history(err):
                 raise
-        val = event_fn(hist.load(), n) if event_fn else None
+        h = events() if event_fn else None
+        val = event_fn(h, n) if h else None
         return (val, "EVENTS") if val is not None else (None, None)
 
     def check(n, label, state_fn, event_fn, expect, show):
         val, how = at(n, state_fn, event_fn)
         if how is None:
-            rep.line(None, f"{label}: the node no longer keeps block {n}'s state and it cannot be derived from "
+            rep.line(None, f"{label}: no node asked still keeps block {n}'s state and it cannot be derived from "
                            f"events — re-check with an archive node (--rpc-url); archived in {ARCHIVE_DIR}/", pruned=True)
         else:
             rep.line(val == expect, f"{how} {label} = {show(val)}")
@@ -459,11 +590,15 @@ def main():
             a, b = aw["fromBlock"], aw["toBlock"]
             try:
                 bal = [int(chain.call(tok, selector("balanceOf(address)") + w(v), hex(x)), 16) for x in (a, b)]
-                how, moved = "STATE ", bal[0] - bal[1]
+                how, moved = "STATE " if chain.last == urls[0] else f"STATE ({host(chain.last)})", bal[0] - bal[1]
             except RpcError as err:
                 if not no_history(err):
                     raise
-                h = hist.load()
+                h = events()
+                if not h:
+                    rep.line(None, f"{aw['label']}: no node asked still keeps the state of blocks {a}..{b} and it cannot be "
+                                   f"derived from events — re-check with an archive node (--rpc-url)", pruned=True)
+                    continue
                 bal, how, moved = [h.balance(a), h.balance(b)], "EVENTS", h.moved_out(a, b)
             rep.line(bal[0] == bal[1] and moved == 0, f"{how} {aw['label']}: blocks {a}..{b}, "
                                                       f"{eusd(bal[0])} -> {eusd(bal[1])} {sym}, moved out: {eusd(moved)}")
@@ -477,8 +612,9 @@ def main():
 
     print(f"\nRejection reasons proven by execution trace (STRICT): {methods['STRICT']}, "
           f"by historical replay (REPLAY): {methods['REPLAY']}")
+    print("Answers per node: " + ", ".join(f"{host(u)} {chain.used.get(u, 0)}" for u in urls))
     print(f"RESULT: {rep.ok} checks OK, {rep.bad} mismatches, {rep.skip} not checkable, "
-          f"{rep.pruned} need an archive node (OLD: history this node no longer keeps) — "
+          f"{rep.pruned} need an archive node (OLD: history no node asked still keeps) — "
           + ("everything checkable matches the evidence" if rep.bad == rep.skip == 0 else
              "MISMATCH, see BAD lines" if rep.bad else "incomplete, see SKIP lines"))
     if archive:

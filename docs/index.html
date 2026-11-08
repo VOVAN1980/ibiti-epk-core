@@ -258,12 +258,13 @@
           <div class="cmd"><span class="c-dim"># Python 3 only — no packages, no keys</span>
 git clone https://github.com/VOVAN1980/ibiti-epk-core
 cd ibiti-epk-core &amp;&amp; git checkout bd3cf19   <span class="c-dim"># the commit the evidence was published with</span>
+git checkout master -- scripts/v2/verify_evidence.py   <span class="c-dim"># today's checker: asks several public nodes</span>
 python scripts/v2/verify_evidence.py
 
 <span class="c-dim"># + byte-for-byte: on-chain code = open-source build</span>
 forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
-          <p class="card-text" style="margin-top:16px">Last full run: <b style="color:#fff">112 checks OK, 0 mismatches</b>; the bytecode of all
-            6 contracts equals the repository's build.</p>
+          <p class="card-text" style="margin-top:16px">Last run (2026-11-08): <b style="color:#fff">118 checks OK, 0 mismatches</b>;
+            with <code>--build</code> (2026-11-07) the bytecode of all 6 contracts equals the repository's build.</p>
         </div>
       </div>
     </div>

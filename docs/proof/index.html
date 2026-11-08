@@ -37,7 +37,9 @@
 .proof .claim { color: var(--dim); } .proof .ok { color: var(--safe-soft); } .proof .bad { color: var(--danger-soft); } .proof .warn { color: var(--gold); }
 .proof #log { background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 12px; padding: 14px; max-height: 360px; overflow: auto; font: 12.5px/1.6 var(--font-mono); white-space: pre-wrap; word-break: break-word; margin: 0; }
 .proof details summary { cursor: pointer; color: var(--muted); margin: 6px 0; }
-.proof #rpc { background: rgba(0,0,0,.4); border: 1px solid var(--line); color: #fff; border-radius: 8px; padding: 8px 10px; }
+.proof #rpc { background: rgba(0,0,0,.4); border: 1px solid var(--line); color: #fff; border-radius: 8px; padding: 8px 10px; width: 100%; max-width: 620px; resize: vertical; font: 12.5px/1.6 var(--font-mono); }
+.proof .nodes { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+.proof .nodes code { color: #fff; }
 @media (max-width: 860px) { .proof .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .proof section { padding: 18px; } .proof #go { width: 100%; } }
 </style>
@@ -93,6 +95,7 @@ proof on a separate demo vault — <a href="guards.html">Protected swaps</a>.</d
 </div>
 
 <div class="run"><button id="go">Run the check in my browser</button><span class="status" id="status">Not run yet. Values below are claims until checked.</span></div>
+<p class="nodes" id="nodes-line"></p>
 <details><summary>Live log</summary><pre id="log"></pre></details>
 
 <section id="s-attacks">
@@ -101,7 +104,7 @@ proof on a separate demo vault — <a href="guards.html">Protected swaps</a>.</d
   <b>STRICT</b> = the reason is read from an execution trace of that exact transaction, saved in the repository.
   <b>REPLAY</b> = the transaction is replayed against the chain state right before its block, and no earlier
   transaction in that block touched the vault or the token (a replay is strong evidence, not a trace).
-  <b>Archived</b> = free public nodes no longer keep that old state; the rejection itself is still checked on-chain,
+  <b>Archived</b> = none of the nodes asked still keeps that old state; the rejection itself is still checked on-chain,
   and its reason was replayed while nodes still had the state (reports archived in the repository).</p>
   <div class="scroll"><table id="tbl-attacks"><thead><tr><th>Step</th><th>Attempt</th><th>Vault's answer</th><th>Proof</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
 </section>
@@ -148,14 +151,24 @@ proof on a separate demo vault — <a href="guards.html">Protected swaps</a>.</d
   hashes and registry pins, versions, every transaction with its events or rejection reason, the vault at fixed
   blocks and the attack windows. The command line with <code>--build</code> adds one more check per contract (6 in
   total): it compiles the open-source contracts and compares them byte for byte with the code on chain — a browser
-  cannot compile Solidity. Both counts depend a little on the node: a detail whose history the node no longer keeps
-  is reported as <i>archived</i> instead of being checked, never as passed.</p>
+  cannot compile Solidity. Both counts depend a little on the nodes: a detail whose history none of the nodes asked
+  still keeps is reported as <i>archived</i> instead of being checked, never as passed.</p>
   <div class="cmd" id="cmds"></div>
   <p>Evidence file: <a data-blob="deployments/bsc-testnet/epk-v2-evidence.json">epk-v2-evidence.json</a> · Runbook and tables:
   <a data-blob="docs/TESTNET_V2.md">docs/TESTNET_V2.md</a> ·
   Source: <a data-tree="contracts/v2">contracts/v2</a></p>
-  <details><summary>Use another RPC node</summary>
-    <p>Checkpoints and replays need a node with historical state. <input id="rpc" class="mono" style="width:100%;max-width:520px" value="https://bsc-testnet-rpc.publicnode.com"></p>
+  <details id="nodes-box"><summary>Choose the RPC nodes</summary>
+    <p>Free public nodes forget old history, each in its own way, so this page asks several of them, in the order
+    below (one URL per line): every request goes to the first node, and the next one is asked only when a node has
+    no answer — a transaction it no longer returns, state it has pruned, a request it refuses, or no response.
+    Event logs are used only from a node whose logs contain every event of the evidence transactions. What no node
+    can answer is shown as <i>archived</i>, never as passed. Put your own node first, or keep a single line to use
+    only that node.</p>
+    <p><textarea id="rpc" rows="3" spellcheck="false" aria-label="RPC nodes, one per line, asked in this order"></textarea></p>
+    <p>The defaults, tested 2026-11-08: <code>bsc-testnet.bnbchain.org</code> — BNB Chain's own node: every
+    transaction, but only the latest state; <code>97.rpc.thirdweb.com</code> — keeps old state and event logs, with a
+    strict rate limit, so it is asked second; <code>bsc-testnet-rpc.publicnode.com</code> — state of about the last
+    hour, transactions of about the last day.</p>
   </details>
 </section>
 
@@ -228,13 +241,54 @@ const eusd = v => { v = BigInt(v); const i = v / 10n**18n, f = (v % 10n**18n).to
 const short = h => h.slice(0, 10) + "…" + h.slice(-4);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pill = (cls, text) => `<span class="pill ${cls}">${esc(text)}</span>`;
-let rpcUrl = "";
-async function rpc(method, ...params) {
-  const r = await fetch(rpcUrl, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params})});
-  const j = await r.json();
-  if (j.error) { const e = new Error(j.error.message); e.data = j.error.data; throw e; }
-  return j.result;
+// ---------- nodes: free public BSC Testnet nodes, asked in this order (tested 2026-11-08; all allow browser requests) ----------
+// Every request goes to the first node; the next one is asked only when a node has no answer: a transaction it no
+// longer returns, state it has pruned, a request it refuses, or no response. A revert is an answer, never retried.
+const NODES = [
+  "https://bsc-testnet.bnbchain.org",        // BNB Chain's own node: every transaction, but only the latest state, no logs
+  "https://97.rpc.thirdweb.com",             // keeps old state and event logs (archive); strict rate limit, so asked second
+  "https://bsc-testnet-rpc.publicnode.com",  // state of the last hour or so; drops transactions after about a day
+];
+const LOOKUPS = ["eth_getTransactionByHash", "eth_getTransactionReceipt", "eth_getBlockByNumber"];
+let nodes = NODES, used = {}, silent = {}, lastNode = "";
+const host = u => { try { return new URL(u).host; } catch (e) { return u; } };
+const sleep = ms => new Promise(res => setTimeout(res, ms));
+async function post(url, body) {
+  let why = "";
+  for (let attempt = 1; ; attempt++) { // a busy node (rate limit, 5xx) is asked again 1, 2, 4, 8, 8 s later; a silent one once more
+    let tries = 2;
+    try {
+      const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"}, body,
+        signal: window.AbortSignal && AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined});
+      const j = await r.json().catch(() => null);
+      if (r.status !== 429 && r.status < 500 && j && ("result" in j || j.error)) return j; // also JSON-RPC errors sent with HTTP 4xx
+      why = `HTTP ${r.status}`; tries = 6;
+    } catch (e) { why = e.message; }
+    if (attempt >= tries) break;
+    await sleep(1000 * Math.min(2 ** (attempt - 1), 8));
+  }
+  silent[url] = (silent[url] || 0) + 1;
+  return {error: {message: `no response (${why})`}};
 }
+async function rpcOn(list, method, ...params) {
+  const body = JSON.stringify({jsonrpc: "2.0", id: 1, method, params}), why = [];
+  for (const url of list) {
+    if ((silent[url] || 0) >= 3) { why.push(`${host(url)}: not answering`); continue; } // stopped answering in this run
+    const j = await post(url, body), err = j.error;
+    if (!err && j.result === null && LOOKUPS.includes(method)) { why.push(`${host(url)}: not found`); continue; }
+    const data = err && typeof err.data === "string" && err.data.startsWith("0x") ? err.data : "";
+    if (!err || data || /revert/i.test(err.message || "")) {
+      used[url] = (used[url] || 0) + 1; lastNode = url;
+      if (!err) return j.result;
+      const e = new Error(err.message); e.data = data; throw e;
+    }
+    why.push(`${host(url)}: ${err.message || JSON.stringify(err)}`);
+  }
+  if (LOOKUPS.includes(method)) return null; // no node asked still returns it
+  throw new Error(why.join("; "));
+}
+const rpc = (method, ...params) => rpcOn(nodes, method, ...params);
+const fromNode = (what) => lastNode && lastNode !== nodes[0] ? ` (${what}${host(lastNode)})` : "";
 const call = (to, data, block = "latest") => rpc("eth_call", {to, data}, block);
 async function getFile(path, asJson = true) {
   try { const r = await fetch(REPO_RAW + path, {cache: "no-store"}); if (r.ok) return asJson ? await r.json() : await r.text(); } catch (e) {}
@@ -253,6 +307,14 @@ function log(kind, text) {
   return kind === "ok";
 }
 const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+const readNodes = () => { const l = $("rpc").value.split(/[\s,]+/).filter(u => /^https?:\/\/\S+$/.test(u)); return l.length ? l : NODES; };
+function showNodes(done) {
+  const list = done ? nodes : readNodes();
+  $("nodes-line").innerHTML = "Nodes asked, in this order (the next one only when a node has no answer): "
+    + list.map(u => `<code>${esc(host(u))}</code>${done ? ` (${used[u] || 0} answers)` : ""}`).join(" → ")
+    + ' · <a href="#nodes-box" id="nodes-change">change</a>';
+  $("nodes-change").onclick = () => { $("nodes-box").open = true; };
+}
 // evidence values go into HTML: accept only the shapes they must have
 const hx = (s) => (/^0x[0-9a-fA-F]{1,64}$/.test(String(s)) ? String(s) : "0x");
 const num = (n) => String(Number.parseInt(n, 10) || 0);
@@ -283,7 +345,8 @@ function renderClaims(ev) {
 }
 
 async function verify() {
-  counts = {ok: 0, bad: 0, skip: 0, old: 0}; logEl.textContent = ""; rpcUrl = $("rpc").value.trim(); HIST = null;
+  counts = {ok: 0, bad: 0, skip: 0, old: 0}; logEl.textContent = ""; HIST = null;
+  nodes = readNodes(); used = {}; silent = {}; lastNode = ""; showNodes(false);
   const ev = EV, C = Object.fromEntries(Object.entries(ev.contracts).map(([k, v]) => [k, v.address]));
   const roles = ev.roles, sessions = ev.sessions || {};
   const names = {}; for (const [k, a] of Object.entries({...C, ...roles})) names[a.toLowerCase()] = k;
@@ -296,7 +359,7 @@ async function verify() {
     return sig.split("(")[0] + "(" + args.join(", ") + ")";
   };
 
-  log("info", `node ${rpcUrl}`);
+  log("info", `nodes, asked in this order: ${nodes.map(host).join(" → ")}`);
   const cid = parseInt(await rpc("eth_chainId"), 16);
   if (!log(cid === ev.chainId ? "ok" : "bad", `chainId ${cid} (expected ${ev.chainId}, BSC Testnet)`)) return;
 
@@ -336,15 +399,19 @@ async function verify() {
   $("t-contracts").textContent = `${codeOk}/${Object.keys(ev.contracts).length}`;
 
   // transactions
-  let rejected = 0;
+  let rejected = 0; const receipts = [];
   for (const t of ev.transactions) {
     $("status").textContent = `Checking step ${t.step}: ${t.what}…`;
-    const [tx, rc] = await Promise.all([rpc("eth_getTransactionByHash", t.tx), rpc("eth_getTransactionReceipt", t.tx)]);
+    const tx = await rpc("eth_getTransactionByHash", t.tx), rc = await rpc("eth_getTransactionReceipt", t.tx), found = fromNode("from ");
     log("info", `step ${t.step}  ${t.what}`);
-    if (!tx || !rc) { log("bad", "  not found on chain"); set("x-" + t.tx, pill("bad", "not found")); continue; }
+    if (!tx || !rc) {
+      log("old", "  no node asked still returns this transaction (public nodes drop old ones) — open it on the explorer, or put an archive node first");
+      set("x-" + t.tx, pill("warn", "not kept by nodes")); set("a-" + t.tx, pill("warn", "not kept by nodes")); continue;
+    }
+    receipts.push(rc);
     const block = parseInt(rc.blockNumber, 16), status = parseInt(rc.status, 16);
     let good = log(tx.from.toLowerCase() === roles[t.from].toLowerCase() && (tx.to || "").toLowerCase() === C[t.to].toLowerCase() ? "ok" : "bad",
-      `  sent by ${t.from} to ${t.to}, block ${block}`);
+      `  sent by ${t.from} to ${t.to}, block ${block}${found}`);
     if (t.expect === "success") {
       good = log(status === 1 ? "ok" : "bad", "  succeeded on-chain") && good;
       for (const e of t.events || []) {
@@ -371,11 +438,11 @@ async function verify() {
       try { await rpc("eth_call", {from: tx.from, to: tx.to, data: tx.input, gas: tx.gas}, "0x" + (block - 1).toString(16)); good = log("bad", "  REPLAY did not revert") && false; }
       catch (err) {
         const data = typeof err.data === "string" ? err.data : "";
-        if (!data && isOld(err)) { log("old", `  REPLAY the node no longer keeps block ${block - 1}'s state — the reason was replayed while it did (archived reports) and can be re-checked with an archive node`); method = "ARCHIVED"; }
+        if (!data && isOld(err)) { log("old", `  REPLAY no node asked still keeps block ${block - 1}'s state — the reason was replayed while nodes did (archived reports) and can be re-checked with an archive node`); method = "ARCHIVED"; }
         else if (!data) { log("skip", `  REPLAY failed (${err.message})`); good = false; }
         else {
           detail = showError(t.error, data);
-          good = log(data.slice(0, 10) === want ? "ok" : "bad", `  REPLAY against the state before block ${block}: ${detail}`) && good;
+          good = log(data.slice(0, 10) === want ? "ok" : "bad", `  REPLAY against the state before block ${block}: ${detail}${fromNode("state from ")}`) && good;
           const full = await rpc("eth_getBlockByNumber", "0x" + block.toString(16), true), idx = parseInt(rc.transactionIndex, 16);
           const touched = full.transactions.slice(0, idx).filter(x => [C.vault, C.token].map(a => a.toLowerCase()).includes((x.to || "").toLowerCase()));
           good = log(touched.length ? "skip" : "ok", touched.length ? "  REPLAY earlier txs in this block touched the vault — indicative only" : `  REPLAY no earlier tx in block ${block} touched the vault or the token`) && good;
@@ -390,18 +457,20 @@ async function verify() {
 
   // checkpoints: historical STATE if the node still keeps it, otherwise derived from permanent EVENTS
   const v = C.vault, tok = C.token;
+  const lastBlock = Math.max(0, ...ev.checkpoints.map(c => c.block), ...(ev.attackWindows || []).map(a => a.toBlock));
+  const events = () => history(v, tok, ev.contracts.vault.createdAtBlock, lastBlock, receipts);
   const atBlock = async (n, stateFn, eventFn) => {
-    try { return {val: await stateFn("0x" + n.toString(16)), how: "STATE"}; } catch (err) { if (!isOld(err)) throw err; }
-    if (!eventFn) return {how: null};
-    const val = eventFn(await history(v, tok, ev.contracts.vault.createdAtBlock), n);
+    try { const val = await stateFn("0x" + n.toString(16)); return {val, how: "STATE" + fromNode("")}; } catch (err) { if (!isOld(err)) throw err; }
+    const h = eventFn ? await events() : null;
+    const val = h ? eventFn(h, n) : null;
     return val === null || val === undefined ? {how: null} : {val, how: "EVENTS"};
   };
   for (const [i, cp] of ev.checkpoints.entries()) {
     $("status").textContent = `Reading the vault at block ${cp.block}…`;
-    let good = true, old = 0; const n = cp.block; log("info", `block ${n}: ${cp.label}`);
+    let good = true, old = 0, asked = 0; const n = cp.block; log("info", `block ${n}: ${cp.label}`);
     const check = async (label, stateFn, eventFn, expect, show) => {
-      const r = await atBlock(n, stateFn, eventFn);
-      if (!r.how) { old++; log("old", `  ${label}: the node no longer keeps this block's state and it cannot be derived from events (archived reports)`); return; }
+      const r = await atBlock(n, stateFn, eventFn); asked++;
+      if (!r.how) { old++; log("old", `  ${label}: no node asked still keeps this block's state and it cannot be derived from events (archived reports)`); return; }
       good = log(r.val === expect ? "ok" : "bad", `  ${r.how} ${label} = ${show(r.val)}`) && good;
     };
     if ("paused" in cp) await check("paused", async b => BigInt(await call(v, selector("paused()"), b)) !== 0n, (h, n) => h.paused(n), cp.paused, String);
@@ -409,49 +478,69 @@ async function verify() {
     if ("eUSD" in cp) await check("balance (eUSD)", async b => BigInt(await call(tok, selector("balanceOf(address)") + word(v), b)), (h, n) => h.balance(n), wei(cp.eUSD), eusd);
     if ("vaultLimitLeft" in cp) await check("vault limit left (eUSD)", async b => BigInt(await call(v, selector("availableToSpend(address)") + word(tok), b)), (h, n) => h.limitLeft(n), wei(cp.vaultLimitLeft), eusd);
     if (cp.sessionBudgetLeft) { const s = cp.sessionBudgetLeft; await check("session budget left (eUSD)", async b => BigInt(await call(v, selector("budgetAvailable(uint256,address)") + word(sessions[s.session]) + word(tok), b)), null, wei(s.value), eusd); }
-    set("c-" + i, !good ? pill("bad", "mismatch") : old ? pill("warn", `verified · ${old} archived`) : pill("ok", "verified"));
+    set("c-" + i, !good ? pill("bad", "mismatch") : old === asked ? pill("warn", "archived") : old ? pill("warn", `verified · ${old} archived`) : pill("ok", "verified"));
   }
 
   // money moved while the attacks ran: vault balance before the first and after the last attack
-  let moved = 0n;
+  let moved = 0n, windowsOld = 0;
   for (const aw of ev.attackWindows || []) {
     let a, b, d, how = "STATE";
     try {
-      [a, b] = (await Promise.all([aw.fromBlock, aw.toBlock].map(n => call(tok, selector("balanceOf(address)") + word(v), "0x" + n.toString(16))))).map(BigInt); d = a - b;
+      a = BigInt(await call(tok, selector("balanceOf(address)") + word(v), "0x" + aw.fromBlock.toString(16)));
+      b = BigInt(await call(tok, selector("balanceOf(address)") + word(v), "0x" + aw.toBlock.toString(16))); d = a - b; how += fromNode("");
     } catch (err) {
       if (!isOld(err)) throw err;
-      const h = await history(v, tok, ev.contracts.vault.createdAtBlock); how = "EVENTS";
+      const h = await events(); how = "EVENTS";
+      if (!h) { windowsOld++; log("old", `${aw.label}: no node asked still keeps the state of blocks ${aw.fromBlock}..${aw.toBlock} and it cannot be derived from events (archived reports)`); continue; }
       a = h.balance(aw.fromBlock); b = h.balance(aw.toBlock); d = h.movedOut(aw.fromBlock, aw.toBlock);
     }
     moved += d;
     log(d === 0n && a === b ? "ok" : "bad", `${how} ${aw.label}: ${eusd(a)} -> ${eusd(b)} eUSD between blocks ${aw.fromBlock} and ${aw.toBlock}`);
   }
-  $("t-stolen").textContent = eusd(moved);
+  $("t-stolen").textContent = windowsOld ? "?" : eusd(moved);
   const bal = BigInt(await call(tok, selector("balanceOf(address)") + word(v)));
   log("info", `vault now: ${eusd(bal)} eUSD`);
+  log("info", "answers per node: " + nodes.map(u => `${host(u)} ${used[u] || 0}`).join(", "));
+  showNodes(true);
   $("t-checks").textContent = `${counts.ok}/${counts.ok + counts.bad + counts.skip}`;
-  const oldNote = counts.old ? ` ${counts.old} older details need a full-history node; they were checked while public nodes still had them (archived).` : "";
+  const oldNote = counts.old ? ` ${counts.old} older details are kept by none of the nodes asked; they were checked while public nodes still had them (archived).` : "";
   $("status").innerHTML = counts.bad || counts.skip
     ? `<span class="bad">${counts.bad} mismatches, ${counts.skip} not checkable — see the live log.</span>`
     : `<span class="ok">All ${counts.ok} checks passed against BSC Testnet, in your browser, just now.</span><span class="warn">${esc(oldNote)}</span>`;
 }
 
-// ---------- history from event logs (full nodes keep logs; free nodes prune old state after a few hours) ----------
-const isOld = e => /pruned|missing trie node|unknown state|historical state|not available/i.test((e && e.message) || "");
+// ---------- history from event logs, for when no node asked keeps the old state ----------
+// All logs come from one node, used only if they contain every vault/token event of the evidence transactions:
+// a node that pruned old logs answers with an empty list instead of an error.
+const isOld = e => /pruned|missing trie node|unknown state|historical state|not available|header not found/i.test((e && e.message) || "");
 let HIST = null;
-async function history(v, tok, start) {
-  if (HIST) return HIST;
-  const latest = parseInt(await rpc("eth_blockNumber"), 16);
-  const logs = async (address, topics) => {
-    let out = [];
-    for (let b = start; b <= latest; b += 10000)
-      out = out.concat(await rpc("eth_getLogs", {address, topics, fromBlock: "0x" + b.toString(16), toBlock: "0x" + Math.min(b + 9999, latest).toString(16)}));
-    return out.sort((x, y) => (parseInt(x.blockNumber, 16) - parseInt(y.blockNumber, 16)) || (parseInt(x.logIndex, 16) - parseInt(y.logIndex, 16)));
-  };
+async function history(v, tok, start, end, receipts) {
+  if (HIST !== null) return HIST;
+  HIST = false;
   const TR = topic0("Transfer(address,address,uint256)"), vw = "0x" + word(v), PAUSED = topic0("Paused(address)");
-  const [tin, tout, pause, upg, outflow] = await Promise.all([
-    logs(tok, [TR, null, vw]), logs(tok, [TR, vw, null]), logs(v, [[PAUSED, topic0("Unpaused()")]]),
-    logs(v, [topic0("Upgraded(address)")]), logs(v, [topic0("Outflow(address,uint256,uint256)"), "0x" + word(tok)])]);
+  const V = v.toLowerCase(), T = tok.toLowerCase(), at = (l, i) => l.topics[i] || null;
+  const ours = l => l.address.toLowerCase() === V || (l.address.toLowerCase() === T && at(l, 0) === TR);
+  const key = l => l.transactionHash.toLowerCase() + ":" + parseInt(l.logIndex, 16);
+  const want = receipts.filter(rc => { const b = parseInt(rc.blockNumber, 16); return b >= start && b <= end; }).flatMap(rc => rc.logs.filter(ours).map(key));
+  let L = null;
+  for (const url of nodes) {
+    const get = async filter => { let out = [];
+      for (let b = start; b <= end; b += 1000) // 1000 blocks per request: the most some free nodes accept
+        out = out.concat(await rpcOn([url], "eth_getLogs", {...filter, fromBlock: "0x" + b.toString(16), toBlock: "0x" + Math.min(b + 999, end).toString(16)}));
+      return out; };
+    try { L = (await get({address: v})).concat(await get({address: tok, topics: [TR]})); }
+    catch (e) { log("info", `  event logs not used from ${e.message.slice(0, 120)}`); L = null; continue; }
+    const got = new Set(L.map(key)), missing = want.filter(k => !got.has(k)).length;
+    if (want.length && !missing) { log("info", `  event logs from ${host(url)}`); break; }
+    log("info", `  event logs not used from ${host(url)}: ` + (want.length ? `its logs miss ${missing} of the ${want.length} events of the evidence transactions` : "no evidence transaction in these blocks to cross-check them with"));
+    L = null;
+  }
+  if (!L) { log("info", "  no node asked has complete event logs"); return HIST; }
+  L.sort((x, y) => (parseInt(x.blockNumber, 16) - parseInt(y.blockNumber, 16)) || (parseInt(x.logIndex, 16) - parseInt(y.logIndex, 16)));
+  const ofVault = L.filter(l => l.address.toLowerCase() === V), transfers = L.filter(l => l.address.toLowerCase() === T && at(l, 0) === TR);
+  const tin = transfers.filter(l => at(l, 2) === vw), tout = transfers.filter(l => at(l, 1) === vw);
+  const pause = ofVault.filter(l => [PAUSED, topic0("Unpaused()")].includes(at(l, 0))), upg = ofVault.filter(l => at(l, 0) === topic0("Upgraded(address)"));
+  const outflow = ofVault.filter(l => at(l, 0) === topic0("Outflow(address,uint256,uint256)") && at(l, 1) === "0x" + word(tok));
   const upto = (L, n, after = -1) => L.filter(l => { const b = parseInt(l.blockNumber, 16); return b > after && b <= n; });
   const sum = L => L.reduce((s, l) => s + BigInt(l.data), 0n);
   HIST = {
@@ -465,11 +554,13 @@ async function history(v, tok, start) {
 }
 
 (async () => {
+  $("rpc").value = NODES.join("\n"); $("rpc").oninput = () => showNodes(false); showNodes(false);
   // every link points at the same fixed commit
   for (const a of document.querySelectorAll("a[data-blob]")) a.href = REPO_BLOB + a.dataset.blob;
   for (const a of document.querySelectorAll("a[data-tree]")) a.href = `https://github.com/${REPO}/tree/${EVIDENCE_COMMIT}/${a.dataset.tree}`;
   const cl = $("commit-link"); cl.textContent = EVIDENCE_COMMIT.slice(0, 12); cl.href = `https://github.com/${REPO}/commit/${EVIDENCE_COMMIT}`;
   $("cmds").textContent = `git clone https://github.com/${REPO} && cd ibiti-epk-core && git checkout ${EVIDENCE_COMMIT}\n`
+    + "git checkout master -- scripts/v2/verify_evidence.py      # today's checker: asks several nodes, as this page does\n"
     + "python scripts/v2/verify_evidence.py                      # same checks as this page\n"
     + "forge build && python scripts/v2/verify_evidence.py --build  # + bytecode equals the compiled source";
   EV = await getFile(EV_PATH);
