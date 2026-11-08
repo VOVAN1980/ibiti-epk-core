@@ -135,7 +135,7 @@ const plan = await planGuardedSwap({ publicClient, guard: dex, router, vault, pa
 ```
 
 What DexGuard blocks and what it does not cover: [`GUARDS_v2.md`](GUARDS_v2.md). Live proof:
-[`TESTNET_V21.md`](TESTNET_V21.md).
+[`TESTNET_V22_GUARDS.md`](TESTNET_V22_GUARDS.md) (vault 2.2.0; the first run on 2.1.0: [`TESTNET_V21.md`](TESTNET_V21.md)).
 
 ## 7. Watch, react, upgrade
 

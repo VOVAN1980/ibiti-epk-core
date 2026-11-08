@@ -1,4 +1,8 @@
-# EPK 2.1 guard demo — BSC Testnet
+# EPK 2.1 guard demo — BSC Testnet (first run, history)
+
+> **History.** This is the first guard demo (EPKVault 2.1.0, 2026-11-07). It stays as it is, with its proofs
+> (`docs/proof/guards-2.1.html`). The current guard demo runs on EPKVault 2.2.0 with the fixed guards:
+> [`TESTNET_V22_GUARDS.md`](TESTNET_V22_GUARDS.md) (`docs/proof/guards.html`).
 
 Goal: show on a real chain that **DexGuard**, **ThreatFeed V2** and **CompositeGuard** protect a vault's
 trades — for an ordinary trading policy and for autonomous AI-agent sessions — using the **real

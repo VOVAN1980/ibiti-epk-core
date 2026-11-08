@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EPK Guards — live proof</title>
-<meta name="description" content="EPK 2.1 guards by IBITI Labs: protected swaps for trading bots and AI agents, every claim checked live against BSC Testnet in your browser.">
+<meta name="description" content="EPK guards on EPKVault 2.2.0 by IBITI Labs: protected swaps for trading bots and AI agents, every claim checked live against BSC Testnet in your browser.">
 <meta name="theme-color" content="#020204">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2360a5fa' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,19 +73,22 @@
 <main class="proof">
 <div class="wrap">
 <div class="page-head">
-  <span class="badge"><span class="dot"></span>Live check · BSC Testnet · EPK 2.1 (in development)</span>
+  <span class="badge"><span class="dot"></span>Live check · BSC Testnet · EPKVault 2.2.0 (in development)</span>
   <h1>Protected <span class="grad">swaps</span></h1>
 </div>
-<p class="lead">DexGuard, ThreatFeed V2 and CompositeGuard on a separate EPKVault 2.1.0, trading through the real
-PancakeSwap V2 testnet router with real Chainlink price feeds. A compromised operator key and an AI agent tried to
+<p class="lead">DexGuard, ThreatFeed V2 and CompositeGuard on a new EPKVault 2.2.0 — created through the public
+2.2.0 factory like any integrator's vault — trading through the real PancakeSwap V2 testnet router with real
+Chainlink price feeds. A compromised operator key and an AI agent tried to
 steal or waste the vault's money; every attempt was sent on-chain and rejected, while fair trades went through.
 Press the button and your browser checks every claim below directly against BSC Testnet.</p>
 
 <div class="note"><b>What this is and is not.</b> Verified test scenarios on BSC Testnet, with test funds, on a
 separate demo vault (the EPK v2 demo vault on the <a href="./">main proof page</a> is not involved). They prove that
 the listed protections worked in these scenarios — not that no other attack exists; what the guards do not cover is
-listed in <a data-blob="docs/GUARDS_v2.md">GUARDS_v2.md</a>. EPK 2.1 is in development and not yet independently
-audited; nothing goes to mainnet before an audit.</div>
+listed in <a data-blob="docs/GUARDS_v2.md">GUARDS_v2.md</a>. EPK is in development and not yet independently
+audited; nothing goes to mainnet before an audit.
+<br><b>Earlier run:</b> the first guard demo, on EPKVault 2.1.0 (2026-11-07), stays with its proofs —
+<a href="guards-2.1.html">Protected swaps 2.1</a>.</div>
 
 <div class="tiles">
   <div class="tile"><div class="n" id="t-attacks">–</div><div class="l">attacks rejected on-chain</div></div>
@@ -110,13 +113,21 @@ audited; nothing goes to mainnet before an audit.</div>
 </section>
 
 <section id="s-pool">
-  <h2>A real pool 38 % below the market (2026-11-07)</h2>
+  <h2>A real pool 38 % below the market (2026-11-08)</h2>
   <p>The real WBNB/BUSD pool on BSC Testnet pays far less than the Chainlink BNB price. In step <b>C1</b> a plain
   wallet with no EPK makes a 0.0001 BNB trade there and receives about 0.043 BUSD instead of about 0.070 — it loses
   roughly 38 %. In step <b>A3</b> the operator key asks the guarded vault for the same trade at that pool's own
   quote; DexGuard compares it with Chainlink and the vault refuses with <code>PriceTooLow</code>. Fair trades on a
   pool at the Chainlink price (steps S1, S2, S6) go through. Both transactions are checked in the tables on this
   page.</p>
+</section>
+
+<section id="s-fix">
+  <h2>A fix you can check: tokens parked at the router</h2>
+  <p>The fifth internal review (2026-11-08) found that tokens sent to a router — an allowed destination — can be
+  swept by anyone. The first guard demo's DexGuard let such a transfer through; this demo's DexGuard, deployed from
+  the fixed code, refuses it. In step <b>A11</b> the operator key tries exactly that and the vault answers
+  <code>RecipientNotAllowed</code>. The vault itself runs release 2.2.0 with the review's two vault fixes.</p>
 </section>
 
 <section id="s-flow">
@@ -128,9 +139,11 @@ audited; nothing goes to mainnet before an audit.</div>
 
 <section id="s-code">
   <h2>Contracts</h2>
-  <p>Each contract's bytecode hash is checked; the vault's 2.1.0 implementation must be the one pinned in the demo's
-  EPKRegistry, and the vault proxy must point to it. Source code of every contract deployed for this demo is
-  verified on Sourcify. PancakeSwap, BUSD and the Chainlink feeds are third-party contracts on BSC Testnet.</p>
+  <p>Each contract's bytecode hash is checked; the vault's 2.2.0 implementation must be the one pinned in the
+  registry of the public 2.2.0 stack (5-minute release window on test networks), and the vault proxy must point to
+  it. On the command line, <code>--build</code> shows that the implementation, the factory, the vault proxy and the
+  three guards equal this repository's build byte for byte. tUSD, its test feed and the tUSD pool come from the
+  first guard demo; PancakeSwap, BUSD and the Chainlink feeds are third-party contracts on BSC Testnet.</p>
   <div class="scroll"><table id="tbl-code"><thead><tr><th>Contract</th><th>Address</th><th>Code hash</th><th>Result</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -145,8 +158,8 @@ audited; nothing goes to mainnet before an audit.</div>
   with the code on chain — a browser cannot compile Solidity. A detail whose history none of the nodes asked still
   keeps is reported as <i>archived</i> instead of being checked, never as passed.</p>
   <div class="cmd" id="cmds"></div>
-  <p>Evidence file: <a data-blob="deployments/bsc-testnet/epk-v2.1-evidence.json">epk-v2.1-evidence.json</a> · Runbook and tables:
-  <a data-blob="docs/TESTNET_V21.md">docs/TESTNET_V21.md</a> ·
+  <p>Evidence file: <a data-blob="deployments/bsc-testnet/epk-v2.2-guards-evidence.json">epk-v2.2-guards-evidence.json</a> · Runbook and tables:
+  <a data-blob="docs/TESTNET_V22_GUARDS.md">docs/TESTNET_V22_GUARDS.md</a> ·
   Source: <a data-tree="contracts/v2/guards">contracts/v2/guards</a></p>
   <details id="nodes-box"><summary>Choose the RPC nodes</summary>
     <p>Free public nodes forget old history, each in its own way, so this page asks several of them, in the order
@@ -183,11 +196,11 @@ audited; nothing goes to mainnet before an audit.</div>
 "use strict";
 // ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
 const REPO = "VOVAN1980/ibiti-epk-core";
-const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT_V21) || "5f0984c9514d782603ffc55f82a913c70ef7f8d4";
+const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT_V22G) || "cbf22bf43ed4d60ff1cdaf575013549b7b023499";
 const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
 const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
-const EV_PATH = "deployments/bsc-testnet/epk-v2.1-evidence.json";
-const DOC_PATH = "docs/TESTNET_V21.md";
+const EV_PATH = "deployments/bsc-testnet/epk-v2.2-guards-evidence.json";
+const DOC_PATH = "docs/TESTNET_V22_GUARDS.md";
 const TRACE_DIR = "deployments/bsc-testnet/traces/";
 const EXPLORER = "https://testnet.bscscan.com";
 const IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
@@ -552,9 +565,9 @@ async function history(v, tok, start, end, receipts) {
   for (const a of document.querySelectorAll("a[data-tree]")) a.href = `https://github.com/${REPO}/tree/${EVIDENCE_COMMIT}/${a.dataset.tree}`;
   const cl = $("commit-link"); cl.textContent = EVIDENCE_COMMIT.slice(0, 12); cl.href = `https://github.com/${REPO}/commit/${EVIDENCE_COMMIT}`;
   $("cmds").textContent = `git clone https://github.com/${REPO} && cd ibiti-epk-core && git checkout ${EVIDENCE_COMMIT}\n`
-    + "git checkout master -- scripts/v2/verify_evidence.py   # today's checker: asks several nodes, as this page does\n"
-    + "python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.1-evidence.json --doc docs/TESTNET_V21.md\n"
-    + "forge build && python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.1-evidence.json --doc docs/TESTNET_V21.md --build";
+    + "git checkout master -- scripts/v2/verify_evidence.py   # the latest checker: asks several nodes, as this page does\n"
+    + "python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.2-guards-evidence.json --doc docs/TESTNET_V22_GUARDS.md\n"
+    + "forge build && python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.2-guards-evidence.json --doc docs/TESTNET_V22_GUARDS.md --build";
   EV = await getFile(EV_PATH);
   if (!EV) { $("status").textContent = `Could not load the evidence file from GitHub (commit ${EVIDENCE_COMMIT.slice(0, 7)}).`; $("go").disabled = true; return; }
   renderClaims(EV);
