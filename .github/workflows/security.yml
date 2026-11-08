@@ -77,13 +77,13 @@ jobs:
         run: |
           pip install mythril
 
-      - name: Run Mythril (EPKernel viaIR)
+      - name: Run Mythril (EPKVault viaIR)
         continue-on-error: true
         run: |
           mkdir -p reports
-          myth analyze contracts/epk/EPKernel.sol \
+          myth analyze contracts/v2/EPKVault.sol \
             --solv 0.8.24 \
-            --solc-args "--via-ir --optimize --optimize-runs 200" \
+            --solc-args "--via-ir --optimize --optimize-runs 1 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/" \
             --execution-timeout 600 \
             --max-depth 22 \
             -o json > reports/mythril.json 2>&1 || true

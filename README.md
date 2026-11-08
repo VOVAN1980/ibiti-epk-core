@@ -108,8 +108,7 @@ python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json 
 | `watchtower/` | automatic guardian and its tests | BUSL-1.1 |
 | `deployments/bsc-testnet/` | evidence: addresses, transactions, saved traces, verification reports | MIT |
 | `docs/` | specifications, security review, roadmap; the website (GitHub Pages) | MIT |
-| `contracts/epk/`, `contracts/validators/`, `contracts/mocks/`, `test/*.sol`, `scripts/` (outside `v2/`) | EPK v1 | MIT |
-| `sdk/` | TypeScript SDK for v1 (SDK v2 is on the roadmap) | MIT |
+| `sdk/` | TypeScript SDK [`@ibiti/epk-sdk`](https://www.npmjs.com/package/@ibiti/epk-sdk) (bundled guard bytecode: BUSL-1.1) | MIT |
 
 ## Build and test
 
@@ -117,7 +116,7 @@ Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
 
 ```bash
 forge build
-forge test                                               # 322 contract tests: 120 for v2, 202 for v1
+forge test                                               # 176 contract tests (3 of them fork BSC Testnet and need an RPC)
 python -m unittest discover -s watchtower -p "test_*.py" # 12 Watchtower tests, no network
 ```
 
@@ -133,25 +132,6 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
 - [BSC Testnet demo and evidence](docs/TESTNET_V2.md)
 - [Roadmap](docs/ROADMAP.md)
-
----
-
-## EPK v1 — legacy reference (MIT)
-
-EPK v1 (`v1.0.0`, frozen) is the original **immutable execution kernel** with capability-based delegation: an owner
-creates a policy (allowed agents with TTL, allowed `target + selector` calls, a native value cap,
-optional validators), signs an EIP-712 `Execute(policyId, target, value, dataHash, nonce, deadline)`,
-and an agent submits it; `setPolicyActive(false)` revokes instantly and `emergencyNonceBump()`
-kills queued signatures.
-
-> ⚠️ `EPKernel` is a **shared executor**. Never `approve` tokens to it or send tokens to it —
-> see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md). EPK v2 exists because of this: there every
-> customer has their own vault.
-
-- Specification: [docs/SPEC.md](docs/SPEC.md) · [Integration](docs/INTEGRATION.md) · [Threat model](docs/THREAT_MODEL.md) · old website pages: [docs/v1/](docs/v1/)
-- BSC Testnet addresses and smoke test: [docs/TESTNET_ADDRESSES_UPDATED.md](docs/TESTNET_ADDRESSES_UPDATED.md)
-- Scripts: `scripts/Deploy.s.sol` (kernel + validators), `scripts/SmokeTest.s.sol` (policy → execute → revoke)
-- Tests: 202 passing, including invariants (nonce monotonicity, a revoked policy can never execute)
 
 ---
 
@@ -181,6 +161,6 @@ Configuration lives in `.env` (copy `.env.example`); `.env` is git-ignored — *
   ([LICENSE-BUSL-1.1](LICENSE-BUSL-1.1)). Free for study, audits, test networks, hackathons,
   education and research; production use with real assets requires a commercial license. Each
   version becomes MIT no later than 2030-11-06.
-- **Everything else** — EPK v1, the SDK, documentation and the website: **MIT** ([LICENSE](LICENSE)).
+- **Everything else** — the SDK code, documentation, the website and the testnet evidence: **MIT** ([LICENSE](LICENSE)).
 
 Details and commercial licensing: [LICENSING.md](LICENSING.md) · info@ibiticoin.com

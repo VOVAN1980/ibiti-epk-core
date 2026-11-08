@@ -27,7 +27,7 @@ if (fromNpm) {
 }
 console.log(`${packed.filename}: ${packed.entryCount} files, ${(packed.size / 1024).toFixed(0)} kB`);
 const files = packed.files.map((f) => f.path);
-for (const must of ["dist/v2/index.js", "dist/v2/index.d.ts", "dist/index.js", "dist/abi/EPKernel.abi.json", "README.md"]) {
+for (const must of ["dist/v2/index.js", "dist/v2/index.d.ts", "dist/index.js", "dist/index.d.ts", "README.md"]) {
   if (!files.includes(must)) throw new Error(`package is missing ${must}`);
 }
 const leaked = files.filter((f) => /(^|\/)(\.env|test\/|examples\/|scripts\/|src\/)/.test(f));
@@ -42,7 +42,7 @@ console.log(`installed @ibiti/epk-sdk and its dependencies (viem) from ${fromNpm
 
 fs.writeFileSync(
   path.join(app, "check.mjs"),
-  `import * as v1 from "@ibiti/epk-sdk";
+  `import * as root from "@ibiti/epk-sdk";
 import * as v2 from "@ibiti/epk-sdk/v2";
 import { createPublicClient, http } from "viem";
 import { bscTestnet } from "viem/chains";
@@ -50,13 +50,14 @@ const need = ["EPKVaultClient","EPKFactoryClient","VaultAdmin","vaultActions","E
   "DexGuardClient","deployDexGuard","deployThreatFeed","deployCompositeGuard","networks","explainEpkError","executeDigest","hashOperation"];
 const missing = need.filter((n) => !(n in v2));
 if (missing.length) throw new Error("missing exports: " + missing);
-if (!("createEPKContracts" in v1) && !("abi" in v1)) throw new Error("v1 entry point broken");
+const missingRoot = need.filter((n) => !(n in root));
+if (missingRoot.length) throw new Error("root entry point is missing: " + missingRoot);
 // offline: the digest the live vault computes (same vector as the SDK tests)
 const d = v2.executeDigest(97, "0x83c6D86019BfF5ebBb7bd955aa63878DAa60f674", { policyId: 0n, agent: "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
   calls: [{ target: "0xc58699856ED5c978F7bf47e46650Bdb23d9bB119", value: 0n, data: "0xa9059cbb000000000000000000000000c93ec67f65530e5997e0a54826d1de1243e204dd0000000000000000000000000000000000000000000000000de0b6b3a7640000" },
           { target: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", value: 100000000000000n, data: "0x1234" }], nonce: 7n, deadline: 1800000000n });
 if (d !== "0x07550881657f463f93c1876ba53cb9c1cf829730e99f33995e2ae9e5bea8d7c4") throw new Error("digest mismatch " + d);
-console.log("imports OK (" + Object.keys(v2).length + " v2 exports), offline digest OK");
+console.log("imports OK (" + Object.keys(root).length + " exports, same from @ibiti/epk-sdk and /v2), offline digest OK");
 if (process.env.LIVE !== "0") {
   const pc = createPublicClient({ chain: bscTestnet, transport: http(process.env.BSC_TESTNET_RPC ?? "https://bsc-testnet-rpc.publicnode.com") });
   const vault = new v2.EPKVaultClient({ address: v2.networks.bscTestnet.demo.guardVault, publicClient: pc });

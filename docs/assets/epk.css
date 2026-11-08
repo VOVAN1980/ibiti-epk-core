@@ -265,10 +265,6 @@ footer { border-top: 1px solid var(--line); padding: 44px 0 56px; color: var(--d
 .foot a:hover { color: #fff; }
 .foot .fine { margin-top: 18px; font-size: 12.5px; max-width: 760px; line-height: 1.6; }
 
-/* ---------- archive banner (v1 pages) ---------- */
-.archive-banner { position: relative; z-index: 60; background: linear-gradient(90deg, rgba(59, 130, 246, 0.18), rgba(139, 92, 246, 0.18)); border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #fff; font: 500 14px/1.4 var(--font-body); text-align: center; padding: 10px 16px; }
-.archive-banner a { text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
-
 /* ---------- motion ---------- */
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
 .reveal.active { opacity: 1; transform: none; }

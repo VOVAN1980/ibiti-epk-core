@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.24;
 
-import {IPolicyValidator} from "../../epk/IPolicyValidator.sol";
+import {IPolicyValidator} from "../IPolicyValidator.sol";
 import {IEPKGuard} from "./IEPKGuard.sol";
 
 /// @title EPK CompositeGuard — several guards in one slot
@@ -10,7 +10,7 @@ import {IEPKGuard} from "./IEPKGuard.sol";
 ///         a new CompositeGuard, switched in through the vault's timelock.
 ///
 ///         Children are either EPK guards (`IEPKGuard`, called with the vault they act for) or legacy
-///         validators (`IPolicyValidator`, e.g. EPK v1 validators: `validate` only, never `afterBatch`).
+///         validators (`IPolicyValidator`: `validate` only, never `afterBatch`).
 ///         A composite must be used by vaults directly — composites inside composites are not supported,
 ///         so per-batch guard state can only ever be written for the vault that is actually executing.
 contract CompositeGuard is IEPKGuard {

@@ -128,7 +128,7 @@ FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --match-path "test/v2/*" --
 
 Results on 2026-11-06:
 
-- Whole repository: **322 / 322 tests passing** (v1: 202, v2: 120).
+- EPK v2: **120 / 120 tests passing**.
 - Agent sessions: 24 unit tests + 3 stateful invariants with a compromised session manager and compromised session keys (`test/v2/EPKVault.sessions.t.sol`).
 - Static analysis: Slither reports **0** results on `contracts/v2/` — every original finding fixed or justified with proof tests, see [SLITHER_TRIAGE.md](SLITHER_TRIAGE.md); reentrancy and native-transfer proofs in `test/v2/EPKVault.reentrancy.t.sol`.
 - v2 unit + fuzz: 55 passing; fuzz tests at 257 runs each, including `testFuzz_compromisedOperatorCannotDrain` (operator signer, agent and co-signer all compromised).
@@ -150,7 +150,7 @@ Results on 2026-11-06:
 | `contracts/v2/EPKRegistry.sol` | 100% (46/46) | 94.44% (51/54) | 75.00% (9/12) | 100% (9/9) |
 | `contracts/v2/EPKVaultFactory.sol` | 100% (17/17) | 95.00% (19/20) | 50.00% (1/2) | 100% (5/5) |
 
-With via-IR + `--ir-minimum`, Foundry's source maps under-report some branches (same artifact as noted for v1); the uncovered remainder is mostly defensive `revert` paths (e.g. zero-address and malformed-calldata checks).
+With via-IR + `--ir-minimum`, Foundry's source maps under-report some branches ; the uncovered remainder is mostly defensive `revert` paths (e.g. zero-address and malformed-calldata checks).
 
 ## 6. Before mainnet
 

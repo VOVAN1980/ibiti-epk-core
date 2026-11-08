@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @notice Modular validator interface. Kernel must not mask reverts.
+/// @notice Modular validator interface. The vault must not mask reverts.
 interface IPolicyValidator {
     function validate(
         uint256 policyId,

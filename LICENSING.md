@@ -15,10 +15,7 @@ refers to the same rights holder.
 
 | Component | Paths | License |
 |---|---|---|
-| **EPK v1** — kernel, validators, mocks | `contracts/epk/`, `contracts/validators/`, `contracts/mocks/` | **MIT** ([`LICENSE`](LICENSE)) |
-| EPK v1 tests | `test/*.sol` (top level) | MIT |
-| Scripts (EPK v1 and helpers) | `scripts/` except `scripts/v2/` | MIT |
-| TypeScript SDK | `sdk/` | MIT |
+| TypeScript SDK | `sdk/` | **MIT** ([`LICENSE`](LICENSE)); the guard bytecode it bundles is EPK v2 code (BUSL-1.1), see `sdk/LICENSE` |
 | Documentation and the website | `docs/`, `README.md`, other top-level `*.md` | MIT |
 | Testnet evidence (addresses, transactions, traces, reports) | `deployments/` | MIT |
 | **EPK v2** — EPKVault, EPKVaultProxy, EPKVaultFactory, EPKRegistry | `contracts/v2/` | **BUSL-1.1** ([`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)) |
@@ -28,7 +25,7 @@ refers to the same rights holder.
 | Third-party libraries | `lib/` (e.g. OpenZeppelin Contracts) | their own licenses (OpenZeppelin: MIT) — not relicensed |
 
 Each Solidity file, and each Python file of EPK v2, states its license in its `SPDX-License-Identifier` header.
-Everything already published under MIT (including release `v1.0.0`) stays under MIT permanently.
+Everything already published under MIT stays under MIT permanently.
 
 ## EPK v2 under the Business Source License 1.1
 
@@ -82,4 +79,4 @@ the Licensor may also offer it under commercial licenses. Contributions elsewher
 
 The Business Source License is a source-available license, not an OSI-approved open-source
 license. Hackathon participation is explicitly allowed by the Additional Use Grant; if an event
-strictly requires an OSI-approved license, contact the Licensor or use the MIT-licensed EPK v1.
+strictly requires an OSI-approved license, contact the Licensor.

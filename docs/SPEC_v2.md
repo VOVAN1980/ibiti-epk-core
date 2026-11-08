@@ -10,13 +10,13 @@ Tests: `test/v2/`. Review: [SECURITY_REVIEW_v2.md](SECURITY_REVIEW_v2.md).
 > the attacker cannot take more than the configured limit per time window, and cannot send funds
 > to an address that was not allowlisted in advance.
 
-v1 (`EPKernel`) protects against a compromised **agent** only. v2 extends the threat model to a compromised **operator signer** — the scenario of large exchange hacks where the signing infrastructure itself was made to sign attacker transactions.
+The threat model covers a compromised **agent** and a compromised **operator signer** — the scenario of large exchange hacks where the signing infrastructure itself was made to sign attacker transactions.
 
-## 2. Why a new design (v1 limitation)
+## 2. Why one vault per customer
 
-`EPKernel` v1 is a **shared executor**: anyone can create a policy, and the kernel makes calls from its own address. Any authority given to the kernel address (token allowances, tokens held by the kernel, roles granted to it) is therefore usable by **every** policy owner, not only by the one who granted it. v1 is safe only for calls where the kernel's address carries no privileges. See [THREAT_MODEL.md](THREAT_MODEL.md).
+A **shared executor** — one contract that executes calls for many customers from its own address — is unsafe: any authority given to that address (token allowances, tokens it holds, roles granted to it) is usable by **every** customer, not only by the one who granted it.
 
-v2 fixes this by construction: **every customer gets their own vault**. Funds sit in that vault, and calls are made from that vault. Nobody else's policy can reach them.
+EPK avoids this by construction: **every customer gets their own vault**. Funds sit in that vault, and calls are made from that vault. Nobody else's policy can reach them.
 
 ## 3. Roles
 
