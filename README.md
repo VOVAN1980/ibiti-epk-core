@@ -134,7 +134,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
-- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo on 2.2.0](docs/TESTNET_V22_GUARDS.md) (first run on 2.1.0: [history](docs/TESTNET_V21.md)) · [5-minute upgrade](docs/TESTNET_V21_FAST_UPGRADE.md) · [release 2.2.0](docs/TESTNET_V22.md)
+- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_V22_GUARDS.md) · [5-minute upgrade](docs/TESTNET_V21_FAST_UPGRADE.md) · [release 2.2.0](docs/TESTNET_V22.md)
 - [Guard modules](docs/GUARDS_v2.md)
 - [Roadmap](docs/ROADMAP.md)
 

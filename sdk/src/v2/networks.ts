@@ -32,12 +32,12 @@ export const networks = {
       "USDT/USD": "0xEca2605f0BCF2BA5966372C99837b1F182d3D620" as Address,
       "CAKE/USD": "0x81faeDDfeBc2F8Ac524327d70Cf913001732224C" as Address,
     },
-    /** the live guard demo (docs/TESTNET_V21.md) — read-only reference */
+    /** the live guard demo on EPKVault 2.2.0 (docs/TESTNET_V22_GUARDS.md) — read-only reference */
     demo: {
-      guardVault: "0x83c6D86019BfF5ebBb7bd955aa63878DAa60f674" as Address,
-      dexGuard: "0x5A00736dE12a925E7A9427dB7253C3074f434209" as Address,
-      threatFeed: "0x327274073da2dCac166F20E68e2e7fD2fA15EDba" as Address,
-      compositeGuard: "0x83e0a92F04EFE126D6Ce4aE6066FcEc5Ca849B09" as Address,
+      guardVault: "0x5c2585f1f0725E54F8742798A20972Caa192eCba" as Address,
+      dexGuard: "0xE40E81fc52d54F20ff883C3177878A3ECc03e152" as Address,
+      threatFeed: "0xAc4128402295c8e8e68b77b518B1ae823BFcB271" as Address,
+      compositeGuard: "0xCc6a261A6FD502F9122Bf0CEAd4a03157988577D" as Address,
     },
   },
 } as const;

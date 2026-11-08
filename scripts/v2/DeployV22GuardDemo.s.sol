@@ -12,7 +12,26 @@ import {DexGuard, IChainlinkFeed} from "../../contracts/v2/guards/DexGuard.sol";
 import {ThreatFeedGuard} from "../../contracts/v2/guards/ThreatFeedGuard.sol";
 import {CompositeGuard} from "../../contracts/v2/guards/CompositeGuard.sol";
 import {EPKTestUSD} from "./demo/EPKTestUSD.sol";
-import {IPancakeRouterV2} from "./DeployV21Demo.s.sol";
+interface IPancakeRouterV2 {
+    function getAmountsOut(uint256 amountIn, address[] calldata path) external view returns (uint256[] memory);
+    function swapExactETHForTokens(uint256 amountOutMin, address[] calldata path, address to, uint256 deadline)
+        external
+        payable
+        returns (uint256[] memory);
+    function swapExactTokensForETH(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory);
+    function swapExactETHForTokensSupportingFeeOnTransferTokens(
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external payable;
+}
 
 interface IPancakeFactoryV2 {
     function getPair(address a, address b) external view returns (address);
@@ -23,10 +42,9 @@ interface IPancakePairV2 {
     function getReserves() external view returns (uint112, uint112, uint32);
 }
 
-/// @notice The guard demo's tUSD/WBNB pool on the real PancakeSwap V2 testnet router (seeded by the 2.1 demo
-///         on 2026-11-07). tUSD is a test stablecoin worth $1 that only the demo admin can mint, so only the
-///         admin can move this pool's price: `_alignPool` moves it back to the Chainlink BNB price, so that
-///         fair trades exist when the demo runs.
+/// @notice The guard demo's tUSD/WBNB pool on the real PancakeSwap V2 testnet router. tUSD is the demo's test
+///         stablecoin worth $1 that only the demo admin can mint, so only the admin can move this pool's
+///         price: `_alignPool` keeps it at the Chainlink BNB price, so that fair trades exist when the demo runs.
 abstract contract GuardDemoPool is Script {
     address internal constant ROUTER = 0xD99D1c33F9fC3444f8101754aBC46c52416550D1; // PancakeSwap V2, testnet
     address internal constant PANCAKE_FACTORY = 0x6725F303b657a9451d8BA641348b6761A6CC7a17;
@@ -68,12 +86,10 @@ abstract contract GuardDemoPool is Script {
     }
 }
 
-/// @title EPK guard demo on EPKVault 2.2.0 — the current guard demo (BSC Testnet)
-/// @notice A new vault created through the PUBLIC 2.2.0 factory (the SDK's `networks.bscTestnet.epk.factory`,
+/// @title EPK guard demo on EPKVault 2.2.0 (BSC Testnet)
+/// @notice A vault created through the PUBLIC 2.2.0 factory (the SDK's `networks.bscTestnet.epk.factory`,
 ///         whose registry runs the 5-minute public-test-network clocks), guarded by a DexGuard, ThreatFeed V2
-///         and CompositeGuard deployed from this repository's current code (with the 2026-11-08 guard fixes).
-///         Same rules, tokens, pool and role keys as the 2.1 guard demo, whose vault and proofs stay as they
-///         are (history). Keys: V21_* in the local .env (testnet only).
+///         and CompositeGuard deployed from this repository's code. Keys: V21_* in the local .env (testnet only).
 /// forge script scripts/v2/DeployV22GuardDemo.s.sol:DeployV22GuardDemo --rpc-url $BSC_RPC_URL --broadcast --slow
 contract DeployV22GuardDemo is GuardDemoPool {
     string internal constant OUT = "deployments/bsc-testnet/epk-v2.2-guards.json";
@@ -124,7 +140,7 @@ contract DeployV22GuardDemo is GuardDemoPool {
         // 1) the demo pool back at the Chainlink price
         (uint256 alignTusd, uint256 alignBnb) = _alignPool(r.admin);
 
-        // 2) guards from this repository's current code (same rules as the 2.1 demo)
+        // 2) guards from this repository's code
         DexGuard.RouterInit[] memory routers = new DexGuard.RouterInit[](1);
         routers[0] = DexGuard.RouterInit(ROUTER, DexGuard.RouterKind.V2);
         DexGuard.TokenInit[] memory tokens = new DexGuard.TokenInit[](3);

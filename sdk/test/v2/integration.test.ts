@@ -50,7 +50,7 @@ test("every error a vault batch can return has a plain explanation", () => {
 
 test("explainEpkError turns every on-chain rejection of the testnet demo into advice", () => {
   const root = "../deployments/bsc-testnet";
-  const ev = JSON.parse(readFileSync(`${root}/epk-v2.1-evidence.json`, "utf8"));
+  const ev = JSON.parse(readFileSync(`${root}/epk-v2.2-guards-evidence.json`, "utf8"));
   const traces = new Set(readdirSync(`${root}/traces`));
   for (const t of ev.transactions.filter((x: { expect: string }) => x.expect === "reverted")) {
     const out = JSON.parse(readFileSync(`${root}/traces/${t.tx.toLowerCase()}.json`, "utf8")).trace.output as Hex;
