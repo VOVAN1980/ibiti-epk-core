@@ -10,7 +10,7 @@ Last updated: 2026-11-08.
 
 | Component | Status |
 |---|---|
-| **EPK v2** — `EPKVault` | The main version of this repository: 2.2 preview (release 2.2.0 with the fifth review's vault fixes, on BSC Testnet since 2026-11-08), BUSL-1.1, TypeScript SDK in `sdk/` (published on npm with the finished release). Not audited. **Live on BSC Testnet** with an end-to-end demo on 2.2.0 anyone can re-check (`docs/TESTNET_V2.md`, `docs/proof/`); not on mainnet. |
+| **EPK v2** — `EPKVault` | The main version of this repository: 2.2 preview (release 2.2.0 with the fifth review's vault fixes, on BSC Testnet since 2026-11-08; 2.3.0 in development: test networks also get a 5-minute minimum timelock for vault settings, so nothing in testnet development waits an hour), BUSL-1.1, TypeScript SDK in `sdk/` (published on npm with the finished release). Not audited. **Live on BSC Testnet** with an end-to-end demo on 2.2.0 anyone can re-check (`docs/TESTNET_V2.md`, `docs/proof/`); not on mainnet. |
 | **EPK Watchtower** | Automatic guardian (`watchtower/`, BUSL-1.1). Working on BSC Testnet: cancelled a change scheduled with the stolen admin key 5 blocks after it appeared. |
 
 EPK v2 today:

@@ -58,7 +58,7 @@ cast call 0xc4158107aCEa510DE0E791315aBdf75eD1f3B65a "vaultVersion()(uint64)" --
 cast call 0xA128110b6C89E3A55E1F7815b75D48fcb124EB48 "implementation()(address)" --rpc-url $R   # 0xD5cb4eB7…5Ffd
 ```
 
-Bytecode against this repository's build (`forge build` first): the on-chain code of the implementation equals
+Bytecode against this repository's build (`git checkout 177131d && forge build` first — the 2.2.0 source; development continues on master): the on-chain code of the implementation equals
 `out/EPKVault.sol/EPKVault.json` `deployedBytecode` with the two UUPS immutables masked, and the factory's equals
 `out/EPKVaultFactory.sol/EPKVaultFactory.json` with its two immutables masked (checked 2026-11-08).
 

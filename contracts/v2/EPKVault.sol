@@ -68,6 +68,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     bytes4 internal constant NATIVE_TRANSFER_SELECTOR = bytes4(0);
 
     uint256 internal constant MIN_DELAY = 1 hours;
+    /// @dev On public test networks only (EPKChains): the minimum timelock, same code.
+    uint256 internal constant TEST_MIN_DELAY = 5 minutes;
     uint256 internal constant MAX_DELAY = 30 days;
     /// @notice A ready operation must be executed within this period, otherwise it goes stale.
     uint256 public constant GRACE_PERIOD = 14 days;
@@ -342,7 +344,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     ) external initializer {
         if (admin_ == address(0) || registry_ == address(0)) revert ZeroAddress();
         if (admin_ == address(this)) revert BadRole(admin_);
-        if (delay_ < MIN_DELAY || delay_ > MAX_DELAY) revert BadDelay();
+        if (delay_ < _minDelay() || delay_ > MAX_DELAY) revert BadDelay();
 
         admin = admin_;
         delay = delay_;
@@ -368,7 +370,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
 
     /// @notice Implementation version: major * 10_000 + minor * 100 + patch.
     function vaultVersion() public pure virtual override returns (uint64) {
-        return 20_200; // 2.2.0
+        return 20_300; // 2.3.0
     }
 
     receive() external payable {}
@@ -853,7 +855,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
 
     function setDelay(uint256 newDelay) external onlyTimelocked {
-        if (newDelay < MIN_DELAY || newDelay > MAX_DELAY) revert BadDelay();
+        if (newDelay < _minDelay() || newDelay > MAX_DELAY) revert BadDelay();
         delay = newDelay;
         emit DelaySet(newDelay);
     }
@@ -876,12 +878,17 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
 
     /// @dev Data migration of the release a vault upgrades to; it runs every step that `from` has not
-    ///      reached yet (vaults may skip releases). 2.2.0 needs none: 2.1 only appended `envelopeGuard`
-    ///      (empty by default) and 2.2 adds no storage, so 2.0.x and 2.1.x vaults upgrade directly.
+    ///      reached yet (vaults may skip releases). 2.3.0 needs none: 2.1 only appended `envelopeGuard`
+    ///      (empty by default) and 2.2 and 2.3 add no storage, so 2.0.x – 2.2.x vaults upgrade directly.
     ///      Every later release overrides this as `internal override reinitializer(n)`; one that forgets
     ///      to (a different `vaultVersion`) refuses here, so it can never be installed.
     function _migrate(uint64 /* from */ ) internal virtual {
-        if (vaultVersion() != 20_200) revert BadOperation();
+        if (vaultVersion() != 20_300) revert BadOperation();
+    }
+
+    /// @dev Shortest timelock a vault may use: 1 hour; 5 minutes on public test networks (EPKChains).
+    function _minDelay() internal view returns (uint256) {
+        return EPKChains.isTestChain() ? TEST_MIN_DELAY : MIN_DELAY;
     }
 
     /// @dev Upgrades happen only through `scheduleUpgrade` → delay → `executeScheduled` (the vault

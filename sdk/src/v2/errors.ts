@@ -43,7 +43,7 @@ export const epkErrorHelp: Record<string, { meaning: string; fix: string }> = {
   StaleOperation: { meaning: "The scheduled change expired (grace period passed) or was invalidated by panic / an upgrade.", fix: "Schedule it again." },
   OperationExists: { meaning: "The same operation (data + salt) is already scheduled.", fix: "Use another salt or wait for it." },
   CannotCancel: { meaning: "This operation cannot be cancelled by this caller.", fix: "Use a key that may cancel it." },
-  BadDelay: { meaning: "Delay out of range (1 hour – 30 days).", fix: "Pick a delay in range." },
+  BadDelay: { meaning: "Delay out of range (1 hour – 30 days; from 5 minutes on test networks with vault 2.3).", fix: "Pick a delay in range." },
   BadRole: { meaning: "This address may not take that role (e.g. the vault itself, or an admin as guardian).", fix: "Use a separate key for each role." },
   TooFewGuardians: { meaning: "At least 2 guardians are needed before the vault can go live.", fix: "Add guardians, then finalizeSetup." },
   TooManyAssets: { meaning: "At most 16 tracked assets.", fix: "Untrack an asset first." },
