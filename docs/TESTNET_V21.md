@@ -97,8 +97,13 @@ code changed afterwards — that it equals this repository's build), that the 2.
 pinned in the demo registry and that the vault proxy points to it, every transaction's sender and
 target, the events and exact amounts of the successful steps, and the revert reason of every attack —
 **STRICT** from execution traces saved in `deployments/bsc-testnet/traces/` right after sending, or by
-replay. Free public nodes keep historical state only for about 2 hours, so the report of the day is
-archived in `deployments/bsc-testnet/verification/`.
+replay. Free public nodes forget old history, each in its own way, so the script asks several of them
+in turn (see "How long history lasts" in [TESTNET_V2.md](TESTNET_V2.md)); what no node asked can
+answer is reported as OLD, never as passed. The reports are archived in
+`deployments/bsc-testnet/verification/`: on the day (`2026-11-07T1920Z-v21-report.txt`, with
+`--build`: 122 checks OK) and on 2026-11-08 with the default nodes, after `publicnode` had dropped
+these transactions (`2026-11-08T1519Z-v21-report.txt`: **113 checks OK, 0 mismatches, 0 OLD** — all
+11 attack reasons STRICT, no tUSD left the vault).
 
 ## How it was run
 

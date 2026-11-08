@@ -113,7 +113,8 @@ Machine-readable copies: `deployments/bsc-testnet/epk-v2.json`, `epk-v2-vault.js
 
 No need to trust this page. The same claims are written in machine-readable form in
 `deployments/bsc-testnet/epk-v2-evidence.json`, and one command (Python 3 only — no Foundry, no
-keys, no packages) checks every one of them against a public BSC Testnet node:
+keys, no packages) checks every one of them against free public BSC Testnet nodes (several, asked in
+turn — see "How long history lasts" below):
 
 ```bash
 python scripts/v2/verify_evidence.py            # add --build after `forge build` to compare bytecode with this repo
@@ -128,7 +129,7 @@ python scripts/v2/verify_evidence.py            # add --build after `forge build
 | Successful steps | the claimed events were emitted by the claimed contract, with the claimed indexed values and amounts (e.g. `Transfer` of exactly 50 eUSD from the vault to the treasury) |
 | Rejected steps | failed by revert, not by running out of gas, and the claimed custom error is proven in the strongest available way — the report labels which: **STRICT** = read from the execution trace of that exact transaction (live, or a trace saved in `deployments/bsc-testnet/traces/` whose sender, target and input match the transaction); **REPLAY** = the same transaction replayed against the chain state right before its block, plus a check that no earlier transaction in that block was sent to the vault or the token. A replay is strong evidence but not a trace: internal calls from other contracts in the same block cannot be ruled out without one |
 | Money | for each attack window, the vault balance before the first attack equals the balance after the last one (nothing moved) |
-| History | fixed block-number checkpoints (paused, implementation, balance, limits left). **STATE** = read from the node's historical state; when the node no longer keeps it, **EVENTS** = derived from event logs (pause/unpause, `Upgraded`, eUSD `Transfer`s, `Outflow`), which full nodes keep for good. A value that needs old state and cannot be derived from events is reported as **OLD** (needs an archive node) — never as passed |
+| History | fixed block-number checkpoints (paused, implementation, balance, limits left). **STATE** = read from a node's historical state; when no node asked keeps it, **EVENTS** = derived from event logs (pause/unpause, `Upgraded`, eUSD `Transfer`s, `Outflow`) of one node whose logs contain every event of the evidence transactions (a node that pruned old logs answers with an empty list, so it is not used). A value that needs old state and cannot be derived from events is reported as **OLD** (needs an archive node) — never as passed |
 | Code hashes | recorded in the evidence file for every contract, including both vault implementations (2.0.0, and 2.0.1 — a demo release that was proposed but never installed; the upgrade was cancelled) |
 
 Why some reasons are REPLAY: free public BSC Testnet nodes do not keep traces of old transactions.
@@ -136,18 +137,33 @@ Binance's own node traces only roughly the last 120 blocks (about 1.5 minutes), 
 recovery step on, `demo_attacks.py` captures each attack's trace immediately after sending it.
 The Day 0 attacks (4a–4e) were sent before this was in place, so their reasons are proven by replay.
 
-**How long history lasts.** Free public nodes keep historical *state* only for recent blocks: on
+**How long history lasts.** Every free public node forgets old history, each in its own way. On
 2026-11-07, about two hours after Day 0, `publicnode` already answered "state … is pruned" for the
-Day 0 blocks, and no keyless public node had it. Transactions, receipts and event logs stay
-available. So:
+Day 0 blocks. On 2026-11-08 it had also dropped the receipts and event logs of the day before: it
+returned no receipt for those transactions and an *empty list* of logs, without an error. Tested on
+2026-11-08:
 
-- checkpoints and attack windows fall back to EVENTS (see the table above) and stay checkable;
-- the five Day 0 replays (4a–4e) and two "limit left" values now need an archive node
-  (`--rpc-url <archive node>`; paid providers offer them). They were checked while public nodes still
-  had the state, and those runs are archived in
-  [`deployments/bsc-testnet/verification/`](../deployments/bsc-testnet/verification/):
-  `2026-11-07-day0-report.txt`, `2026-11-07-recovery-report.txt` (111 OK, all five replays) and a
-  later report with a snapshot of every raw node answer it used (`*-rpc-snapshot.json`,
+| Node | Old transactions and receipts | Old state (checkpoints, replays) | Old event logs |
+|---|---|---|---|
+| `bsc-testnet.bnbchain.org` (BNB Chain's own) | yes | no (latest blocks only) | refused ("limit exceeded") |
+| `97.rpc.thirdweb.com` | yes | yes (archive) | yes, 1,000 blocks per request; strict rate limit |
+| `bsc-testnet-rpc.publicnode.com` | about the last day only | about the last hour | silently empty for old blocks |
+
+So the script (and the proof pages) ask several nodes, in this order: every request goes to the
+first node, and the next one is asked only when a node has no answer — a transaction it no longer
+returns, state it has pruned, a request it refuses, or no response; a revert is an answer and is
+never retried elsewhere. `--rpc-url A,B` replaces the list (one URL = only that node). Event logs are
+used from one node only, and only if they contain every event of the evidence transactions. What
+no node asked can answer is reported as OLD, never as passed and never as a mismatch:
+
+- with the default nodes, all checkpoints, attack windows and the five Day 0 replays (4a–4e) are
+  checked against the chain again (STATE and REPLAY from thirdweb's archive state);
+- without an archive node, checkpoints and attack windows fall back to EVENTS when a node with
+  complete logs is available, and the rest is OLD (`--rpc-url <archive node>`; paid providers offer
+  them). Everything was also checked while public nodes still had the state, and those runs are
+  archived in [`deployments/bsc-testnet/verification/`](../deployments/bsc-testnet/verification/):
+  `2026-11-07-day0-report.txt`, `2026-11-07-recovery-report.txt` (111 OK, all five replays) and
+  later reports with a snapshot of every raw node answer they used (`*-rpc-snapshot.json`,
   `--archive <file>`);
 - from now on each milestone is verified right away and archived the same day.
 
@@ -176,6 +192,12 @@ recovery: unpaused, 9,940 eUSD (10,000 − 50 − 10), new session budget left 9
 Run at 13:39 UTC the same day, after `publicnode` had pruned the Day 0 state (with `--build`):
 **99 checks OK, 0 mismatches, 7 OLD** (the five Day 0 replays and two limit values; Day 0 balances,
 pause state, implementation and the attack window were re-derived from event logs).
+
+Run 2026-11-08 at 15:18 UTC with the default nodes (no `--build`), after `publicnode` had also
+dropped the transactions: **118 checks OK, 0 mismatches, 0 not checkable, 0 OLD** — the five Day 0
+reasons are proven by REPLAY again, now on thirdweb's archive state; 6f and W3 STRICT by their saved
+traces; the three attack windows moved 0 eUSD. Report and raw node answers:
+`2026-11-08T1518Z-report.txt`, `2026-11-08T1518Z-rpc-snapshot.json`.
 
 About the pause: lifting it is never automatic. Only the admin can schedule `unpause`, it waits
 out the timelock (1 hour in this demo), the admin then executes it, and during the wait the

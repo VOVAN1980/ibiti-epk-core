@@ -62,15 +62,16 @@ release 2.2.0 through the SDK on 2026-11-08 ([`docs/TESTNET_V22.md`](docs/TESTNE
 
 No need to trust this page. One command — Python 3 only, no Foundry, no keys, no packages —
 re-checks every claim in [`deployments/bsc-testnet/epk-v2-evidence.json`](deployments/bsc-testnet/epk-v2-evidence.json)
-against a public BSC Testnet node: chain id, bytecode hashes, who sent what, emitted events, revert
-reasons, balances and historical checkpoints.
+against free public BSC Testnet nodes (it asks several in turn, because each forgets old history in its
+own way): chain id, bytecode hashes, who sent what, emitted events, revert reasons, balances and
+historical checkpoints.
 
 ```bash
 python scripts/v2/verify_evidence.py
 ```
 
 The report labels how each fact was proven (**STRICT** execution trace, **REPLAY**, **STATE** or
-**EVENTS**) and never marks something as passed when the node can no longer prove it. Details:
+**EVENTS**) and never marks something as passed when no node asked can prove it any more. Details:
 [docs/TESTNET_V2.md](docs/TESTNET_V2.md).
 
 ---
