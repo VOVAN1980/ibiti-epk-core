@@ -194,7 +194,7 @@ audited; nothing goes to mainnet before an audit.</div>
 "use strict";
 // ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
 const REPO = "VOVAN1980/ibiti-epk-core";
-const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT_GUARDS) || "cbf22bf43ed4d60ff1cdaf575013549b7b023499";
+const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT_GUARDS) || "dfe6d0e0dbf4e803016f76d897e3e776576a33c8";
 const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
 const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
 const EV_PATH = "deployments/bsc-testnet/epk-v2.2-guards-evidence.json";

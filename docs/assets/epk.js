@@ -7,7 +7,7 @@
   var EPK = window.EPK = window.EPK || {};
   EPK.REPO = "VOVAN1980/ibiti-epk-core";
   EPK.COMMIT = "bd3cf198a361d3bc7780806e9cdd54f2be1a0f59";
-  EPK.COMMIT_GUARDS = "cbf22bf43ed4d60ff1cdaf575013549b7b023499"; // evidence of the guard demo (docs/proof/guards.html)
+  EPK.COMMIT_GUARDS = "dfe6d0e0dbf4e803016f76d897e3e776576a33c8"; // evidence of the guard demo (docs/proof/guards.html)
   EPK.RPC = "https://bsc-testnet-rpc.publicnode.com";
   EPK.EXPLORER = "https://testnet.bscscan.com";
   EPK.raw = function (path) { return "https://raw.githubusercontent.com/" + EPK.REPO + "/" + EPK.COMMIT + "/" + path; };
