@@ -81,5 +81,7 @@ How the guards work and what they do not cover: [`docs/GUARDS_v2.md`](https://gi
 
 ## License
 
+The bundled guard bytecode targets the Shanghai EVM (PUSH0): BSC, Ethereum and their test networks.
+
 SDK code: MIT. The bundled guard creation bytecode is EPK v2 contract code under BUSL-1.1 — see `LICENSE`
 and [LICENSING.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSING.md).

@@ -222,6 +222,9 @@ def decide(log, expected, state, now, policy):
             acts.append(("alert", "critical", f"GUARDIAN REMOVAL of {removed}: that guardian cannot veto its own removal "
                                               f"(and a panic does not stop it) — ANOTHER guardian or the owner must cancel "
                                               f"{op['id']} before {when}"))
+        if op["data"][:10].lower() == selector("setRecovery(address)"):
+            acts.append(("alert", "critical", f"RECOVERY KEY REPLACEMENT: from vault 2.2.0 the recovery key cannot veto it — "
+                                              f"a guardian or the owner must cancel {op['id']} before {when}"))
         acts.append(("cancel", op["id"]))
         if len(state["unexpected"]) >= policy.get("panicAfterUnexpectedPerHour", 3) and not state["panicked"]:
             acts.append(("panic", f"{len(state['unexpected'])} unexpected changes within an hour"))

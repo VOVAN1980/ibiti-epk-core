@@ -391,6 +391,6 @@ contract DexGuardVaultTest is GuardBase {
     }
 
     function test_version() public view {
-        assertEq(vault.vaultVersion(), 20_100);
+        assertEq(vault.vaultVersion(), 20_200);
     }
 }

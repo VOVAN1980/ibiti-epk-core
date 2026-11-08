@@ -122,6 +122,12 @@ class Decisions(unittest.TestCase):
         adding = "0x" + wt.selector("setGuardian(address,bool)")[2:] + wt.word(g) + wt.word(1)
         self.assertIsNone(wt.removed_guardian(adding))
 
+    def test_recovery_replacement_raises_the_alarm(self):
+        data = "0x" + wt.selector("setRecovery(address)")[2:] + wt.word(ATTACKER)
+        acts = wt.decide(scheduled_log(data, STOLEN_SALT), EXPECTED, fresh_state(), 0, POLICY)
+        self.assertEqual(kinds(acts), ["alert", "alert", "cancel"])
+        self.assertIn("RECOVERY KEY REPLACEMENT", acts[1][2])
+
     def test_unpause_rearms_panic(self):
         st = fresh_state()
         st["panicked"] = True

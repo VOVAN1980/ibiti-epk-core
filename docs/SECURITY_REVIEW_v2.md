@@ -105,8 +105,8 @@ inspects itself.
 |---|---|---|---|---|
 | A5-1 | High | DexGuard: a V3 single-pool swap with a price limit may stop early and still charge `amountInMaximum`; on 2.1 vaults the after-batch check could be masked by wrapping the vault's own BNB in the same batch (proof: 30,300 USDT paid for 0.05 WBNB) | **Fixed** in DexGuard: price limit must be 0, wraps are booked. The guard deployed for the testnet demo predates the fix | `test_v3PriceLimitPartialFillIsRefused`, `test_wrapCannotHideAShortSwap` |
 | A5-2 | Medium | Tokens transferred to a router (an allowlisted destination) can be swept by anyone | **Fixed** in DexGuard: no transfers to routers or the wrapped native token | `test_transferToRouterIsRefused`, `test_transferFromToRouterIsRefused` |
-| A5-3 | Medium | The recovery key can veto every timelocked change, including its own replacement: a stolen recovery key can keep a paused vault paused (freeze, not theft) | **Open** — needs a vault release: shield `setRecovery` from the current recovery key, like guardian removal | `test_knownIssue_recoveryCanVetoItsOwnReplacement` (pins today's behaviour) |
-| A5-4 | Low | An ERC-721 `approve(destination, 0)` (token #0) is not recorded as an allowance and survives the batch | **Open** — vault release: record the spender of every approve | `test_knownIssue_nftApprovalOfTokenZeroSurvives` (pins today's behaviour) |
+| A5-3 | Medium | The recovery key can veto every timelocked change, including its own replacement: a stolen recovery key can keep a paused vault paused (freeze, not theft) | **Fixed in vault release 2.2.0** (built and tested, not yet deployed): replacing the recovery key is shielded from the current recovery key and waits 3× delay (longer than `recoverAdmin`, not panic-exempt), so a stolen recovery key can delay changes but not freeze the vault, and an honest one still beats a compromised admin. A first version (1× delay, panic-exempt) was rejected by an independent re-review: it let a compromised admin out-race an honest recovery key | `test_recoveryCannotVetoItsOwnReplacement`, `test_guardianCanStillVetoARecoveryChange`, `test_honestRecoveryBeatsCompromisedAdmin`, `test_panicCancelsARecoveryChange` |
+| A5-4 | Low | An ERC-721 `approve(destination, 0)` (token #0) is not recorded as an allowance and survives the batch | **Fixed in vault release 2.2.0**: every approval is recorded and checked after the batch (an NFT approval fails closed); approvals to address(0) are refused | `test_nftApprovalOfTokenZeroFailsClosed`, `test_erc20AllowanceResetStillWorks`, `test_approvalToZeroAddressIsRefused` |
 | A5-5 | Low | DexGuard rounded minimum outputs down (a token with few decimals could lose one whole unit) | **Fixed**: rounding in the vault's favour | `test_minimumOutRoundsUp` |
 | A5-6 | Medium (ops) | Watchtower: cannot stop its own removal (shielded by design), panicked only once, could go blind silently on node errors | **Improved**: guardian-removal alarm, panic re-armed after an unpause, alerts on read failures, log-range splitting. Run two Watchtowers on separate hosts | `watchtower/test_watchtower.py` |
 | A5-7 | Low (ops) | Watchtower config still pre-approved the cancelled 2.0.1 upgrade | **Fixed**: nothing pre-approved | — |
@@ -138,7 +138,7 @@ inspects itself.
 8. **After a panic every policy is dead** for good; re-creating policies, agents and calls takes at least one delay.
 9. **An agent can front-run a panic** and spend what is left in the current window.
 10. **One operator key shared across vaults** means one compromise hits all of them (each within its own limit).
-11. **A stolen recovery key can veto every change** (A5-3) until the vault release that fixes it: a paused vault then stays paused.
+11. **A stolen recovery key can veto changes for up to 3× delay** (2.2.0; before 2.2.0 it could veto everything, including its own replacement — A5-3). Replace it through the timelock; guardians, not the recovery key, decide.
 12. **`revokeAll` does not stop a compromised session manager**: it can reopen sessions in the new epoch — remove it with `setSessionManager(address(0))` (instant).
 13. **An already-pending loosening can undo an instant tightening** of the same setting once its delay passes: cancel pending operations (or `panic`) when tightening in an incident.
 
@@ -183,5 +183,5 @@ With via-IR + `--ir-minimum`, Foundry's source maps under-report some branches ;
 1. Independent audit by a professional firm (scope: this document's contracts, the guard modules, the Watchtower and the SDK signing code).
 2. Public testnet deployment (done 2026-11-07) and a bug bounty.
 3. Monitoring bot as a guardian — built (the Watchtower); run at least two, always on, on separate hosts.
-3a. A vault release fixing A5-3 and A5-4 (§1e).
+3a. Vault release 2.2.0 fixes A5-3 and A5-4 (§1e): deploy it on testnet and let the demo vaults opt in.
 4. Integration validators for every generic call that will be allowlisted (DEX, lending, bridges).

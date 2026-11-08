@@ -31,7 +31,7 @@ EPK avoids this by construction: **every customer gets their own vault**. Funds 
 | **Co-signer** (per vault, optional) | independent service on separate infrastructure | approve a batch whose outflow is above `coSignAbove` | anything alone |
 | **Admin** | multisig / cold key | tighten instantly; **schedule** loosening changes | loosen without the timelock; be a guardian |
 | **Guardians** (≥ 2) | independent people / monitoring bots | pause, revoke, cancel pending changes, lower limits, `panic` | move funds, loosen anything, unpause, block their own removal |
-| **Recovery** (optional, recommended) | cold key | replace a lost or compromised admin (2× delay); veto pending changes | move funds, execute admin operations |
+| **Recovery** (optional, recommended) | cold key | replace a lost or compromised admin (2× delay); veto pending changes (except its own replacement, from 2.2.0) | move funds, execute admin operations |
 | **Session manager** (optional) | separate hot key of the operator's backend | open agent sessions instantly inside approved envelopes; close sessions | widen any envelope, touch ordinary policies, open sessions while paused or before setup; be admin, guardian or recovery |
 
 ## 4. Lifecycle
@@ -78,7 +78,7 @@ Per tracked asset (`NATIVE = address(0)` for the native coin): `maxPerWindow`, `
 | `cancel(operationId)` | `setCoSigner`, `setGuardian`, `replaceGuardian`, `setDelay`, `setAdmin`, `setRecovery` |
 
 - Every scheduled change emits `OperationScheduled(id, data, salt, readyAt, by)` — monitoring must watch it; any guardian can `cancel` within the delay.
-- **Shielded operations**: removing or replacing a guardian cannot be cancelled by that guardian and is not invalidated by a panic, so one rogue guardian cannot freeze the vault forever. The guardian count can never drop below 2 after setup.
+- **Shielded operations**: removing or replacing a guardian cannot be cancelled by that guardian and is not invalidated by a panic, so one rogue guardian cannot freeze the vault forever. From 2.2.0, replacing the recovery key cannot be cancelled by the recovery key (so a stolen one cannot freeze the vault) and waits **3× delay** — longer than `recoverAdmin` — so an honest recovery key that reacts within one delay still beats a compromised admin; guardians, the admin and a panic can stop it. The guardian count can never drop below 2 after setup.
 - **Recovery**: `recoverAdmin(newAdmin)` (recovery key only) schedules `setAdmin` with **2× delay**; the admin cannot cancel it and a panic does not invalidate it; any guardian can veto it.
 - `executeScheduled` is called by the admin; the recovery key can execute only its own recovery operations. A ready operation must be executed within `GRACE_PERIOD` (14 days), otherwise it is stale and may be scheduled again.
 

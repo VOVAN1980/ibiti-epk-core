@@ -368,7 +368,7 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
 
     /// @notice Implementation version: major * 10_000 + minor * 100 + patch.
     function vaultVersion() public pure virtual override returns (uint64) {
-        return 20_100; // 2.1.0
+        return 20_200; // 2.2.0
     }
 
     receive() external payable {}
@@ -395,8 +395,11 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     }
 
     /// @notice Schedules a call to one of this vault's `onlyTimelocked` functions.
-    /// @dev Removing or replacing a guardian is shielded: that guardian cannot cancel it and a panic
-    ///      does not invalidate it, so a single rogue guardian cannot freeze the vault forever.
+    /// @dev Removing or replacing a guardian is shielded: that guardian cannot cancel it and a panic does
+    ///      not invalidate it, so a single rogue guardian cannot freeze the vault forever. Replacing the
+    ///      recovery key is shielded from the recovery key (so a stolen one cannot freeze the vault) and
+    ///      takes 3 × delay — longer than `recoverAdmin` — so an honest recovery key still wins against a
+    ///      compromised admin; guardians and a panic can stop it.
     function schedule(bytes calldata data, bytes32 salt) external onlyAdmin returns (bytes32 id) {
         if (data.length < 4) revert BadOperation();
         bytes4 sel = bytes4(data[:4]);
@@ -405,14 +408,19 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
             revert BadOperation();
         }
         address shielded = address(0);
+        uint256 wait = delay;
         if (sel == this.setGuardian.selector) {
             (address g, bool enabled) = abi.decode(data[4:], (address, bool));
             if (!enabled) shielded = g;
         } else if (sel == this.replaceGuardian.selector) {
             (address g,) = abi.decode(data[4:], (address, address));
             shielded = g;
+        } else if (sel == this.setRecovery.selector) {
+            shielded = recovery;
+            wait = delay * 3;
         }
-        id = _schedule(data, salt, delay, shielded != address(0), false, shielded);
+        // guardian changes survive a panic; a recovery change does not (wait != delay)
+        id = _schedule(data, salt, wait, shielded != address(0) && wait == delay, false, shielded);
     }
 
     /// @notice Recovery key: replace a lost or compromised admin. Takes twice the normal delay,
@@ -476,7 +484,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     // timestamp: false positive — only the existence sentinel (`version`) of the stored operation is
     // compared; Slither taints the whole struct because it also holds `readyAt`.
     /// @notice Admin, any guardian or the recovery key can veto a pending change (see shielding rules).
-    ///         The recovery key's veto matters when the admin is compromised and a guardian is absent.
+    ///         The recovery key's veto matters when the admin is compromised and a guardian is absent;
+    ///         it cannot veto its own replacement.
     function cancel(bytes32 id) external {
         if (msg.sender != admin && !isGuardian[msg.sender] && (msg.sender != recovery || recovery == address(0))) {
             revert NotAdminOrGuardian();
@@ -866,11 +875,13 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         _migrate(_getInitializedVersion());
     }
 
-    /// @dev Every release overrides this as `internal override reinitializer(n)` and runs every step
-    ///      that `from` has not reached yet (vaults may skip releases). 2.0.0 is the first release,
-    ///      so nothing can upgrade *to* it and this default refuses.
+    /// @dev Data migration of the release a vault upgrades to; it runs every step that `from` has not
+    ///      reached yet (vaults may skip releases). 2.2.0 needs none: 2.1 only appended `envelopeGuard`
+    ///      (empty by default) and 2.2 adds no storage, so 2.0.x and 2.1.x vaults upgrade directly.
+    ///      Every later release overrides this as `internal override reinitializer(n)`; one that forgets
+    ///      to (a different `vaultVersion`) refuses here, so it can never be installed.
     function _migrate(uint64 /* from */ ) internal virtual {
-        revert BadOperation();
+        if (vaultVersion() != 20_200) revert BadOperation();
     }
 
     /// @dev Upgrades happen only through `scheduleUpgrade` → delay → `executeScheduled` (the vault
@@ -1149,13 +1160,12 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
             if (_addressArg(data, 0) == address(this) && !assets[target].tracked) revert UntrackedAsset(target);
             _requireDestination(_addressArg(data, 1));
         } else if (sel == _SEL_APPROVE || sel == _SEL_INCREASE_ALLOWANCE) {
-            address s = _addressArg(data, 0);
-            // spender checked even for amount 0: for ERC-721 approve(x, 0) means token #0, not a revoke
-            if (s != address(0)) _requireDestination(s);
-            if (_uintArg(data, 1) != 0) {
-                if (!assets[target].tracked) revert UntrackedAsset(target);
-                spender = s;
-            }
+            // every approval is recorded and must be gone after the batch — also amount 0: for ERC-721,
+            // approve(x, 0) approves token #0 (an NFT then fails the allowance check: fails closed)
+            // (an approval to address(0) is refused: it is never a destination)
+            spender = _addressArg(data, 0);
+            _requireDestination(spender);
+            if (_uintArg(data, 1) != 0 && !assets[target].tracked) revert UntrackedAsset(target);
         } else if (sel == _SEL_SET_APPROVAL_FOR_ALL) {
             if (_uintArg(data, 1) != 0) revert ForbiddenApproval();
         }
