@@ -20,10 +20,28 @@ import {IPancakeRouterV2} from "./DeployV21Demo.s.sol";
 ///   forge script scripts/v2/RunV21Demo.s.sol:RunV21Demo --sig "blockSupplier()"  --rpc-url $BSC_RPC_URL --broadcast
 ///   forge script scripts/v2/RunV21Demo.s.sol:RunV21Demo --sig "prepareBlocked()" --rpc-url $BSC_RPC_URL
 contract RunV21Demo is Script {
-    string internal constant DEPLOY = "deployments/bsc-testnet/epk-v2.1.json";
-    string internal constant RUN = "deployments/bsc-testnet/epk-v2.1-run.json";
-    string internal constant ATTACKS = "deployments/bsc-testnet/epk-v2.1-attacks.json";
-    string internal constant BLOCKED = "deployments/bsc-testnet/epk-v2.1-blocked.json";
+    // the demo's files (RunV22GuardDemo runs the same steps on the 2.2.0 guard demo's files)
+    function DEPLOY() internal pure virtual returns (string memory) {
+        return "deployments/bsc-testnet/epk-v2.1.json";
+    }
+
+    function RUN() internal pure virtual returns (string memory) {
+        return "deployments/bsc-testnet/epk-v2.1-run.json";
+    }
+
+    function ATTACKS() internal pure virtual returns (string memory) {
+        return "deployments/bsc-testnet/epk-v2.1-attacks.json";
+    }
+
+    function BLOCKED() internal pure virtual returns (string memory) {
+        return "deployments/bsc-testnet/epk-v2.1-blocked.json";
+    }
+
+    /// @dev Further attacks a later demo adds to the same JSON object (`o`); returns the serialized object.
+    function _moreAttacks(string memory, string memory out) internal virtual returns (string memory) {
+        return out;
+    }
+
     address internal constant CAKE = 0xFa60D973F7642B748046464e165A65B7323b0DEE; // real testnet token, not listed
     uint256 internal constant TRADE_BNB = 0.0001 ether;
     uint256 internal constant TRADE_TUSD = 0.05 ether;
@@ -39,7 +57,7 @@ contract RunV21Demo is Script {
     uint256 agentPk;
 
     function _load() internal {
-        string memory j = vm.readFile(DEPLOY);
+        string memory j = vm.readFile(DEPLOY());
         vault = EPKVault(payable(vm.parseJsonAddress(j, ".vault")));
         dex = DexGuard(vm.parseJsonAddress(j, ".dexGuard"));
         router = IPancakeRouterV2(vm.parseJsonAddress(j, ".router"));
@@ -96,7 +114,7 @@ contract RunV21Demo is Script {
 
     // ------------------------------------------------------------------ allowed
 
-    function allowed() external {
+    function allowed() public virtual {
         require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         _load();
         address supplier = vm.addr(vm.envUint("V21_SUPPLIER_PRIVATE_KEY"));
@@ -137,17 +155,17 @@ contract RunV21Demo is Script {
         string memory o = "run";
         vm.serializeUint(o, "sessionGuarded", sidG);
         string memory out = vm.serializeUint(o, "sessionUnguarded", sidU);
-        vm.writeJson(out, RUN);
+        vm.writeJson(out, RUN());
         console2.log("vault tUSD:", IERC20(tusd).balanceOf(address(vault)));
         console2.log("vault BNB :", address(vault).balance);
     }
 
     // ------------------------------------------------------------------ attacks (prepared, not sent)
 
-    function prepareAttacks() external {
+    function prepareAttacks() public virtual {
         require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         _load();
-        string memory r = vm.readFile(RUN);
+        string memory r = vm.readFile(RUN());
         uint256 sidG = vm.parseJsonUint(r, ".sessionGuarded");
         uint256 sidU = vm.parseJsonUint(r, ".sessionUnguarded");
         address attacker = vm.addr(vm.envUint("V21_ATTACKER_PRIVATE_KEY"));
@@ -203,7 +221,7 @@ contract RunV21Demo is Script {
         string memory out = vm.serializeBytes(
             o, "j_removeGuardWithoutTimelock", abi.encodeCall(EPKVault.setEnvelopeGuard, (1, address(0)))
         );
-        vm.writeJson(out, ATTACKS);
+        vm.writeJson(_moreAttacks(o, out), ATTACKS());
         console2.log("prepared 10 attacks; swap deadline (unix):", dl);
     }
 
@@ -228,7 +246,7 @@ contract RunV21Demo is Script {
 
     function blockSupplier() external {
         require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
-        string memory j = vm.readFile(DEPLOY);
+        string memory j = vm.readFile(DEPLOY());
         ThreatFeedGuard feed = ThreatFeedGuard(vm.parseJsonAddress(j, ".threatFeed"));
         address[] memory a = new address[](1);
         a[0] = vm.parseJsonAddress(j, ".supplier");
@@ -247,6 +265,6 @@ contract RunV21Demo is Script {
         string memory out = vm.serializeBytes(
             o, "k_payBlockedSupplier", _signedExecute(pid, opPk, _one(tusd, 0, abi.encodeCall(IERC20.transfer, (supplier, 1e18))))
         );
-        vm.writeJson(out, BLOCKED);
+        vm.writeJson(out, BLOCKED());
     }
 }

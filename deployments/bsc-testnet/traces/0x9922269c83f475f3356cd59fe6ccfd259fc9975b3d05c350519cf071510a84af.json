@@ -1,0 +1,30 @@
+{
+  "tx": "0x9922269c83f475f3356cd59fe6ccfd259fc9975b3d05c350519cf071510a84af",
+  "node": "https://data-seed-prebsc-1-s1.binance.org:8545",
+  "tracer": "callTracer",
+  "capturedAt": "2026-11-08 16:02:58 UTC",
+  "trace": {
+    "from": "0x8502c5cfdaf6dbad23995a68735534d813672a71",
+    "gas": "0xdbba0",
+    "gasUsed": "0x716c",
+    "to": "0x5c2585f1f0725e54f8742798a20972caa192ecba",
+    "input": "0x4af9c24700000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+    "output": "0xb48b74db",
+    "error": "execution reverted",
+    "calls": [
+      {
+        "from": "0x5c2585f1f0725e54f8742798a20972caa192ecba",
+        "gas": "0xd2038",
+        "gasUsed": "0xb38",
+        "to": "0xd5cb4eb76cbabf55769f8c4ebffb13754b1e5ffd",
+        "input": "0x4af9c24700000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+        "output": "0xb48b74db",
+        "error": "execution reverted",
+        "value": "0x0",
+        "type": "DELEGATECALL"
+      }
+    ],
+    "value": "0x0",
+    "type": "CALL"
+  }
+}
