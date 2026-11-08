@@ -1,4 +1,5 @@
-import { type Address, type Hex, type PublicClient, decodeFunctionData } from "viem";
+import { type Address, type Hex, decodeFunctionData } from "viem";
+import type { AnyPublicClient } from "./client.js";
 
 import { epkVaultAbi } from "./abi/epkVaultAbi.js";
 
@@ -49,12 +50,21 @@ export type VaultEvent =
 /**
  * Subscribe to what matters about one vault: scheduled changes (decoded and labelled), executions and
  * cancellations, batches, outflows, pauses and upgrades. Returns a function that stops watching.
+ * `onError` receives every node / polling error — a monitor that silently stops is worse than none, so
+ * alert on it (the default prints to stderr).
  */
-export function watchVault(publicClient: PublicClient, vault: Address, onEvent: (e: VaultEvent) => void, pollingInterval = 4_000) {
+export function watchVault(
+  publicClient: AnyPublicClient,
+  vault: Address,
+  onEvent: (e: VaultEvent) => void,
+  pollingInterval = 4_000,
+  onError: (error: Error) => void = (error) => console.error(`watchVault ${vault}: ${error.message}`),
+) {
   return publicClient.watchContractEvent({
     address: vault,
     abi: epkVaultAbi,
     pollingInterval,
+    onError,
     onLogs: (logs) => {
       for (const log of logs as unknown as { eventName: string; args: Record<string, unknown> }[]) {
         const a = log.args;

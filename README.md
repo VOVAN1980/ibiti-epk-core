@@ -28,7 +28,9 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 
 | Component | State |
 |---|---|
-| **EPK v2** — `EPKVault` | **Live on BSC Testnet** since 2026-11-07. Four internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
+| **EPK v2** — `EPKVault` 2.1 | **Live on BSC Testnet** since 2026-11-07. Five internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
+| **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). BUSL-1.1. |
+| **TypeScript SDK** — `@ibiti/epk-sdk` | Preview on npm, testnet only ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). MIT. |
 | **EPK Watchtower** | Automatic guardian, working on BSC Testnet. BUSL-1.1. |
 
 What comes next, and in which order, is in the [roadmap](docs/ROADMAP.md) — the single source of
@@ -102,7 +104,7 @@ python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json 
 
 | Path | What | License |
 |---|---|---|
-| `contracts/v2/` | `EPKVault`, `EPKVaultFactory` (with the proxy), `EPKRegistry`, interfaces | BUSL-1.1 |
+| `contracts/v2/` | `EPKVault`, `EPKVaultFactory` (with the proxy), `EPKRegistry`, interfaces; `guards/`: DexGuard, ThreatFeedGuard, CompositeGuard | BUSL-1.1 |
 | `test/v2/` | v2 tests: unit, sessions, upgrades, reentrancy, fuzz and stateful invariants | BUSL-1.1 |
 | `scripts/v2/` | testnet deployment and demo scripts, evidence verifier, upgrade preflight | BUSL-1.1 |
 | `watchtower/` | automatic guardian and its tests | BUSL-1.1 |
@@ -116,11 +118,11 @@ Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
 
 ```bash
 forge build
-forge test                                               # 176 contract tests (3 of them fork BSC Testnet and need an RPC)
-python -m unittest discover -s watchtower -p "test_*.py" # 12 Watchtower tests, no network
+forge test                                               # 185 contract tests (3 of them fork BSC Testnet and need an RPC)
+python -m unittest discover -s watchtower -p "test_*.py" # 14 Watchtower tests, no network
 ```
 
-Every push runs the tests in [CI](.github/workflows/ci.yml); pull requests and `master` also run
+Every pull request and every push to `master` runs the tests in [CI](.github/workflows/ci.yml) and
 Slither in the [security workflow](.github/workflows/security.yml). Every Slither finding is fixed or
 justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 
@@ -130,7 +132,8 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
-- [BSC Testnet demo and evidence](docs/TESTNET_V2.md)
+- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_V21.md) · [5-minute upgrade](docs/TESTNET_V21_FAST_UPGRADE.md)
+- [Guard modules](docs/GUARDS_v2.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ---

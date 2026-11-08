@@ -20,6 +20,8 @@ contract DemoStolenKey is Script {
     bytes32 internal constant SALT = keccak256("EPK demo: stolen admin key");
 
     function run() external {
+        // EPK is not audited: these scripts refuse to run on any mainnet
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         EPKVault vault = EPKVault(payable(vm.parseJsonAddress(vm.readFile(IN_VAULT), ".vault")));
         bytes memory change = abi.encodeCall(EPKVault.addDestination, (ATTACKER));
 

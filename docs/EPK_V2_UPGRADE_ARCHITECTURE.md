@@ -2,7 +2,7 @@
 
 Status: **implemented (EPK 2.0 and 2.1), internally reviewed (3 rounds), not audited; live on BSC Testnet only, not on any mainnet.**
 Contracts: `contracts/v2/EPKVault.sol`, `contracts/v2/EPKRegistry.sol`, `contracts/v2/EPKVaultFactory.sol` (incl. `EPKVaultProxy`).
-Tests: `test/v2/EPKVault.upgrade.t.sol`. Storage snapshot: `docs/storage-layout/EPKVault-2.0.0.txt`.
+Tests: `test/v2/EPKVault.upgrade.t.sol`. Storage snapshots: `docs/storage-layout/EPKVault-2.0.0.txt`, `docs/storage-layout/EPKVault-2.1.0.txt`.
 
 ## 1. The short answer
 
@@ -39,7 +39,7 @@ Tests: `test/v2/EPKVault.upgrade.t.sol`. Storage snapshot: `docs/storage-layout/
 ## 4. Architecture
 
 ```
-            IBITI Labs (multisig)                         Customer
+            IBITI Labs (multisig planned; testnet: one key)                  Customer
                   │ propose release (7-day public delay)     │ admin key
                   ▼                                          ▼
            ┌──────────────┐    isApproved / versionOf  ┌──────────────────────┐
@@ -99,7 +99,7 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 
 | Party | Compromised alone → worst case |
 |---|---|
-| IBITI registry owner | can list a malicious release (public for 7 days, one major step at most), revoke releases, or permanently freeze the registry (no succession). Vaults keep working on their current release; new upgrades would need new vaults. **Cannot upgrade any vault, cannot touch funds.** |
+| IBITI registry owner | can list a malicious release (public for 7 days — 5 minutes on test networks — one major step at most), revoke releases, or permanently freeze the registry (no succession). Vaults keep working on their current release; new upgrades would need new vaults. **Cannot upgrade any vault, cannot touch funds.** |
 | Vault admin | can schedule loosening changes / an upgrade to an *approved* release; they are visible for ≥ delay (≥ 2 days for upgrades) and any other guardian or the recovery key can veto. **Cannot install unapproved code, cannot swap the registry, cannot squat the recovery.** |
 | Guardian | denial of service (pause, veto). Cannot move funds; cannot block its own removal. |
 | Recovery key | can schedule an admin change (2× delay, guardians can veto) and veto pending changes (denial of service). Cannot execute admin operations, cannot move funds. |
@@ -143,7 +143,7 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 6. Tests: full suite + an upgrade test from **every** previous release (including skipping releases) + invariants after upgrade.
 7. Independent audit → `proposeRelease` → 7 days → announce.
 8. Static analysis: Slither must report no unexplained findings ([SLITHER_TRIAGE.md](SLITHER_TRIAGE.md)).
-9. Bytecode budget: `EPKVault` is 23,776 B of the 24,576 B limit (v2 is compiled with optimizer_runs = 1 for size). New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
+9. Bytecode budget: `EPKVault` is 24,562 B of the 24,576 B limit (v2 is compiled with optimizer_runs = 1 for size). New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
 
 ## 10. Test evidence
 
@@ -165,7 +165,6 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 
 - Independent audit of the vault **and** the upgrade path; formal verification of "the only path that sets the implementation slot is a scheduled `scheduleUpgrade` operation".
 - CI check that diffs the storage layout automatically.
-- SDK support (v2 signing format, upgrade helpers) and a guardian monitoring bot that decodes and vetoes operations.
 - Registry-owner succession and a safe registry-migration path for vaults (today a vault's registry is fixed for life).
 - Optional listing-time check of `proxiableUUID()`; the `0xEF` check would also reject EOF contracts if EOF ever ships.
 - Recommended registry-owner setup: multisig behind its own timelock.

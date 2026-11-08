@@ -72,8 +72,10 @@ if (process.env.LIVE !== "0") {
 fs.writeFileSync(
   path.join(app, "check.ts"),
   `import { EPKVaultClient, vaultActions, planGuardedSwap, explainEpkError, networks, NATIVE, type Call, type VaultAction } from "@ibiti/epk-sdk/v2";
-import type { PublicClient } from "viem";
-declare const publicClient: PublicClient;
+import { createPublicClient, http } from "viem";
+import { bscTestnet } from "viem/chains";
+// a real, chain-specific viem client (viem's default PublicClient type rejects these)
+const publicClient = createPublicClient({ chain: bscTestnet, transport: http() });
 const actions: VaultAction[] = [vaultActions.setAsset(NATIVE, 1n, 86_400), vaultActions.addDestination("0x0000000000000000000000000000000000000001")];
 const calls: Call[] = [{ target: networks.bscTestnet.dex.wbnb, value: 0n, data: "0x" }];
 const vault = new EPKVaultClient({ address: networks.bscTestnet.demo.guardVault, publicClient });

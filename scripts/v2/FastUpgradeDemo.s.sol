@@ -24,6 +24,7 @@ contract FastUpgradeDemo is Script {
     bytes32 internal constant SALT = keccak256("EPK fast test-network upgrade to 2.1.1");
 
     function start() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         require(block.chainid == 97, "BSC Testnet only");
         uint256 pk = vm.envUint("V21_ADMIN_PRIVATE_KEY");
         address admin = vm.addr(pk);
@@ -66,6 +67,7 @@ contract FastUpgradeDemo is Script {
     /// @notice Registry owner publishes release 2.1.2 for the same vault; the vault's admin then schedules and
     ///         executes the upgrade with SDK v2 (sdk/examples/v2-upgrade.ts).
     function proposeNext() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         string memory j = vm.readFile(OUT);
         EPKRegistry registry = EPKRegistry(vm.parseJsonAddress(j, ".registry"));
         vm.startBroadcast(vm.envUint("V21_ADMIN_PRIVATE_KEY"));
@@ -77,6 +79,7 @@ contract FastUpgradeDemo is Script {
     }
 
     function execute() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         string memory j = vm.readFile(OUT);
         EPKVault vault = EPKVault(payable(vm.parseJsonAddress(j, ".vault")));
         address release = vm.parseJsonAddress(j, ".release_2_1_1");

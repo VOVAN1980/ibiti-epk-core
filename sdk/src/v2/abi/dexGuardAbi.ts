@@ -566,6 +566,11 @@ export const dexGuardAbi = [
   },
   {
     "type": "error",
+    "name": "PriceLimitNotAllowed",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "PriceTooHigh",
     "inputs": [
       {
@@ -593,6 +598,17 @@ export const dexGuardAbi = [
         "name": "required",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "RecipientNotAllowed",
+    "inputs": [
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
       }
     ]
   },

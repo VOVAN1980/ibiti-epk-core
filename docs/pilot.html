@@ -118,7 +118,7 @@
         <article class="crystal hover lic reveal d2"><span class="eyebrow tone-blue">Pilot</span><div class="price">Your vault on testnet</div>
           <ul><li>Mapping, deployment, attack report</li><li>Scope agreed per project</li></ul></article>
         <article class="crystal hover lic reveal d3"><span class="eyebrow tone-violet">Production</span><div class="price">Commercial license</div>
-          <ul><li>Any vault that secures real value</li><li>Terms by agreement with IBITI Labs</li><li>Becomes MIT no later than 2030-11-06</li></ul></article>
+          <ul><li>Any vault that secures real value</li><li>Terms by agreement with IBITI Labs</li><li>Each version becomes MIT at the latest four years after its release (current: 2030-11-06)</li></ul></article>
       </div>
     </div>
   </section>
@@ -136,8 +136,8 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>DoraHacks OpenClaw winner</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>EPK v2: live on BSC Testnet with a public, re-checkable demo</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Watchtower: stopped a stolen-admin-key attack in 5 blocks</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>202 automated tests across the project, source verified, BUSL-1.1 business model</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>TypeScript SDK on npm (preview); next: independent audit, then mainnet</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>215 automated tests across the project, source code public, BUSL-1.1 business model</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>TypeScript SDK on npm (preview); next: Watchtower service and emergency response, then an independent audit</li>
         </ul>
         <div class="cta" style="justify-content:flex-start;margin-top:24px">
           <a class="btn btn-primary btn-small" href="mailto:info@ibiticoin.com?subject=EPK%20%E2%80%94%20investor%20contact">Talk to the founder</a>
@@ -150,12 +150,13 @@
     <div class="wrap">
       <div class="section-head reveal"><p class="eyebrow">Straight answers</p><h2>Questions we get.</h2></div>
       <div class="grid g2">
-        <article class="crystal pad reveal d1"><h3>Is EPK v2 audited?</h3><p class="card-text">Not yet. EPK has 202 automated tests (contracts, Watchtower and SDK),
-          static analysis and four internal security reviews, and an independent audit comes before mainnet. Until then: testnet only.</p></article>
+        <article class="crystal pad reveal d1"><h3>Is EPK v2 audited?</h3><p class="card-text">Not yet. EPK has 215 automated tests (contracts, Watchtower and SDK),
+          static analysis and five internal security reviews, and an independent audit comes before mainnet. Until then: testnet only.</p></article>
         <article class="crystal pad reveal d2"><h3>Can IBITI Labs touch my vault?</h3><p class="card-text">No. You own your vault.
           Nobody — including us — can upgrade it, change its rules or move its funds for you. New versions are opt-in through your own timelock.</p></article>
         <article class="crystal pad reveal d1"><h3>What if the Watchtower's key is stolen?</h3><p class="card-text">A guardian can only
-          cancel pending changes or press panic. It can never move funds. The worst it can do is pause the vault, which you lift through the timelock.</p></article>
+          cancel pending changes or press panic. It can never move funds. The worst it can do is pause or panic the vault (panic also
+          revokes policies, sessions and pending changes) and veto your changes until you replace it through the timelock.</p></article>
         <article class="crystal pad reveal d2"><h3>Which chains?</h3><p class="card-text">BSC Testnet today. The vault is a standard
           EVM contract; more networks are on the roadmap after the audit.</p></article>
       </div>

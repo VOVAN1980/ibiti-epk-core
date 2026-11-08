@@ -9,12 +9,15 @@ import {IEPKGuard} from "./IEPKGuard.sol";
 ///
 ///         - Blocking is INSTANT: the owner or any blocker (fast responders) can block.
 ///         - Unblocking is SLOW: only the owner can schedule it, it waits `unblockDelay`, and any
-///           blocker can cancel it meanwhile — a stolen owner key cannot quietly open a blocked address.
+///           blocker can cancel it meanwhile. The owner can also remove blockers at once, so a stolen
+///           owner key can still open a blocked address after `unblockDelay`: keep the owner cold.
 ///         - The feed can only stop calls, never move funds (the same trust level as a vault guardian).
 ///
-///         Checked for every call: the call target, and every 32-byte argument word that has the shape
-///         of an address — so recipients, spenders and addresses nested in arrays or structs
-///         (e.g. a swap path or a multicall payload) are covered without decoding each protocol.
+///         Checked for every call: the call target, and every 32-byte-aligned argument word that has the
+///         shape of an address — recipients, spenders and addresses in arrays or structs (e.g. a V2 swap
+///         path) without decoding each protocol. NOT seen: addresses packed tighter (V3 swap paths) or
+///         inside a nested call's bytes (a multicall payload is shifted by its 4-byte selector) — pair the
+///         feed with DexGuard, which refuses multicalls and lists every token a path may use.
 contract ThreatFeedGuard is IEPKGuard {
     uint256 public constant MIN_UNBLOCK_DELAY = 1 hours;
     uint256 public constant MAX_BATCH = 256;

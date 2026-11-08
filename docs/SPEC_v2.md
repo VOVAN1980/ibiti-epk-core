@@ -1,6 +1,9 @@
-# EPK v2 — EPKVault Specification (draft)
+# EPK v2 — EPKVault Specification
 
-Status: **draft, internally reviewed, not independently audited, not deployed.**
+Status: **preview — live on BSC Testnet only, internally reviewed, not independently audited, not on any mainnet.**
+Release 2.1 adds guards for agent sessions (`setEnvelopeGuard`, `GuardRequired`, `afterBatch`), parallel upgrade
+clocks and 5-minute delays on public test networks — see [GUARDS_v2.md](GUARDS_v2.md) and
+[EPK_V2_UPGRADE_ARCHITECTURE.md](EPK_V2_UPGRADE_ARCHITECTURE.md).
 Contracts: `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol`, `contracts/v2/EPKRegistry.sol`.
 Tests: `test/v2/`. Review: [SECURITY_REVIEW_v2.md](SECURITY_REVIEW_v2.md).
 
@@ -8,7 +11,8 @@ Tests: `test/v2/`. Review: [SECURITY_REVIEW_v2.md](SECURITY_REVIEW_v2.md).
 
 > Even if the server, the operator key **and** the AI agent are compromised at the same time,
 > the attacker cannot take more than the configured limit per time window, and cannot send funds
-> to an address that was not allowlisted in advance.
+> to an address that was not allowlisted in advance — for the calls the vault inspects itself or a guard checks
+> (§10).
 
 The threat model covers a compromised **agent** and a compromised **operator signer** — the scenario of large exchange hacks where the signing infrastructure itself was made to sign attacker transactions.
 
@@ -146,5 +150,5 @@ Full design, comparison with immutable / beacon / migration approaches, threats 
 
 - `delay` ≥ 24 hours; **at least 3 guardians** (the enforced minimum is 2) on infrastructure independent from the operator and from each other; a recovery key in cold storage. With only 2 guardians and no recovery key, a compromised admin plus one absent guardian can take over (see the upgrade architecture, §7).
 - Monitoring bot as a guardian: auto-`cancel` unexpected `OperationScheduled`, auto-`panic` on anomalies.
-- Co-signer on separate infrastructure (e.g. IBITI Guardian) with a low `coSignAbove`.
+- Co-signer: a co-signing service on separate infrastructure, with a low `coSignAbove`.
 - `maxPerWindow` sized to what the business can afford to lose in one window.

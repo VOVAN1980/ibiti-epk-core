@@ -5,6 +5,9 @@ on:
     branches: [ "master" ]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   forge-test:
     runs-on: ubuntu-latest
@@ -15,7 +18,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: stable
+          version: v1.5.1
 
       - name: Cache forge
         uses: actions/cache@v4
@@ -45,6 +48,7 @@ jobs:
         run: |
           npm ci
           npm run typecheck
+          npm run typecheck:examples
           npm run test:v2
 
       - name: SDK package installs in a clean outside project

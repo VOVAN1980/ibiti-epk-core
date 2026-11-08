@@ -317,8 +317,9 @@ contract DexGuardUnitTest is Test {
         amountIn = bound(amountIn, 1e6, 50_000e6);
         bnbPrice = bound(bnbPrice, 1e8, 100_000e8);
         wbnbFeed.set(int256(bnbPrice));
-        uint256 fair = Math.mulDiv(Math.mulDiv(amountIn, 1e18, 1e6), 1e18, bnbPrice * 1e10);
-        uint256 required = Math.mulDiv(fair, 9_900, 10_000);
+        // the guard rounds a minimum output up (in the vault's favour)
+        uint256 fair = Math.mulDiv(Math.mulDiv(amountIn, 1e18, 1e6, Math.Rounding.Ceil), 1e18, bnbPrice * 1e10, Math.Rounding.Ceil);
+        uint256 required = Math.mulDiv(fair, 9_900, 10_000, Math.Rounding.Ceil);
         minOut = bound(minOut, 1, fair * 2 + 1);
         bytes memory d = _v2In(amountIn, minOut, address(vault20));
         if (minOut < required) {

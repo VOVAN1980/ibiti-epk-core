@@ -23,7 +23,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "clean": "rimraf dist",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepack": "npm run build",
@@ -32,15 +32,15 @@
     "example:v2-upgrade": "tsx examples/v2-upgrade.ts",
     "example:v2-quickstart": "tsx examples/v2-quickstart.ts",
     "build:abi": "cd .. && forge build && cd sdk && node scripts/sync-abi.mjs",
-    "check:package": "node scripts/check-package.mjs"
+    "check:package": "node scripts/check-package.mjs",
+    "typecheck:examples": "tsc -p tsconfig.examples.json"
   },
   "dependencies": {
-    "viem": "^2.21.0"
+    "viem": "^2.57.16"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
-    "rimraf": "^5.0.10",
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.3"
   },
   "engines": {

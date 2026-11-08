@@ -3,7 +3,7 @@
 Thanks for your interest in contributing to EPK.
 
 ## Requirements
-- Foundry (forge)
+- Foundry (forge) 1.5.1, Python 3, Node.js ≥ 20.10 (SDK)
 
 ## Pull requests
 - Keep PRs small and focused.

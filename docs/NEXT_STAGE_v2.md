@@ -1,18 +1,19 @@
 # EPK v2 — next stage: guards, SDK v2, Watchtower (design draft)
 
-Status: design, 2026-11-07. Order and status live in [ROADMAP.md](ROADMAP.md); this page explains
+Status: design written 2026-11-07; steps 1, 3 and 4 are built (preview). Order and status live in [ROADMAP.md](ROADMAP.md); this page explains
 *how* the next milestones will work.
 
-**Update 2026-11-07:** steps 1 and 3 below — DexGuard, ThreatFeed V2, CompositeGuard and vault release
-2.1.0 with guards for agent sessions — are built and tested (preview, BSC Testnet). What they
+**Update 2026-11-08:** steps 1 and 3 below — DexGuard, ThreatFeed V2, CompositeGuard and vault release
+2.1.0 with guards for agent sessions — are built and tested (preview, BSC Testnet), and step 4, the SDK, is on
+npm as `@ibiti/epk-sdk`. What they
 block, what they do not cover and how to connect them: [GUARDS_v2.md](GUARDS_v2.md). Goal of the stage: EPK that outside developers can integrate
 and that trading-bot and AI-agent companies will pay to run with real money.
 
 ## 1. Why guards come first
 
 The biggest open gap is in the [security review §3.1](SECURITY_REVIEW_v2.md#3-residual-risks-and-design-limitations):
-calls other than plain transfers and approvals are not inspected. A trading bot needs swaps; today a
-compromised operator could route a swap's output to its own address or accept a terrible price —
+calls other than plain transfers and approvals are not inspected. A trading bot needs swaps; without a
+guard a compromised operator could route a swap's output to its own address or accept a terrible price —
 bounded by the outflow limit, but still a loss. Guards close that gap for the customers most likely
 to pay: bots and agents that trade.
 
@@ -28,10 +29,9 @@ to pay: bots and agents that trade.
   *add* blocks — it can stop calls, never move funds, the same trust level as a guardian.)
 - **CompositeGuard** runs several guards in one slot (all must pass).
 
-**Agent sessions need a vault release.** Sessions are opened today with no validator, so guards
-cannot cover them yet. Vault release **2.1.0** adds a guard to each session envelope (set through the
-timelock; applies to every session of the envelope). `EPKVault` is 23,776 of 24,576 bytes, so the
-change is kept small. Each vault opts in through the registry and its own timelock.
+**Agent sessions needed a vault release.** On 2.0.x vaults sessions run with no validator. Vault release **2.1.0** adds a guard to each session envelope (set through the
+timelock; applies to every session of the envelope). `EPKVault` is now 24,562 of 24,576 bytes, so the
+change was kept small. Each vault opts in through the registry and its own timelock.
 
 ## 3. DEX Guard
 
@@ -56,7 +56,7 @@ by default.
 
 ## 4. ThreatFeed V2
 
-- A shared on-chain blocklist of addresses (and `target + selector` pairs) kept by a feed operator.
+- A shared on-chain blocklist of addresses kept by a feed operator.
   Vaults opt in by adding the feed guard to a policy.
 - Checks the call target and the address arguments of transfers and approvals (recipient, spender,
   operator).
@@ -76,8 +76,8 @@ by default.
 | `guards` | build and deploy DEX Guard / ThreatFeed / Composite configurations |
 | `watch` | typed events for dashboards and alerts |
 
-Tested against a local chain and a fork of the live testnet vault. Examples: "AI agent pays an
-invoice", "trading bot swaps through DEX Guard", "owner reacts to an alert".
+Tested offline against reference values taken from the live testnet vault (digests, operation ids, every
+on-chain rejection). Examples: quickstart (your own vault from zero), guarded swap, opt-in upgrade.
 
 ## 6. Watchtower — from demo to service
 

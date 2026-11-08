@@ -11,7 +11,7 @@ during the wait any guardian can cancel it. That is what protects a customer who
 server is stolen: the thief's change can be stopped before it takes effect.
 
 But it only helps if somebody is watching. People sleep, travel and miss notifications. The
-Watchtower watches instead: it is a guardian that never sleeps.
+Watchtower watches instead: a guardian that keeps watching as long as it runs (always-on hosting is the next step).
 
 ## What it does
 
@@ -22,10 +22,13 @@ Watchtower watches instead: it is a guardian that never sleeps.
 | A cancel fails, or 3 unexpected changes arrive within an hour | presses `panic()` (pause + revoke all sessions, policies and pending changes) |
 | A change that was not approved gets executed | presses `panic()` |
 | Pause, admin change, epoch bump, guardian / delay / destination change | sends an alert |
+| A change would remove a guardian | cancels it if it can and raises a **GUARDIAN REMOVAL** alarm: the removed guardian cannot veto its own removal, so another guardian or the owner must |
+| The node cannot be read 5 times in a row | sends an alert (the vault is not being watched) |
 
 It only uses a guardian's own buttons, `cancel(id)` and `panic()`. A guardian can never move funds,
-so even a stolen Watchtower key can at worst pause the vault, which the owner lifts through the
-timelock. Run the Watchtower on a different machine from the admin key — that is the point.
+so even a stolen Watchtower key can at worst pause or panic the vault (panic also revokes policies,
+sessions and pending changes) and veto the owner's changes until it is replaced through the timelock.
+One Watchtower cannot stop its own removal: run two, on separate hosts, with separate guardian keys. Run the Watchtower on a different machine from the admin key — that is the point.
 
 A `panic` also invalidates changes the owner approved; the owner simply schedules them again once
 the incident is over.
@@ -53,6 +56,8 @@ python -m unittest discover -s watchtower -p "test_*.py" -v                     
 
 1. The Watchtower watches the demo vault `0xB2166241…A340` with the guardian2 key; the only approved
    change is the planned upgrade to release 2.0.1.
+   (That upgrade was later cancelled, so `config.bsc-testnet.json` now pre-approves nothing: every
+   scheduled change is treated as unexpected.)
 2. An attacker who holds the **real admin key** schedules `addDestination(0xBAD1)` — the one change
    that would let money leave the vault for their own address
    ([0x7aa83e7b…](https://testnet.bscscan.com/tx/0x7aa83e7bf27bcb13b6a6f28f2a211dfa77b828d86dd956788537e366c4230218), block 141354342).

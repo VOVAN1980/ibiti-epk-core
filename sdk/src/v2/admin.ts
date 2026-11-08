@@ -3,7 +3,6 @@ import {
   type Address,
   type Chain,
   type Hex,
-  type PublicClient,
   type Transport,
   type WalletClient,
   decodeEventLog,
@@ -13,6 +12,7 @@ import {
   toBytes,
   toFunctionSelector,
 } from "viem";
+import type { AnyPublicClient } from "./client.js";
 
 import { epkVaultAbi } from "./abi/epkVaultAbi.js";
 import { epkVaultFactoryAbi } from "./abi/epkVaultFactoryAbi.js";
@@ -83,7 +83,7 @@ export type ApplyResult = {
 export class VaultAdmin {
   constructor(
     readonly vault: Address,
-    readonly publicClient: PublicClient,
+    readonly publicClient: AnyPublicClient,
     readonly walletClient: WalletClient<Transport, Chain, Account>,
   ) {}
 
@@ -143,6 +143,7 @@ export class VaultAdmin {
   private async policyIdFrom(hash: Hex): Promise<bigint> {
     const rc = await this.publicClient.getTransactionReceipt({ hash });
     for (const log of rc.logs) {
+      if (log.address.toLowerCase() !== this.vault.toLowerCase()) continue; // only this vault's own events
       try {
         const ev = decodeEventLog({ abi: epkVaultAbi, data: log.data, topics: log.topics });
         if (ev.eventName === "PolicyCreated") return (ev.args as unknown as { policyId: bigint }).policyId;
@@ -158,7 +159,7 @@ export class VaultAdmin {
 export class EPKFactoryClient {
   constructor(
     readonly address: Address,
-    readonly publicClient: PublicClient,
+    readonly publicClient: AnyPublicClient,
     readonly walletClient?: WalletClient<Transport, Chain, Account>,
   ) {}
 
@@ -190,6 +191,7 @@ export class EPKFactoryClient {
     });
     const rc = await this.publicClient.waitForTransactionReceipt({ hash });
     for (const log of rc.logs) {
+      if (log.address.toLowerCase() !== this.address.toLowerCase()) continue; // only this factory's events
       try {
         const ev = decodeEventLog({ abi: epkVaultFactoryAbi, data: log.data, topics: log.topics });
         if (ev.eventName === "VaultCreated") return { vault: (ev.args as unknown as { vault: Address }).vault, hash };

@@ -36,8 +36,11 @@ Each line is a test that sends the attack through a real `EPKVault` 2.1.0 and ex
 | 10 | Trade on a stale, broken or out-of-bounds price | `StalePrice` / `BadPrice` | `test_attack_staleOrBrokenPrice` |
 | 11 | Router or token delivers less than promised (e.g. a transfer tax switched on) | `BalanceCheckFailed` (after the batch) | `test_attack_routerDeliversLess` |
 | 12 | AI agent takes another path: a session without a guard calls a router | `GuardRequired` (vault) | `test_session_withoutGuardCannotSwap` |
-| 13 | Add, swap or remove a session guard without notice (e.g. a stolen guardian key installing a guard that lets everything through) | `NotTimelocked` — every change waits in the timelock; guardians / Watchtower can cancel | `test_session_guardChangesAreTimelocked` |
+| 13 | Add, swap or remove a session guard without notice (e.g. a stolen admin key installing a guard that lets everything through) | `NotTimelocked` — every change waits in the timelock; guardians / Watchtower can cancel | `test_session_guardChangesAreTimelocked` |
 | 14 | Trade through a token or pay an address that turned out to be malicious | `BlockedAddress` (ThreatFeed) | `test_blockedTokenStopsSwaps`, `test_blockedRecipientStopsPayments` |
+| 15 | V3 single-pool swap with a price limit: the router stops early, charges the maximum and delivers dust (found in the 2026-11-08 audit) | `PriceLimitNotAllowed` | `test_v3PriceLimitPartialFillIsRefused` |
+| 16 | Hide a short swap by wrapping the vault's own BNB into the output token in the same batch | `BalanceCheckFailed` (wraps are booked) | `test_wrapCannotHideAShortSwap` |
+| 17 | Send tokens straight to a router (an allowlisted destination) and sweep them out (`sweepToken`, `removeLiquidity…SupportingFeeOnTransferTokens`) | `RecipientNotAllowed` | `test_transferToRouterIsRefused`, `test_transferFromToRouterIsRefused` |
 
 The vault's own limits still bound everything a guard allows (`test_vaultLimitsStillApply`,
 `test_session_budgetStillApplies`).
@@ -71,7 +74,17 @@ Stated openly, so integrators can plan around it:
 - **Ordinary policies without a guard** can call whatever the admin allowlisted through the timelock.
   Always give a trading policy a guard.
 - **ThreatFeed alone** checks the call target and every word-aligned address argument; token addresses
-  packed inside a V3 path are not word-aligned. DexGuard's token list covers them — use both together.
+  packed inside a V3 path, and addresses inside a nested call's bytes (multicall payloads), are not seen.
+  DexGuard refuses multicalls and lists every path token — use both together. A token that gets blocked
+  can still be bought through a V3 path until the DexGuard is replaced through the timelock.
+- **ThreatFeed as the only envelope guard** lifts `GuardRequired`: sessions may then make every allowlisted
+  call uninspected. Put it in a CompositeGuard together with DexGuard.
+- **The feed owner** can remove blockers at once, so a stolen owner key can open a blocked address after
+  `unblockDelay`. Keep the owner key cold (a multisig).
+- **Validators written for 2.0 (`validate` only)**: a 2.1.0 vault also calls `afterBatch` on a policy's
+  validator, so such a validator makes every batch revert. Wrap it in a CompositeGuard with `legacy = true`.
+- **The DexGuard deployed for the testnet demo** (`0x5A00…4209`) predates the 2026-11-08 fixes (rows 15–17):
+  deploy a fresh guard (`deployDexGuard` in the SDK) for any new setup.
 - **Immutable configuration**: a mistake in a guard's settings means deploying a new guard and switching
   to it through the timelock.
 - Not audited yet.
@@ -138,7 +151,7 @@ bytes32 digest = vault.getExecuteDigest(policyId, agent, calls, vault.nonces(pol
 `guard.maximumIn(tokenIn, tokenOut, amountOut)` gives the limit for exact-output swaps. Errors a bot
 should handle: `PriceTooLow`, `PriceTooHigh`, `StalePrice`, `BadPrice`, `BadDeadline`, `AmountTooLarge`,
 `TokenNotAllowed`, `UnsupportedCall`, `BalanceCheckFailed`, and from the vault `LimitExceeded`,
-`BudgetExceeded`, `GuardRequired`. SDK v2 will wrap all of this in a few calls.
+`BudgetExceeded`, `GuardRequired`. SDK v2 wraps all of this: `DexGuardClient`, `planGuardedSwap`, `explainEpkError`.
 
 ### 3.4 Supported router functions
 

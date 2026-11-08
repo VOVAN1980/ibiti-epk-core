@@ -1,4 +1,5 @@
-import { type Account, type Address, type Chain, type PublicClient, type Transport, type WalletClient } from "viem";
+import { type Account, type Address, type Chain, type Transport, type WalletClient } from "viem";
+import type { AnyPublicClient } from "./client.js";
 
 import { dexGuardAbi } from "./abi/dexGuardAbi.js";
 import { threatFeedGuardAbi } from "./abi/threatFeedGuardAbi.js";
@@ -9,7 +10,7 @@ import { compositeGuardBytecode } from "./abi/compositeGuardBytecode.js";
 
 type Wallet = WalletClient<Transport, Chain, Account>;
 
-async function deployed(publicClient: PublicClient, hash: `0x${string}`): Promise<Address> {
+async function deployed(publicClient: AnyPublicClient, hash: `0x${string}`): Promise<Address> {
   const rc = await publicClient.waitForTransactionReceipt({ hash });
   if (rc.status !== "success" || !rc.contractAddress) throw new Error(`deployment failed (tx ${hash})`);
   return rc.contractAddress;
@@ -28,7 +29,7 @@ export type DexGuardConfig = {
 };
 
 /** Deploy your own DexGuard. Its rules are fixed forever; new rules = a new guard switched in through the vault's timelock. */
-export async function deployDexGuard(walletClient: Wallet, publicClient: PublicClient, cfg: DexGuardConfig): Promise<Address> {
+export async function deployDexGuard(walletClient: Wallet, publicClient: AnyPublicClient, cfg: DexGuardConfig): Promise<Address> {
   const hash = await walletClient.deployContract({
     abi: dexGuardAbi,
     bytecode: dexGuardBytecode,
@@ -46,7 +47,7 @@ export async function deployDexGuard(walletClient: Wallet, publicClient: PublicC
 }
 
 /** Deploy a ThreatFeed V2 blocklist you operate: instant blocking, unblocking after `unblockDelay` (>= 1 hour). */
-export async function deployThreatFeed(walletClient: Wallet, publicClient: PublicClient, cfg: { owner: Address; unblockDelay: bigint }): Promise<Address> {
+export async function deployThreatFeed(walletClient: Wallet, publicClient: AnyPublicClient, cfg: { owner: Address; unblockDelay: bigint }): Promise<Address> {
   const hash = await walletClient.deployContract({
     abi: threatFeedGuardAbi,
     bytecode: threatFeedGuardBytecode,
@@ -60,7 +61,7 @@ export async function deployThreatFeed(walletClient: Wallet, publicClient: Publi
 /** Combine guards (all must pass). `legacy[i] = true` for a validator that only implements `validate`. */
 export async function deployCompositeGuard(
   walletClient: Wallet,
-  publicClient: PublicClient,
+  publicClient: AnyPublicClient,
   cfg: { guards: Address[]; legacy?: boolean[] },
 ): Promise<Address> {
   const hash = await walletClient.deployContract({

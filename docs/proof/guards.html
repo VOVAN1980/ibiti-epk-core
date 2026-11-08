@@ -98,7 +98,7 @@ audited; nothing goes to mainnet before an audit.</div>
 <section id="s-attacks">
   <h2>Rejected attacks</h2>
   <p>What a compromised operator key or AI agent would try. Each attempt was really sent to the vault and failed on-chain.
-  <b>STRICT</b> = the reason is read from the execution trace of that exact transaction.
+  <b>STRICT</b> = the reason is read from an execution trace of that exact transaction, saved in the repository.
   <b>REPLAY</b> = the transaction is replayed against the chain state right before its block, and no earlier
   transaction in that block touched the vault or the token (a replay is strong evidence, not a trace).
   <b>Archived</b> = free public nodes no longer keep that old state; the rejection itself is still checked on-chain,
@@ -107,7 +107,7 @@ audited; nothing goes to mainnet before an audit.</div>
 </section>
 
 <section id="s-pool">
-  <h2>A real pool 38 % below the market</h2>
+  <h2>A real pool 38 % below the market (2026-11-07)</h2>
   <p>The real WBNB/BUSD pool on BSC Testnet pays far less than the Chainlink BNB price. In step <b>C1</b> a plain
   wallet with no EPK makes a 0.0001 BNB trade there and receives about 0.043 BUSD instead of about 0.070 — it loses
   roughly 38 %. In step <b>A3</b> the operator key asks the guarded vault for the same trade at that pool's own
@@ -244,6 +244,9 @@ function log(kind, text) {
   return kind === "ok";
 }
 const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+// evidence values go into HTML: accept only the shapes they must have
+const hx = (s) => (/^0x[0-9a-fA-F]{1,64}$/.test(String(s)) ? String(s) : "0x");
+const num = (n) => String(Number.parseInt(n, 10) || 0);
 
 let EV;
 function renderClaims(ev) {
@@ -251,11 +254,11 @@ function renderClaims(ev) {
   $("t-attacks").textContent = `${attacks.length}`; $("t-stolen").textContent = "?";
   $("t-contracts").textContent = `${Object.keys(C).length}`;
   $("tbl-attacks").tBodies[0].innerHTML = attacks.map(t => `<tr><td>${esc(t.step)}</td><td>${esc(t.what)}</td>
-    <td class="mono">${esc(t.error.split("(")[0])}</td><td id="a-${t.tx}">${pill("claim", "claimed")}</td>
-    <td><a class="mono" href="${EXPLORER}/tx/${t.tx}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
+    <td class="mono">${esc(t.error.split("(")[0])}</td><td id="a-${hx(t.tx)}">${pill("claim", "claimed")}</td>
+    <td><a class="mono" href="${EXPLORER}/tx/${hx(t.tx)}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
   $("tbl-tx").tBodies[0].innerHTML = ev.transactions.map(t => `<tr><td>${esc(t.step)}</td><td>${esc(t.what)}</td><td>${esc(t.from)}</td>
-    <td id="x-${t.tx}">${pill("claim", t.expect === "success" ? "success (claimed)" : "rejected (claimed)")}</td>
-    <td><a class="mono" href="${EXPLORER}/tx/${t.tx}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
+    <td id="x-${hx(t.tx)}">${pill("claim", t.expect === "success" ? "success (claimed)" : "rejected (claimed)")}</td>
+    <td><a class="mono" href="${EXPLORER}/tx/${hx(t.tx)}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
   if ($("tbl-cp")) $("tbl-cp").tBodies[0].innerHTML = ev.checkpoints.map((c, i) => {
     const claims = [];
     if ("paused" in c) claims.push(`paused ${c.paused}`);
@@ -263,11 +266,11 @@ function renderClaims(ev) {
     if ("eUSD" in c) claims.push(`balance ${c.eUSD} eUSD`);
     if ("vaultLimitLeft" in c) claims.push(`vault limit left ${c.vaultLimitLeft}`);
     if (c.sessionBudgetLeft) claims.push(`session budget left ${c.sessionBudgetLeft.value}`);
-    return `<tr><td class="mono"><a href="${EXPLORER}/block/${c.block}" target="_blank" rel="noopener">${c.block}</a></td><td>${esc(c.label)}</td><td>${esc(claims.join(" · "))}</td><td id="c-${i}">${pill("claim", "claimed")}</td></tr>`;
+    return `<tr><td class="mono"><a href="${EXPLORER}/block/${num(c.block)}" target="_blank" rel="noopener">${num(c.block)}</a></td><td>${esc(c.label)}</td><td>${esc(claims.join(" · "))}</td><td id="c-${i}">${pill("claim", "claimed")}</td></tr>`;
   }).join("");
   $("tbl-code").tBodies[0].innerHTML = Object.entries(C).map(([k, c]) => `<tr><td>${esc(c.label)}</td>
-    <td><a class="mono" href="${EXPLORER}/address/${c.address}#code" target="_blank" rel="noopener">${short(c.address)}</a></td>
-    <td class="mono">${c.codeHash ? short(c.codeHash) : "–"}</td><td id="k-${k}">${pill("claim", "claimed")}</td></tr>`).join("");
+    <td><a class="mono" href="${EXPLORER}/address/${hx(c.address)}#code" target="_blank" rel="noopener">${short(c.address)}</a></td>
+    <td class="mono">${c.codeHash ? short(hx(c.codeHash)) : "–"}</td><td id="k-${esc(k)}">${pill("claim", "claimed")}</td></tr>`).join("");
 }
 
 async function verify() {

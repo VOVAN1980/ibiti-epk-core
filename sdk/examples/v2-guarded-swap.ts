@@ -71,7 +71,8 @@ async function main() {
   const onchain = await vault.getExecuteDigest({ policyId, agent: account.address, calls, nonce: ok.nonce, deadline: ok.deadline });
   console.log(`digest offline ${ok.digest} = on-chain ${onchain}: ${ok.digest === onchain}`);
   const sim = await vault.simulate({ policyId, calls, deadline: ok.deadline, signature: ok.signature, agent: account.address });
-  console.log("simulate the swap:", sim.ok ? "would succeed" : `refused: ${sim.error?.errorName === "Error" ? sim.error.args?.[0] : sim.error?.errorName}`);
+  const why = sim.ok ? "" : String(sim.error?.errorName ?? "unknown reason");
+  console.log("simulate the swap:", sim.ok ? "would succeed" : `refused: ${why}`);
 
   // a compromised operator key tries to send the output elsewhere
   const steal = v2SwapExactNative({ router: dep.router as Address, vault: dep.attacker as Address, path: [dep.wbnb as Address, dep.tusd as Address], amountIn, minOut: 1n, deadline: (await publicClient.getBlock()).timestamp + 300n });

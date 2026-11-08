@@ -26,9 +26,11 @@ interface IERC20Decimals {
 ///         - a call to a configured router must be one of the supported swap functions, and the swap must
 ///           send its output to the vault, use only listed tokens, expire soon, and accept no worse than
 ///           the Chainlink fair price minus `maxSlippageBps` (or pay no more than the fair price plus it);
+///           V3 single-pool swaps must not set a price limit (with one the router may fill only part);
 ///         - a token approval with a non-zero amount must go to a configured router, for a listed token;
 ///         - plain token transfers, allowance resets and native transfers pass (the vault itself checks
-///           their recipients and limits);
+///           their recipients and limits) — except token transfers TO a router or to the wrapped native
+///           token: anyone can sweep a router's balance, and tokens sent to WBNB / WETH are lost;
 ///         - everything else is rejected: unknown functions, multicall, fee-on-transfer variants,
 ///           liquidity functions, other contracts.
 ///
@@ -186,6 +188,8 @@ contract DexGuard is IEPKGuard {
     error StalePrice(address token);
     error BadPrice(address token);
     error BalanceCheckFailed(address asset, int256 actual, int256 required);
+    error PriceLimitNotAllowed();
+    error RecipientNotAllowed(address recipient);
 
     // slither-disable-start missing-zero-check,calls-loop
     // missing-zero-check: wrappedNative_ = 0 is a valid setting (no native swaps; they are then refused).
@@ -251,12 +255,12 @@ contract DexGuard is IEPKGuard {
 
     /// @notice Smallest acceptable output of an exact-input swap right now.
     function minimumOut(address tokenIn, address tokenOut, uint256 amountIn) external view returns (uint256) {
-        return Math.mulDiv(_fairOut(tokenIn, tokenOut, amountIn), BPS - maxSlippageBps, BPS);
+        return Math.mulDiv(_fairOut(tokenIn, tokenOut, amountIn, Math.Rounding.Ceil), BPS - maxSlippageBps, BPS, Math.Rounding.Ceil);
     }
 
     /// @notice Largest acceptable input of an exact-output swap right now.
     function maximumIn(address tokenIn, address tokenOut, uint256 amountOut) external view returns (uint256) {
-        return Math.mulDiv(_fairOut(tokenOut, tokenIn, amountOut), BPS + maxSlippageBps, BPS);
+        return Math.mulDiv(_fairOut(tokenOut, tokenIn, amountOut, Math.Rounding.Floor), BPS + maxSlippageBps, BPS);
     }
 
     // ------------------------------------------------------------------ guard hooks
@@ -289,9 +293,28 @@ contract DexGuard is IEPKGuard {
             if (_postCheckEnabled(vault)) _record(caller, vault, s);
             return;
         }
-        if (data.length < 4) return; // plain native transfer: the vault checks the destination and limits
+        if (data.length < 4) {
+            // plain native transfer: the vault checks the destination and limits. A transfer to the
+            // wrapped native token is a wrap: book it, so it cannot hide a short swap output.
+            if (target == wrappedNative && value != 0 && _postCheckEnabled(vault)) {
+                Pending[] storage list = _pending[_key(caller, vault)];
+                _add(list, vault, NATIVE, -value.toInt256());
+                _add(list, vault, wrappedNative, value.toInt256());
+            }
+            return;
+        }
         bytes4 sel = bytes4(data[:4]);
-        if (sel == SEL_TRANSFER || sel == SEL_TRANSFER_FROM || sel == SEL_SET_APPROVAL_FOR_ALL) return;
+        if (sel == SEL_TRANSFER || sel == SEL_TRANSFER_FROM) {
+            // routers must be destinations (they receive approvals), but anything SENT to a router can be
+            // taken by anyone (V3 sweepToken, V2 removeLiquidity...SupportingFeeOnTransferTokens);
+            // tokens sent to the wrapped native token are lost
+            address to = sel == SEL_TRANSFER
+                ? abi.decode(data[4:], (address))
+                : _secondAddress(data[4:]);
+            if (routerKind[to] != RouterKind.None || to == wrappedNative) revert RecipientNotAllowed(to);
+            return;
+        }
+        if (sel == SEL_SET_APPROVAL_FOR_ALL) return;
         if (sel == SEL_APPROVE || sel == SEL_INCREASE_ALLOWANCE) {
             (address spender, uint256 amount) = abi.decode(data[4:], (address, uint256));
             if (amount == 0) return; // resetting an allowance is always safe
@@ -311,11 +334,14 @@ contract DexGuard is IEPKGuard {
 
         if (s.exactIn) {
             _requireMaxIn(s.tokenIn, s.amount);
-            uint256 required = Math.mulDiv(_fairOut(s.tokenIn, s.tokenOut, s.amount), BPS - maxSlippageBps, BPS);
+            uint256 required = Math.mulDiv(
+                _fairOut(s.tokenIn, s.tokenOut, s.amount, Math.Rounding.Ceil), BPS - maxSlippageBps, BPS, Math.Rounding.Ceil
+            );
             if (s.limit < required) revert PriceTooLow(s.limit, required);
         } else {
             _requireMaxIn(s.tokenIn, s.limit);
-            uint256 allowed = Math.mulDiv(_fairOut(s.tokenOut, s.tokenIn, s.amount), BPS + maxSlippageBps, BPS);
+            uint256 allowed =
+                Math.mulDiv(_fairOut(s.tokenOut, s.tokenIn, s.amount, Math.Rounding.Floor), BPS + maxSlippageBps, BPS);
             if (s.limit > allowed) revert PriceTooHigh(s.limit, allowed);
         }
     }
@@ -326,10 +352,20 @@ contract DexGuard is IEPKGuard {
         if (amount > max) revert AmountTooLarge(token, amount, max);
     }
 
-    /// @dev Value of `amountIn` of `tokenIn`, expressed in `tokenOut`, at feed prices.
-    function _fairOut(address tokenIn, address tokenOut, uint256 amountIn) internal view returns (uint256) {
-        uint256 value = Math.mulDiv(amountIn, _price(tokenIn), 10 ** _tokens[tokenIn].tokenDecimals);
-        return Math.mulDiv(value, 10 ** _tokens[tokenOut].tokenDecimals, _price(tokenOut));
+    /// @dev Value of `amountIn` of `tokenIn`, expressed in `tokenOut`, at feed prices, rounded in the
+    ///      direction that favours the vault (up for a minimum output, down for a maximum input).
+    function _fairOut(address tokenIn, address tokenOut, uint256 amountIn, Math.Rounding r)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 value = Math.mulDiv(amountIn, _price(tokenIn), 10 ** _tokens[tokenIn].tokenDecimals, r);
+        return Math.mulDiv(value, 10 ** _tokens[tokenOut].tokenDecimals, _price(tokenOut), r);
+    }
+
+    /// @dev The `to` of `transferFrom(from, to, amount)`.
+    function _secondAddress(bytes calldata args) internal pure returns (address to) {
+        (, to) = abi.decode(args, (address, address));
     }
 
     // slither-disable-start timestamp,unused-return
@@ -411,12 +447,16 @@ contract DexGuard is IEPKGuard {
         bytes4 sel = bytes4(data[:4]);
         if (sel == EXACT_INPUT_SINGLE) {
             ExactInputSingleParams memory p = abi.decode(data[4:], (ExactInputSingleParams));
+            if (p.sqrtPriceLimitX96 != 0) revert PriceLimitNotAllowed();
             (s.tokenIn, s.tokenOut, s.recipient, s.deadline) = (p.tokenIn, p.tokenOut, p.recipient, p.deadline);
             (s.amount, s.limit, s.exactIn) = (p.amountIn, p.amountOutMinimum, true);
             _requireListed(p.tokenIn);
             _requireListed(p.tokenOut);
         } else if (sel == EXACT_OUTPUT_SINGLE) {
             ExactOutputSingleParams memory p = abi.decode(data[4:], (ExactOutputSingleParams));
+            // with a price limit the real SwapRouter may stop early: deliver less than amountOut while
+            // still charging up to amountInMaximum — the price check above would then mean nothing
+            if (p.sqrtPriceLimitX96 != 0) revert PriceLimitNotAllowed();
             (s.tokenIn, s.tokenOut, s.recipient, s.deadline) = (p.tokenIn, p.tokenOut, p.recipient, p.deadline);
             (s.amount, s.limit) = (p.amountOut, p.amountInMaximum);
             _requireListed(p.tokenIn);
