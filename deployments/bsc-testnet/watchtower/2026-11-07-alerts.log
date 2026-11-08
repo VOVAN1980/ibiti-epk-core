@@ -1,4 +1,0 @@
-2026-11-07 14:05:17 UTC [INFO] watching vault 0xb2166241d29c50f4678aebb5061504ee562fa340 on chain 97; guardian 0xD1e73f683515D4A7a26D06AD6b0c64C62d4C7Fa0 (confirmed by the vault); 1 approved change(s); live
-2026-11-07 14:05:33 UTC [CRITICAL] UNEXPECTED change scheduled by 0xa2bd166173925e5b8e640f091b0f3becbbbe15f8: allow payments to a new address: addDestination(0x000000000000000000000000000000000000bad1); would take effect 2026-11-07 15:05 UTC — cancelling 0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6
-2026-11-07 14:05:36 UTC [CRITICAL] STOPPED: unexpected change 0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6 cancelled — tx 0x6b0875eba8f33b562ea4d0fbd2853eda20b87b3e4901e8a79c745b32f4211714
-2026-11-07 14:05:39 UTC [INFO] change 0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6 cancelled by 0xd1e73f683515d4a7a26d06ad6b0c64c62d4c7fa0

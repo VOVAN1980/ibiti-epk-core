@@ -1,7 +1,7 @@
 # EPK Watchtower
 
-An automatic guardian for an EPK v2 vault. Status: **working on BSC Testnet** (live demo on
-2026-11-07, see below); not audited; licensed under BUSL-1.1 like the rest of EPK v2.
+An automatic guardian for an EPK v2 vault. Status: **working on BSC Testnet** (live demo
+below); not audited; licensed under BUSL-1.1 like the rest of EPK v2.
 
 ## Why it exists
 
@@ -52,27 +52,25 @@ python -m unittest discover -s watchtower -p "test_*.py" -v                     
   `TELEGRAM_CHAT_ID` set (environment or `.env`) also to Telegram.
 - Progress is kept in `watchtower/state.json`, so a restart continues where it stopped.
 
-## Live demo on BSC Testnet (2026-11-07) — "the admin key was stolen"
+## Live demo on BSC Testnet — "the admin key was stolen"
 
-1. The Watchtower watches the demo vault `0xB2166241…A340` with the guardian2 key; the only approved
-   change is the planned upgrade to release 2.0.1.
-   (That upgrade was later cancelled, so `config.bsc-testnet.json` now pre-approves nothing: every
-   scheduled change is treated as unexpected.)
+1. The Watchtower watches the demo vault `0x14026E45…43fa` (EPKVault 2.2.0) with the guardian2 key;
+   `config.bsc-testnet.json` pre-approves nothing, so every scheduled change is treated as unexpected.
 2. An attacker who holds the **real admin key** schedules `addDestination(0xBAD1)` — the one change
    that would let money leave the vault for their own address
-   ([0x7aa83e7b…](https://testnet.bscscan.com/tx/0x7aa83e7bf27bcb13b6a6f28f2a211dfa77b828d86dd956788537e366c4230218), block 141354342).
-3. The Watchtower cancels it **5 blocks (about 3–4 seconds) later**
-   ([0x6b0875eb…](https://testnet.bscscan.com/tx/0x6b0875eba8f33b562ea4d0fbd2853eda20b87b3e4901e8a79c745b32f4211714), block 141354347).
+   ([0x0c13847e…](https://testnet.bscscan.com/tx/0x0c13847ef76301c7de2b5cc594c973449b88495ea3aabd70422319436ded6a44), block 141578898).
+3. The Watchtower cancels it **4 blocks (about 11 seconds) later**
+   ([0x22c88ddb…](https://testnet.bscscan.com/tx/0x22c88ddbab659a89bb9b0e955f54d998e0df692add738f03e7036a4132c559b9), block 141578902).
 4. The attacker tries to execute the change anyway and is rejected with `UnknownOperation()` — the
    change no longer exists (proven by the execution trace of that transaction;
-   [0x3c6846b8…](https://testnet.bscscan.com/tx/0x3c6846b88003723f973912493a364a6f3c1797e983b6ad5e09e937c23ca29f1a)).
+   [0x8ae785d2…](https://testnet.bscscan.com/tx/0x8ae785d2cdf7b1919e3897d5fb3c0d73734519514bc0ab3e06e1c1ea6c628144)).
    `0xBAD1` never became an allowed destination; the vault balance stayed 9,940 eUSD.
 
-The Watchtower's own log of that run: `deployments/bsc-testnet/watchtower/2026-11-07-alerts.log`.
-All of it is re-checked by `scripts/v2/verify_evidence.py` (steps W1–W3).
+The Watchtower's own log of that run: `deployments/bsc-testnet/watchtower/2026-11-08-alerts.log`.
+All of it is re-checked by `scripts/v2/verify_evidence.py` (steps W1–W3, [`docs/TESTNET_V2.md`](../docs/TESTNET_V2.md)).
 
-Rehearsed first on a local fork: the attack above, the approved 2.0.1 upgrade (left alone), and a
-burst of three unexpected changes (each cancelled, then `panic`).
+Rehearsed on a local fork as well: the attack above, an approved upgrade (left alone), and a burst of
+three unexpected changes (each cancelled, then `panic`).
 
 ## Not yet
 

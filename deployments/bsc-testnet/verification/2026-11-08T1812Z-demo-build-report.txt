@@ -1,0 +1,187 @@
+EPK v2 evidence check — nodes, asked in this order (the next one only when a node has no answer):
+  1. https://bsc-testnet.bnbchain.org
+  2. https://97.rpc.thirdweb.com
+  3. https://bsc-testnet-rpc.publicnode.com
+
+Network
+  OK   chainId 97 (expected 97, BSC Testnet)
+
+Document vs evidence file
+  OK   docs/TESTNET_V2.md and deployments/bsc-testnet/epk-v2-evidence.json list the same 18 transactions
+  OK   every contract linked in the document is in the evidence file
+
+Contracts and bytecode
+  OK   0xD5cb4eB76cBABF55769f8c4ebfFb13754b1E5Ffd  EPKVault 2.2.0 implementation: has code (24,102 bytes)
+  OK   code hash 0xbb4d089a2299025c9118e70a248f16ef97015ae6db9937d2032586db0293be01 = recorded 0xbb4d089a22...
+  OK   registry pins this exact code hash (version 20200, revoked: False)
+         usable by vaults from 2026-11-08 14:28 UTC
+  OK   vaultVersion() = 20200 (claimed 20200)
+  OK   bytecode equals this repository's build (out/EPKVault.sol/EPKVault.json, immutables masked)
+  OK   0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db  EPKRegistry (5-minute test-network release window): has code (2,228 bytes)
+  OK   code hash 0xbbd98e762333270989f783029a4bb6f21fe51c7572dbe19c4bdeec37168e86d3 = recorded 0xbbd98e7623...
+  OK   0xA128110b6C89E3A55E1F7815b75D48fcb124EB48  EPKVaultFactory for 2.2.0 — the SDK's public factory: has code (2,331 bytes)
+  OK   code hash 0xbfac363eaa385cd52d14afbd8df83035c6786a1b460e6e5a3cc45be3520748e5 = recorded 0xbfac363eaa...
+  OK   bytecode equals this repository's build (out/EPKVaultFactory.sol/EPKVaultFactory.json, immutables masked)
+  OK   0x84649B8cb58A572a9DA6F00b24D1Dc6412443d8b  EPK Demo USD (eUSD) test token: has code (1,813 bytes)
+  OK   code hash 0x68724c5bdcefd3acc796b2a88ae111701eb10c530ce56c7d0e678c97f05d87b0 = recorded 0x68724c5bdc...
+  OK   0x14026E45D119Af294cFb48Ddf7904299641a43fa  Demo vault (customer proxy): has code (137 bytes)
+  OK   code hash 0xbbd05a6174f795dd16a7fd962265e0f298b9f90266c1f8667c47b923525586da = recorded 0xbbd05a6174...
+  OK   EIP-1967 implementation slot -> implementation_2_2_0 (0xd5cb4eb76cbabf55769f8c4ebffb13754b1e5ffd)
+  OK   bytecode equals this repository's build (out/EPKVaultFactory.sol/EPKVaultProxy.json, immutables masked)
+
+Transactions
+  1   0xb85ce98b12...  admin creates the demo vault through the public 2.2.0 factory
+         block 141570475, 2026-11-08 17:06:33 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to factory
+  OK   succeeded on-chain
+  OK   event VaultCreated from factory
+  2   0x97369512c1...  setup finalized: 1,000 eUSD/day vault limit, 100 eUSD/day per agent session, only the treasury allowed
+         block 141570538, 2026-11-08 17:07:02 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event SetupFinalized from vault
+  3a  0x10abd71078...  session manager opens an AI-agent session (3 days)
+         block 141570608, 2026-11-08 17:07:33 UTC
+  OK   sent by sessionManager (0xbb99385fcf813f59d86d53f454755d48d019f862) to vault
+  OK   succeeded on-chain
+  OK   event SessionOpened from vault
+  3b  0x924b580aca...  the agent pays 50 eUSD to the treasury on its own
+         block 141570613, 2026-11-08 17:07:35 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Outflow from vault, amounts 50 / 950 eUSD
+  OK   event Transfer from token, amounts 50 eUSD
+  4a  0xfe9abf4f64...  agent pays 60 eUSD with 50 left in its budget
+         block 141570624, 2026-11-08 17:07:40 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 119,250 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 17:07:43 UTC): this exact tx reverted with BudgetExceeded(token, 60 eUSD, 50.0058 eUSD)
+  4b  0x87f30d89c2...  agent pays to a non-allowlisted address
+         block 141570634, 2026-11-08 17:07:45 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 60,789 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 17:07:48 UTC): this exact tx reverted with DestinationNotAllowed(0x000000000000000000000000000000000000dead)
+  4c  0x6477643746...  agent calls approve (not in its envelope)
+         block 141570648, 2026-11-08 17:07:51 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 56,042 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 17:07:52 UTC): this exact tx reverted with CallNotAllowed()
+  4d  0x8d2f5df097...  batch signed by a key that is not the session key
+         block 141570656, 2026-11-08 17:07:55 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 70,412 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 17:07:57 UTC): this exact tx reverted with BadSignature()
+  4e  0x3efe865251...  a stranger submits the agent's valid signature
+         block 141570666, 2026-11-08 17:07:59 UTC
+  OK   sent by guardian2 (0xd1e73f683515d4a7a26d06ad6b0c64c62d4c7fa0) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 50,998 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 17:08:02 UTC): this exact tx reverted with AgentNotAllowed()
+  5a  0x46f714babe...  a guardian presses panic: everything stops at once
+         block 141570710, 2026-11-08 17:08:19 UTC
+  OK   sent by guardian1 (0xcd3951cdfab38c628a7396812c78c7f3d7c35f70) to vault
+  OK   succeeded on-chain
+  OK   event Paused from vault
+  OK   event EpochBumped from vault
+  5b  0xb0370b40b7...  admin schedules unpause through the timelock (1 hour)
+         block 141570720, 2026-11-08 17:08:24 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event OperationScheduled from vault
+  6a  0x113264bd86...  admin executes the timelocked unpause (1 hour after the panic)
+         block 141578798, 2026-11-08 18:08:59 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event Unpaused from vault
+  OK   event OperationExecuted from vault
+  6b  0x6990470c2a...  session manager opens a new agent session
+         block 141578804, 2026-11-08 18:09:02 UTC
+  OK   sent by sessionManager (0xbb99385fcf813f59d86d53f454755d48d019f862) to vault
+  OK   succeeded on-chain
+  OK   event SessionOpened from vault
+  6c  0x8524fb183b...  the agent pays 10 eUSD through the new session
+         block 141578809, 2026-11-08 18:09:04 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Outflow from vault, amounts 10 eUSD
+  OK   event Transfer from token, amounts 10 eUSD
+  6f  0x31f631a470...  the agent tries to pay through the old (pre-panic) session
+         block 141578820, 2026-11-08 18:09:09 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 43,409 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 18:09:11 UTC): this exact tx reverted with PolicyInactive()
+  W1  0x0c13847ef7...  attacker with the stolen admin key schedules addDestination(0xBAD1)
+         block 141578898, 2026-11-08 18:09:44 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event OperationScheduled from vault
+  W2  0x22c88ddbab...  the Watchtower (guardian2 key) cancels it, 4 blocks later
+         block 141578902, 2026-11-08 18:09:46 UTC
+  OK   sent by guardian2 (0xd1e73f683515d4a7a26d06ad6b0c64c62d4c7fa0) to vault
+  OK   succeeded on-chain
+  OK   event OperationCancelled from vault
+  W3  0x8ae785d2cd...  attacker tries to execute the change anyway
+         block 141578944, 2026-11-08 18:10:05 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 41,703 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 18:10:07 UTC): this exact tx reverted with UnknownOperation()
+
+Checkpoints — the vault at fixed blocks
+  STATE  = historical state read from a node (most free nodes keep it only for recent blocks)
+  EVENTS = derived from event logs, when no node asked keeps the state
+  block 141570547: setup done, vault funded
+  OK   STATE (97.rpc.thirdweb.com) paused = False
+  OK   STATE (97.rpc.thirdweb.com) implementation = implementation_2_2_0
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 10,000
+  OK   STATE (97.rpc.thirdweb.com) vault limit left today (eUSD) = 1,000
+  block 141570613: right after the agent's 50 eUSD payment
+  OK   STATE (97.rpc.thirdweb.com) paused = False
+  OK   STATE (97.rpc.thirdweb.com) implementation = implementation_2_2_0
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,950
+  OK   STATE (97.rpc.thirdweb.com) vault limit left today (eUSD) = 950
+  OK   STATE (97.rpc.thirdweb.com) agent session budget left (eUSD) = 50
+  block 141570666: after all 5 attacks (nothing moved)
+  OK   STATE (97.rpc.thirdweb.com) paused = False
+  OK   STATE (97.rpc.thirdweb.com) implementation = implementation_2_2_0
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 141570709: one block before the panic
+  OK   STATE (97.rpc.thirdweb.com) paused = False
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 141570710: panic block
+  OK   STATE (97.rpc.thirdweb.com) paused = True
+  OK   STATE (97.rpc.thirdweb.com) implementation = implementation_2_2_0
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 141578797: one block before the timelocked unpause
+  OK   STATE (97.rpc.thirdweb.com) paused = True
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 141578798: unpause block
+  OK   STATE (97.rpc.thirdweb.com) paused = False
+  OK   STATE (97.rpc.thirdweb.com) implementation = implementation_2_2_0
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 141578809: right after the new session's 10 eUSD payment
+  OK   STATE (97.rpc.thirdweb.com) paused = False
+  OK   STATE (97.rpc.thirdweb.com) implementation = implementation_2_2_0
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,940
+  OK   STATE (97.rpc.thirdweb.com) agent session budget left (eUSD) = 90
+  block 141578820: after the old session's attempt (nothing moved)
+  OK   STATE (97.rpc.thirdweb.com) paused = False
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,940
+  block 141578944: after the attacker's attempt (nothing moved, still unpaused)
+  OK   STATE (97.rpc.thirdweb.com) paused = False
+  OK   STATE (97.rpc.thirdweb.com) implementation = implementation_2_2_0
+  OK   STATE (97.rpc.thirdweb.com) vault eUSD balance = 9,940
+
+Attack windows (vault balance before the first and after the last attack)
+  OK   STATE (97.rpc.thirdweb.com) attacks 4a-4e: blocks 141570613..141570666, 9,950 -> 9,950 eUSD, moved out: 0
+  OK   STATE (97.rpc.thirdweb.com) old-session attempt 6f: blocks 141578809..141578820, 9,940 -> 9,940 eUSD, moved out: 0
+  OK   STATE (97.rpc.thirdweb.com) stolen admin key W1-W3: blocks 141578897..141578944, 9,940 -> 9,940 eUSD, moved out: 0
+
+Demo vault now
+  implementation implementation_2_2_0 (0xd5cb4eb76cbabf55769f8c4ebffb13754b1e5ffd), vaultVersion 20200
+  paused: False
+  eUSD balance: 9,940
+
+Rejection reasons proven by execution trace (STRICT): 7, by historical replay (REPLAY): 0
+Answers per node: bsc-testnet.bnbchain.org 67, 97.rpc.thirdweb.com 37, bsc-testnet-rpc.publicnode.com 0
+RESULT: 113 checks OK, 0 mismatches, 0 not checkable, 0 need an archive node (OLD: history no node asked still keeps) — everything checkable matches the evidence
