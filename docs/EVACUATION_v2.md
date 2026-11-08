@@ -1,7 +1,10 @@
 # Emergency evacuation to the owner's cold wallet — design and threat model
 
-Status: **design agreed by the owner on 2026-11-08** (option C, §4; both decisions of §8 "yes"); implementation
-for vault release 2.3.0 in progress (roadmap item 6a). Nothing here is deployed. It ships to BSC Testnet only with
+Status: **design agreed by the owner on 2026-11-08** (option C, §4; both decisions of §8 "yes"); **implemented in
+this repository for vault release 2.3.0** (roadmap item 6a): the `EPKVaultEmergency` module, 22 tests in
+`test/v2/EPKVault.evacuation.t.sol` (attacks E1–E11, the size guard; E12 is the existing rule that ordinary
+operations die with an upgrade), the Watchtower's COLD WALLET CHANGE alarm and the SDK's vault ABI. Nothing here
+is deployed yet. It ships to BSC Testnet only with
 the attack tests of §7, and before any mainnet it must pass an independent security review.
 
 Evacuation is an emergency function for a hack or a loss of control. Ordinary withdrawals never need it: they
@@ -89,15 +92,20 @@ job. If the extra role costs too much code size (§6), fall back to A, not B.
 `EPKVault` 2.3.0 is **24,145 bytes**; the EIP-170 limit is 24,576. **431 bytes** remain. Evacuation needs new
 storage, two functions, a loop over the tracked assets and two events — plausibly 400–700 bytes.
 
-Plan:
+**Measured (2026-11-08):** with evacuation inside the vault, `EPKVault` is 25,587 bytes — 1,011 over the
+limit. So the code lives in a module:
 
-1. **Size prototype first.** Implement §2 in the vault and measure. If it fits with a safety margin
-   (≥ 100 bytes), keep it in the vault.
-2. **If it does not fit:** an extension contract called with `delegatecall` for a fixed list of rarely used
-   functions (evacuation, cold-wallet setup). Its address is set in the implementation's constructor and its
-   code hash is checked there, so the registry's pin of the implementation covers the extension too. This is a
-   larger change and gets its own review.
-3. Never by removing protections or the views the SDK and scripts rely on (`getExecuteDigest`, …).
+- `EPKVaultLayout` holds the vault's storage (unchanged slots, append-only); `EPKVault` and the new
+  `EPKVaultEmergency` both inherit it, so they always agree on every slot.
+- Each implementation **deploys its own `EPKVaultEmergency` in its constructor** and keeps the address as an
+  immutable. The module is therefore part of the same release: the registry's pin of the implementation fixes
+  the address, and the code at that address was created by the implementation's own creation code (checked
+  byte for byte against this repository's build like every contract in the evidence).
+- `evacuate`, `setColdWallet` and `setEvacuator` are called **on the vault** (interface `IEPKVaultEmergency`,
+  in the SDK's vault ABI). The vault has no code of its own for them: its fallback runs the module's code on the
+  vault's storage (`delegatecall`); the module has no other functions, so any other unknown call still reverts.
+  Called directly, the module has no admin, no cold wallet and no assets, so every call fails.
+- Never by removing protections or the views the SDK and scripts rely on (`getExecuteDigest`, …).
 
 Storage: `coldWallet` is appended after all existing storage (the layout stays append-only, checked against the
 `storageLayout` of 2.2.0). Vaults upgrading from 2.0–2.2 start with no cold wallet: evacuation stays off until

@@ -128,6 +128,12 @@ class Decisions(unittest.TestCase):
         self.assertEqual(kinds(acts), ["alert", "alert", "cancel"])
         self.assertIn("RECOVERY KEY REPLACEMENT", acts[1][2])
 
+    def test_cold_wallet_change_raises_the_alarm(self):
+        data = "0x" + wt.selector("setColdWallet(address)")[2:] + wt.word(ATTACKER)
+        acts = wt.decide(scheduled_log(data, STOLEN_SALT), EXPECTED, fresh_state(), 0, POLICY)
+        self.assertEqual(kinds(acts), ["alert", "alert", "cancel"])
+        self.assertIn("COLD WALLET CHANGE", acts[1][2])
+
     def test_unpause_rearms_panic(self):
         st = fresh_state()
         st["panicked"] = True

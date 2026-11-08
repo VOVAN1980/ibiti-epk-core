@@ -102,6 +102,8 @@ TIMELOCKED = {
     "untrackAsset(address)": "stop limiting a token",
     "setAdmin(address)": "replace the vault admin",
     "setRecovery(address)": "replace the recovery key",
+    "setColdWallet(address)": "CHANGE THE COLD WALLET evacuation sends all funds to",
+    "setEvacuator(address)": "change who may evacuate the vault to its cold wallet",
     "setGuardian(address,bool)": "add or remove a guardian",
     "replaceGuardian(address,address)": "replace a guardian",
     "setDelay(uint256)": "change the timelock delay",
@@ -222,6 +224,10 @@ def decide(log, expected, state, now, policy):
             acts.append(("alert", "critical", f"GUARDIAN REMOVAL of {removed}: that guardian cannot veto its own removal "
                                               f"(and a panic does not stop it) — ANOTHER guardian or the owner must cancel "
                                               f"{op['id']} before {when}"))
+        if op["data"][:10].lower() == selector("setColdWallet(address)"):
+            acts.append(("alert", "critical", f"COLD WALLET CHANGE: if it went through, an evacuation would send every "
+                                              f"tracked asset to the new address — a guardian or the owner must make sure "
+                                              f"{op['id']} is cancelled before {when}"))
         if op["data"][:10].lower() == selector("setRecovery(address)"):
             acts.append(("alert", "critical", f"RECOVERY KEY REPLACEMENT: from vault 2.2.0 the recovery key cannot veto it — "
                                               f"a guardian or the owner must cancel {op['id']} before {when}"))
