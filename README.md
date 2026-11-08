@@ -168,8 +168,8 @@ Configuration lives in `.env` (copy `.env.example`); `.env` is git-ignored — *
 
 - **EPK v2** — `contracts/v2/`, `test/v2/`, `scripts/v2/`, `watchtower/`: **IBITI Labs EPK License 1.0**
   ([LICENSE-EPK](LICENSE-EPK)), source-available. Free for study, audits, test networks, hackathons
-  (including a small, time-limited demo on a main network), education, research and evaluation;
-  protecting real assets requires a commercial license. It does not turn into an open-source license
+  (prizes and grants included), education, research and evaluation; anything with real assets —
+  including any main-network deployment — requires a commercial license. It does not turn into an open-source license
   by itself.
 - **Everything else** — the SDK code, documentation, the website and the testnet evidence: **MIT** ([LICENSE](LICENSE)).
 

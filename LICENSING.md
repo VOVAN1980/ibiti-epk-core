@@ -45,9 +45,11 @@ there is no change date.
 - Evaluation inside a company, to decide on a commercial license.
 - Share the code or your changes — only under the same license, with the license text, the copyright notice
   and a note of what you changed.
-- **Hackathon demos on a main network**: a hackathon submission built with EPK may be deployed on a main
-  network to show it during the event and its judging — up to USD 100 of assets in total, for at most
-  90 days, clearly marked as a demo, not offered to the public as a product.
+- **Prizes, grants and awards** won with a hackathon, competition or research project built on EPK are
+  allowed; they do not make the use commercial by themselves.
+
+All free uses are on test networks and local chains only. **Nothing with real value is free** — not even a
+hackathon demo on a main network: if an event requires one, ask the Licensor for written permission.
 
 ### Requires a commercial license
 
@@ -57,6 +59,9 @@ there is no change date.
 - Offering EPK v2, a derivative or a service built on it to others — for a fee, as part of a commercial
   product, or as a hosted or managed service (including a hosted Watchtower).
 - Distributing it under any other license.
+
+The license limits only those who receive the code. It does not limit IBITI Labs: we use, deploy, license
+and sell EPK, enter it into hackathons and grant programmes, and take prizes, grants and investment for it.
 
 ## Commercial licensing
 
@@ -72,12 +77,13 @@ Commercial licenses are granted case by case and in writing by the Licensor.
 
 Contributions to `contracts/v2/`, `test/v2/`, `scripts/v2/` or `watchtower/` are accepted under the EPK
 License: by submitting one you confirm that you have the right to do so and that the Licensor may use and
-license it under any terms, including commercial licenses (section 5 of [`LICENSE-EPK`](LICENSE-EPK)).
+license it under any terms, including commercial licenses (section 6 of [`LICENSE-EPK`](LICENSE-EPK)).
 Contributions elsewhere are under MIT.
 
 ## Note for hackathons
 
-Hackathon use is free, explicitly, including a small, time-limited demo on a main network (see above).
-The EPK License is source-available, not an OSI-approved open-source license. For an event that requires
+Hackathon use on test networks is free, explicitly, and prizes and grants won with it are allowed. A
+deployment on a main network needs the Licensor's written permission. The EPK License is source-available,
+not an OSI-approved open-source license. For an event that requires
 an OSI license, the MIT parts — the SDK, the documentation and your own application code — can be
 submitted as they are; for anything else, contact the Licensor.

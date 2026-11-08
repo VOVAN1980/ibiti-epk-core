@@ -45,16 +45,22 @@ royalty-free license to:
      whether to obtain a commercial license;
   d) share the Software and Derivatives, in source or compiled form, only under this same
      license: include this license text and the copyright notice, state clearly what you changed,
-     and do not grant anyone more rights than this license grants you;
-  e) deploy a hackathon submission built with the Software on a main network, only to
-     demonstrate it during the event and its judging, if: all deployments of that submission
-     together never hold, control or secure Real Value worth more than USD 100; each deployment
-     ends (holds no assets) within 90 days after it is made; it is not offered to the public as a
-     product or service; and it is clearly marked as a hackathon demonstration.
+     and do not grant anyone more rights than this license grants you.
 
-3. What requires a commercial license
+None of these free uses includes any use with Real Value. In particular, a deployment on a main
+network is never free, also not for a hackathon: if an event requires one, ask the Licensor for
+written permission.
 
-Anything not permitted in section 2 requires a written commercial license from the Licensor, in
+3. Prizes, grants and awards
+
+Receiving a prize, grant, award, scholarship or investment for a hackathon, competition, grant
+programme or research project built with the Software is permitted and does not by itself make
+that use commercial. Any later use of such a project with Real Value, or as a product or service,
+still requires a commercial license.
+
+4. What requires a commercial license
+
+Anything not permitted in sections 2 and 3 requires a written commercial license from the Licensor, in
 particular:
 
   a) any Production Use of the Software or a Derivative;
@@ -64,43 +70,48 @@ particular:
 
 Commercial licenses are granted only in writing by the Licensor: info@ibiticoin.com.
 
-4. No automatic change of license
+5. No automatic change of license; the Licensor
 
 This license does not convert into any open-source or other license on any date or event. Only
 the Licensor can decide to offer the Software, or a specific version of it, under other terms.
 
-5. Contributions
+This license limits only those who receive the Software from the Licensor. It does not limit the
+Licensor in any way: the Licensor may use, deploy, license, sell and commercialize the Software,
+enter it into hackathons, competitions and grant programmes, receive prizes, grants and
+investment for it, and grant commercial licenses on any terms.
+
+6. Contributions
 
 If you submit a contribution to the Software (code, documentation, tests or other material), you
 confirm that you have the right to do so, and you grant the Licensor a perpetual, worldwide,
 irrevocable, royalty-free license to use, modify and license your contribution under any terms,
 including this license and commercial licenses.
 
-6. Patents
+7. Patents
 
 The Licensor grants you a license under any patents the Licensor owns or controls, to the extent
 they are necessarily infringed by the Software, only for the uses that this license permits. If
 you start a legal claim that the Software infringes a patent, all your rights under this license
 end at once.
 
-7. Names and trademarks
+8. Names and trademarks
 
 This license grants no rights to the names "IBITI", "IBITI Labs" or "EPK" or to any logo of the
 Licensor, except to state truthfully where the Software comes from. A Derivative must not be
 presented as an official product of the Licensor.
 
-8. Termination
+9. Termination
 
 If you break this license, your rights under it end automatically. If it is the first time and
 you stop the violation within 30 days after the Licensor notifies you, your rights are restored.
-Sections 5, 9 and 10 survive termination.
+Sections 6, 11 and 12 survive termination.
 
-9. Third-party components
+10. Third-party components
 
 Third-party code used by the Software (for example the libraries in lib/) remains under its own
 license. This license does not change those licenses.
 
-10. No warranty, limitation of liability
+11. No warranty, limitation of liability
 
 The Software is provided "as is", without any warranty, express or implied, including fitness for
 a particular purpose and non-infringement. The Software has not been independently audited;
@@ -108,7 +119,7 @@ smart contracts can lose funds. To the maximum extent permitted by applicable la
 is not liable for any damages arising from the Software or its use; this does not limit
 liability that cannot be excluded by law, such as liability for intent or gross negligence.
 
-11. Governing law
+12. Governing law
 
 This license is governed by the laws of the Federal Republic of Germany, excluding the United
 Nations Convention on Contracts for the International Sale of Goods (CISG). If any provision is
