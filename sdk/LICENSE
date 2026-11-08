@@ -26,10 +26,10 @@ EPK SDK — license scope
 The TypeScript source and compiled JavaScript of this SDK are licensed under the MIT License above.
 
 The compiled EPK v2 contract bytecode shipped in dist/v2/abi/*Bytecode.js (DexGuard, ThreatFeedGuard,
-CompositeGuard) is part of EPK v2 and is licensed under the Business Source License 1.1
-(https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSE-BUSL-1.1): free for development,
-public test networks, hackathons, education, research and security review; using it to hold, control
-or secure assets of real economic value requires a commercial license from the Licensor
-(info@ibiticoin.com). See LICENSING.md in the repository.
+CompositeGuard) is part of EPK v2 and is licensed under the IBITI Labs EPK License 1.0
+(https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSE-EPK): free for development, public
+test networks, hackathons, education, research, security review and evaluation; using it to hold,
+control, secure, move or monitor assets of real value requires a commercial license from the
+Licensor (info@ibiticoin.com). See LICENSING.md in the repository.
 
 PREVIEW: EPK v2 has not been independently audited. Do not use this SDK or EPK v2 with real funds.

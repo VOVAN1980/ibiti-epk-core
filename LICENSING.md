@@ -1,10 +1,10 @@
 # Licensing
 
-This repository contains components under **two different licenses**. This page explains which
-files are covered by which license and what that means in practice. The license files themselves
-are authoritative: [`LICENSE`](LICENSE) (MIT) and [`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)
-(Business Source License 1.1). If anything here conflicts with them, the license files prevail.
-This page is an explanation, not legal advice.
+This repository contains components under **two licenses**. This page explains which files are
+covered by which license and what that means in practice. The license files themselves are
+authoritative: [`LICENSE`](LICENSE) (MIT) and [`LICENSE-EPK`](LICENSE-EPK) (IBITI Labs EPK License 1.0).
+If anything here conflicts with them, the license files prevail. This page is an explanation, not
+legal advice.
 
 ## Rights holder
 
@@ -15,51 +15,48 @@ refers to the same rights holder.
 
 | Component | Paths | License |
 |---|---|---|
-| TypeScript SDK | `sdk/` | **MIT** ([`LICENSE`](LICENSE)); the guard bytecode it bundles is EPK v2 code (BUSL-1.1), see `sdk/LICENSE` |
+| **EPK v2** — EPKVault, EPKVaultEmergency, EPKVaultProxy, EPKVaultFactory, EPKRegistry, EPKChains, guard modules (DexGuard, ThreatFeedGuard, CompositeGuard) | `contracts/v2/` | **EPK License** ([`LICENSE-EPK`](LICENSE-EPK)) |
+| EPK v2 tests and mocks | `test/v2/` | **EPK License** |
+| EPK v2 deployment, demo and verification scripts | `scripts/v2/` | **EPK License** |
+| EPK Watchtower (automatic guardian) | `watchtower/` | **EPK License** |
+| TypeScript SDK | `sdk/` | **MIT**; the contract bytecode it bundles (DexGuard, ThreatFeedGuard, CompositeGuard) is EPK v2 code under the EPK License — see `sdk/LICENSE` |
 | Documentation and the website | `docs/`, `README.md`, other top-level `*.md` | MIT |
 | Testnet evidence (addresses, transactions, traces, reports) | `deployments/` | MIT |
-| **EPK v2** — EPKVault, EPKVaultProxy, EPKVaultFactory, EPKRegistry, EPKChains, guard modules (DexGuard, ThreatFeedGuard, CompositeGuard) | `contracts/v2/` | **BUSL-1.1** ([`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)) |
-| EPK v2 tests and mocks | `test/v2/` | **BUSL-1.1** |
-| EPK v2 deployment, demo and verification scripts | `scripts/v2/` | **BUSL-1.1** |
-| EPK Watchtower (automatic guardian) | `watchtower/` | **BUSL-1.1** |
 | Third-party libraries | `lib/` (e.g. OpenZeppelin Contracts) | their own licenses (OpenZeppelin: MIT) — not relicensed |
 
-Each Solidity file, and each Python file of EPK v2, states its license in its `SPDX-License-Identifier` header.
-Two files inside the BUSL folders keep their MIT header: `contracts/v2/IPolicyValidator.sol` (a plain validator
-interface) and `test/v2/MockTarget.sol` (a test helper).
-Everything already published under MIT stays under MIT permanently.
+Each Solidity file and each Python file of EPK v2 states its license in its `SPDX-License-Identifier`
+header (`LicenseRef-IBITI-EPK-1.0`). Two files inside these folders are MIT: `contracts/v2/IPolicyValidator.sol`
+(a plain validator interface) and `test/v2/MockTarget.sol` (a test helper).
 
-## EPK v2 under the Business Source License 1.1
+The EPK License applies from the commit that added [`LICENSE-EPK`](LICENSE-EPK); earlier commits keep the license
+they were published with.
 
-Parameters (see [`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)):
+## EPK v2 under the IBITI Labs EPK License
 
-| Parameter | Value |
-|---|---|
-| Licensor | Volodymyr Podkorytov (IBITI Labs) |
-| Licensed Work | EPK v2: the files in `contracts/v2/`, `test/v2/`, `scripts/v2/` and `watchtower/` |
-| Additional Use Grant | Deploy and use on public test networks, in hackathons, and for education, research and security review — as long as it does not hold, control or secure assets of real economic value |
-| Change Date | 2030-11-06 (or, for any version, the fourth anniversary of its first public release, whichever comes first) |
-| Change License | MIT |
+The code is public so that anyone can read and audit it, test it and build on it. Protecting real assets
+with it requires a commercial license. **The license never turns into an open-source license by itself** —
+there is no change date.
 
 ### Free, no permission needed
 
-- Read, study and audit the code; independent security reviews are welcome.
-- Copy, modify, fork and redistribute it under the same license.
-- Non-production use: development, testing, local and public **test networks**.
-- Hackathons, education, research, security review.
+- Read, study and audit the code; independent security reviews and bug bounties are welcome.
+- Copy, modify and run it, and build on it, on local chains and **public test networks**.
+- **Hackathons**, education, academic and independent research, security research.
+- Evaluation inside a company, to decide on a commercial license.
+- Share the code or your changes — only under the same license, with the license text, the copyright notice
+  and a note of what you changed.
+- **Hackathon demos on a main network**: a hackathon submission built with EPK may be deployed on a main
+  network to show it during the event and its judging — up to USD 100 of assets in total, for at most
+  90 days, clearly marked as a demo, not offered to the public as a product.
 
 ### Requires a commercial license
 
-- **Production use**: deploying or operating EPK v2 (or a derivative of it) on a main network, or in
-  any product or service, where it holds, controls or secures assets of real economic value
-  (e.g. customer vaults, treasuries, trading bots, wallets, custody, payment automation).
-- Offering EPK v2 or a derivative to third parties as a hosted or managed service.
-
-### On the Change Date
-
-Each version of EPK v2 automatically becomes available under the **MIT License** on its Change Date
-(at the latest four years after that version's first public release). New versions may carry a
-later Change Date.
+- **Production use**: any deployment or operation of EPK v2 or a derivative of it that holds, controls,
+  secures, moves or monitors assets of real value — on any main network, in any product or service
+  (customer vaults, treasuries, trading bots, wallets, custody, payment automation).
+- Offering EPK v2, a derivative or a service built on it to others — for a fee, as part of a commercial
+  product, or as a hosted or managed service (including a hosted Watchtower).
+- Distributing it under any other license.
 
 ## Commercial licensing
 
@@ -73,12 +70,14 @@ Commercial licenses are granted case by case and in writing by the Licensor.
 
 ## Contributions
 
-Contributions to `contracts/v2/`, `test/v2/`, `scripts/v2/` or `watchtower/` are accepted under BUSL-1.1 with the same
-parameters. By submitting a contribution you confirm that you have the right to do so and that
-the Licensor may also offer it under commercial licenses. Contributions elsewhere are under MIT.
+Contributions to `contracts/v2/`, `test/v2/`, `scripts/v2/` or `watchtower/` are accepted under the EPK
+License: by submitting one you confirm that you have the right to do so and that the Licensor may use and
+license it under any terms, including commercial licenses (section 5 of [`LICENSE-EPK`](LICENSE-EPK)).
+Contributions elsewhere are under MIT.
 
 ## Note for hackathons
 
-The Business Source License is a source-available license, not an OSI-approved open-source
-license. Hackathon participation is explicitly allowed by the Additional Use Grant; if an event
-strictly requires an OSI-approved license, contact the Licensor.
+Hackathon use is free, explicitly, including a small, time-limited demo on a main network (see above).
+The EPK License is source-available, not an OSI-approved open-source license. For an event that requires
+an OSI license, the MIT parts — the SDK, the documentation and your own application code — can be
+submitted as they are; for anything else, contact the Licensor.

@@ -269,7 +269,7 @@ cd ibiti-epk-core &amp;&amp; git checkout 223e56f   <span class="c-dim"># the co
 git checkout master -- scripts/v2/verify_evidence.py   <span class="c-dim"># today's checker: asks several public nodes</span>
 python scripts/v2/verify_evidence.py
 
-<span class="c-dim"># + byte-for-byte: on-chain code = open-source build</span>
+<span class="c-dim"># + byte-for-byte: on-chain code = the published source, compiled</span>
 forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
           <p class="card-text" style="margin-top:16px">Last run (2026-11-08): <b style="color:#fff">137 checks OK, 0 mismatches</b>;
             with <code>--build</code> the vault implementation, its emergency module, the factory and the vault proxy equal the repository's build.</p>
@@ -335,13 +335,14 @@ forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
         <h2>Open to learn from.<br>Fair to build a business on.</h2>
       </div>
       <div class="grid g3">
-        <article class="crystal hover lic reveal d1"><span class="eyebrow tone-blue">EPK v2 · BUSL-1.1</span><div class="price">Free to test</div>
-          <ul><li>Read the code, run it, build on it</li><li>Testnets, hackathons, education, research and security review</li></ul></article>
+        <article class="crystal hover lic reveal d1"><span class="eyebrow tone-blue">EPK v2 · source-available</span><div class="price">Free to test</div>
+          <ul><li>Read the code, audit it, run it, build on it</li><li>Testnets, hackathons, education, research and security review</li></ul></article>
         <article class="crystal hover lic reveal d2"><span class="eyebrow tone-violet">Production</span><div class="price">By agreement</div>
           <ul><li>Protecting real funds needs a commercial license from IBITI Labs</li><li>Pilot first, then a license that fits your volume</li></ul></article>
-        <article class="crystal hover lic reveal d3"><span class="eyebrow tone-green">Later</span><div class="price">MIT</div>
-          <ul><li>The current version becomes MIT on 2030-11-06; every version at the latest four years after its release</li><li>The SDK code, docs and testnet evidence are MIT already</li></ul></article>
+        <article class="crystal hover lic reveal d3"><span class="eyebrow tone-green">Open for builders</span><div class="price">MIT SDK</div>
+          <ul><li>The SDK, docs and testnet evidence are MIT: build your app on EPK freely</li><li>Hackathon teams may even demo on a main network (small, time-limited)</li></ul></article>
       </div>
+      <p class="lic-terms reveal">Exact terms: <a href="https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSE-EPK" target="_blank" rel="noopener">EPK License</a> · <a href="https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSING.md" target="_blank" rel="noopener">what it means in practice</a> · <a href="https://github.com/VOVAN1980/ibiti-epk-core/blob/master/sdk/LICENSE" target="_blank" rel="noopener">SDK license</a></p>
     </div>
   </section>
 
@@ -379,7 +380,7 @@ forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
     <div class="foot">
       <div>
         <a class="brand" href="./"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span>EPK <small>by IBITI Labs</small></span></a>
-        <p class="fine">© 2026 IBITI Labs (Volodymyr Podkorytov). EPK v2 is licensed under BUSL-1.1; the SDK code and docs under MIT.
+        <p class="fine">© 2026 IBITI Labs (Volodymyr Podkorytov). EPK v2 is source-available under the EPK License — production use by agreement; the SDK code and docs are MIT.
           Testnet demo with a test token; not audited yet; no investment advice.</p>
       </div>
       <nav aria-label="Footer">

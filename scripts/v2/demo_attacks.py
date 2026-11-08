@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: BUSL-1.1
+# SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
 """Send prepared EPK v2 attack transactions so that each one is rejected ON-CHAIN (evidence).
 
 Usage (from the repo root):

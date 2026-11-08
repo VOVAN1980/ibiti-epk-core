@@ -2,7 +2,7 @@
   "name": "@ibiti/epk-sdk",
   "version": "2.0.0-preview.1",
   "description": "PREVIEW (testnet only, not audited) — TypeScript SDK for EPK v2 vaults: per-customer vaults for AI agents and trading bots, agent sessions, guarded swaps (DexGuard), timelock, upgrades. Built on viem.",
-  "license": "MIT AND BUSL-1.1",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

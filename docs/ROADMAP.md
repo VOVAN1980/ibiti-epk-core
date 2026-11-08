@@ -10,8 +10,8 @@ Last updated: 2026-11-08.
 
 | Component | Status |
 |---|---|
-| **EPK v2** — `EPKVault` | The main version of this repository: 2.3 preview (release 2.3.0 on BSC Testnet since 2026-11-08: emergency evacuation to the owner's cold wallet, and a 5-minute minimum timelock on test networks, so nothing in testnet development waits an hour), BUSL-1.1, TypeScript SDK in `sdk/` (published on npm with the finished release). Not audited. **Live on BSC Testnet** with an end-to-end demo on 2.3.0 anyone can re-check (`docs/TESTNET_V2.md`, `docs/proof/`); not on mainnet. |
-| **EPK Watchtower** | Automatic guardian (`watchtower/`, BUSL-1.1). Working on BSC Testnet: cancelled a change scheduled with the stolen admin key 9 blocks (about 4 seconds) after it appeared, and an attempt to redirect the owner's cold wallet 6 blocks (about 3 seconds) after it appeared. |
+| **EPK v2** — `EPKVault` | The main version of this repository: 2.3 preview (release 2.3.0 on BSC Testnet since 2026-11-08: emergency evacuation to the owner's cold wallet, and a 5-minute minimum timelock on test networks, so nothing in testnet development waits an hour), EPK License (source-available), TypeScript SDK in `sdk/` (published on npm with the finished release). Not audited. **Live on BSC Testnet** with an end-to-end demo on 2.3.0 anyone can re-check (`docs/TESTNET_V2.md`, `docs/proof/`); not on mainnet. |
+| **EPK Watchtower** | Automatic guardian (`watchtower/`, EPK License). Working on BSC Testnet: cancelled a change scheduled with the stolen admin key 9 blocks (about 4 seconds) after it appeared, and an attempt to redirect the owner's cold wallet 6 blocks (about 3 seconds) after it appeared. |
 
 EPK v2 today:
 
@@ -34,7 +34,7 @@ EPK v2 today:
 | 5 | **Publication** | Merge to `master`, release tag, updated README, DoraHacks page and IBITI Labs website describing exactly this state | merged to `master` and websites updated (2026-11-08); release tag and DoraHacks page by the owner's decision |
 | 6 | **Emergency response** | Before any mainnet: (a) instant **evacuation** of a vault's funds to the owner's own cold wallet, registered long in advance (changing it is timelocked) — any protective role may trigger it, nobody can redirect it; (b) a **fast track for critical security fixes** that needs an independent security council's release flag **and** the vault's owner **and** its guardians — never IBITI alone. Design, threat model and attack tests first; (a) is drafted in [`EVACUATION_v2.md`](EVACUATION_v2.md). `EPKVault` is at the EIP-170 size limit, so new core code means moving logic into modules | (a) **on BSC Testnet since 2026-11-08** (release 2.3.0): attack tests, then the main demo evacuated under attack ([`TESTNET_V2.md`](TESTNET_V2.md) steps E1–E5); an independent security review before any mainnet. (b) planned (before the audit) |
 | 7 | **Independent audit** | Professional audit of the vault, sessions and upgrade path; public bug bounty | planned |
-| 8 | **Mainnet** | Only after the audit; commercial licenses for production use (BUSL-1.1, see `LICENSING.md`) | after the audit |
+| 8 | **Mainnet** | Only after the audit; commercial licenses for production use (EPK License, see `LICENSING.md`) | after the audit |
 
 Later: ERC-4337 / ERC-7579 smart-account integration, agent identity (ERC-8004), multi-chain deployments, B2B API.
 

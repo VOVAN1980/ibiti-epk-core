@@ -99,7 +99,7 @@ python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-guar
 ```
 
 Python 3 only — no Foundry, no keys. It checks the chain id, every contract's code hash (and, with
-`--build` after `forge build`, that the vault implementation, the factory, the vault proxy and the three
+`--build` after `git checkout 223e56f && forge build` — the source these contracts were built from —, that the vault implementation, the factory, the vault proxy and the three
 guards equal this repository's build), that the implementation is pinned in the registry and that the vault
 proxy points to it, every transaction's sender and target, the events and exact amounts of the successful
 steps, and the revert reason of every attack — **STRICT** from the execution traces saved in

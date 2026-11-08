@@ -74,7 +74,8 @@ cast call 0xe91bC5d529f8Faa73c431d912c574653206Bd8e6 "vaultVersion()(uint64)" --
 cast call 0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B "implementation()(address)" --rpc-url $R   # 0x214c7a5a…eA32
 ```
 
-Bytecode against this repository's build: `forge build`, then `python scripts/v2/verify_evidence.py --build` —
+Bytecode against this repository's build: `git checkout 223e56f && forge build` (the source these contracts were
+built from), then `python scripts/v2/verify_evidence.py --build` —
 the main demo's evidence lists the implementation, its emergency module, the factory and the vault proxy, and
 each must equal this repository's build byte for byte (immutables masked).
 
