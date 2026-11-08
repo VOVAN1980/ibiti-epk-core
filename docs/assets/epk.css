@@ -65,12 +65,13 @@ section { position: relative; padding: 96px 0; }
   font: 500 12px/1 var(--font-mono); letter-spacing: 0.22em; text-transform: uppercase;
   color: var(--primary-soft); margin: 0 0 16px;
 }
-h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; margin: 0; }
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
 h2 { font-size: clamp(30px, 4.2vw, 52px); line-height: 1.08; font-weight: 800; }
 h3 { font-size: 21px; line-height: 1.25; font-weight: 700; }
-.lead { color: var(--muted); font-size: clamp(16px, 1.6vw, 19px); max-width: 720px; margin: 18px 0 0; }
+.lead { color: var(--muted); font-size: clamp(16px, 1.6vw, 19px); max-width: 720px; margin: 18px 0 0; text-wrap: pretty; }
 .center { text-align: center; }
-.center .lead { margin-left: auto; margin-right: auto; }
+/* centred blocks: the paragraph itself sits in the middle, and its lines are of even length */
+.center .lead, .final .lead, .hero .lead { margin-left: auto; margin-right: auto; text-wrap: balance; }
 .section-head { margin-bottom: 52px; }
 
 /* ---------- nav ---------- */
