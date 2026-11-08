@@ -1,7 +1,11 @@
 # Emergency evacuation to the owner's cold wallet — design and threat model
 
-Status: **design for review, no code yet** (planned for vault release 2.3.0; roadmap item 6a). Nothing here is
-deployed. The code is written only after this design is agreed, and it ships only with the attack tests of §7.
+Status: **design agreed by the owner on 2026-11-08** (option C, §4; both decisions of §8 "yes"); implementation
+for vault release 2.3.0 in progress (roadmap item 6a). Nothing here is deployed. It ships to BSC Testnet only with
+the attack tests of §7, and before any mainnet it must pass an independent security review.
+
+Evacuation is an emergency function for a hack or a loss of control. Ordinary withdrawals never need it: they
+work as today, through policies, sessions and the timelock.
 
 ## 1. What it is for
 
@@ -59,7 +63,7 @@ README promises this). Evacuation crosses that line — funds move, but only to 
 | **B** (roadmap text) | admin, recovery key **and every guardian** | fastest: the Watchtower can evacuate on its own | a stolen guardian key can force funds into the cold wallet (disruption, not theft); theft needs the cold wallet key **plus** any guardian key |
 | **C** | admin, recovery key, and **one optional `evacuator` address** the owner sets through the timelock (e.g. a Watchtower) — off by default | automation only where the owner asks for it; guardians keep their promise | one more role to explain and test |
 
-**Recommendation: C.** It keeps the clear guardian rule, lets an owner switch on automatic evacuation by a
+**Chosen: C.** It keeps the clear guardian rule, lets an owner switch on automatic evacuation by a
 Watchtower deliberately, and keeps theft requiring the cold wallet key plus a key the owner picked for this
 job. If the extra role costs too much code size (§6), fall back to A, not B.
 
@@ -113,10 +117,11 @@ Around it: the Watchtower raises a **COLD WALLET CHANGE** alarm and cancels unex
 unexpected change), and with option C can evacuate on its own when the owner enables it; the SDK gets
 `evacuate`, `setColdWallet` and explanations for the new errors.
 
-## 8. Decisions for the owner
+## 8. Decisions of the owner (2026-11-08)
 
-1. Who may trigger evacuation: **A**, **B** or **C** (recommended: C).
-2. Cold-wallet change wait in production: **max(3 × delay, 2 days)** (recommended) or longer.
-3. Evacuation also pauses the vault and revokes policies and sessions, like `panic` (recommended: yes).
+1. Who may trigger evacuation: **option C** — the admin, the recovery key and an optional evacuator the owner
+   sets through the timelock (off by default). Guardians keep their rule: they stop, they never move funds.
+2. Cold-wallet change wait in production: **max(3 × delay, 2 days)**, cancellable by any guardian.
+3. Evacuation also pauses the vault and revokes policies and sessions, like `panic`: **yes**.
 
 Not part of this item: the fast track for critical security fixes (roadmap item 6b) — a separate design.
