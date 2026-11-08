@@ -30,8 +30,8 @@ to pay: bots and agents that trade.
 - **CompositeGuard** runs several guards in one slot (all must pass).
 
 **Agent sessions needed a vault release.** On 2.0.x vaults sessions run with no validator. Vault release **2.1.0** adds a guard to each session envelope (set through the
-timelock; applies to every session of the envelope). `EPKVault` is now 24,562 of 24,576 bytes, so the
-change was kept small. Each vault opts in through the registry and its own timelock.
+timelock; applies to every session of the envelope). `EPKVault` 2.1.0 was 24,562 of 24,576 bytes, so the
+change was kept small (2.2.0: 24,102 bytes, compiled for the Shanghai EVM). Each vault opts in through the registry and its own timelock.
 
 ## 3. DEX Guard
 

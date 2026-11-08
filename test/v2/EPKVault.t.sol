@@ -806,7 +806,11 @@ contract EPKVaultTest is Test {
     function test_adminChangesViaTimelock() public {
         address newRecovery = makeAddr("newRecovery");
         _activate(abi.encodeCall(EPKVault.updatePolicy, (pid, signer, 0, 2 ether, address(0))));
-        _activate(abi.encodeCall(EPKVault.setRecovery, (newRecovery)));
+        bytes memory newRec = abi.encodeCall(EPKVault.setRecovery, (newRecovery));
+        _schedule(newRec);
+        _warp(3 * DELAY); // a recovery change waits 3 x delay (2.2.0)
+        vm.prank(admin);
+        vault.executeScheduled(newRec, bytes32(0));
         _activate(abi.encodeCall(EPKVault.setCoSigner, (address(0))));
         _activate(abi.encodeCall(EPKVault.setGuardian, (guardian3, true)));
         _activate(abi.encodeCall(EPKVault.untrackAsset, (address(falseToken))));
@@ -993,48 +997,117 @@ contract EPKVaultTest is Test {
         assertEq(token.balanceOf(friend), sent);
     }
 
-    // ------------------------------------------------------------------ known issues (internal audit 2026-11-08)
-    // Pinned so that the vault release that fixes them flips these tests (see SECURITY_REVIEW_v2.md §3).
+    // ------------------------------------------------------------------ fifth review (2026-11-08), fixed in 2.2.0
 
-    /// KNOWN ISSUE A: the recovery key can veto every timelocked change, including its own replacement,
-    /// so a stolen recovery key can keep a paused vault paused (a freeze, not a theft).
-    /// Planned fix: shield `setRecovery` from the current recovery key, like guardian removal.
-    function test_knownIssue_recoveryCanVetoItsOwnReplacement() public {
+    /// A5-3: a stolen recovery key used to be able to veto every change, including its own replacement, and
+    /// so keep a paused vault paused forever. Since 2.2.0 replacing the recovery key is shielded from it.
+    function test_recoveryCannotVetoItsOwnReplacement() public {
         vm.prank(guardian);
         vault.panic();
-        bytes memory replace = abi.encodeCall(EPKVault.setRecovery, (makeAddr("freshRecovery")));
+        address fresh = makeAddr("freshRecovery");
+        bytes memory replace = abi.encodeCall(EPKVault.setRecovery, (fresh));
+        bytes32 id = _schedule(replace);
+        vm.prank(recoveryKey);
+        vm.expectRevert(EPKVault.CannotCancel.selector);
+        vault.cancel(id);
+        _warp(DELAY); // a recovery change waits 3 x delay (longer than recoverAdmin's 2 x)
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.OperationNotReady.selector);
+        vault.executeScheduled(replace, bytes32(0));
+        _warp(2 * DELAY);
+        vm.prank(admin);
+        vault.executeScheduled(replace, bytes32(0));
+        assertEq(vault.recovery(), fresh);
+
+        // the old key has no say any more: the owner resumes the vault
         bytes memory resume = abi.encodeCall(EPKVault.unpause, ());
-        bytes32 id1 = _schedule(replace);
         bytes32 id2 = _schedule(resume);
-        vm.startPrank(recoveryKey);
-        vault.cancel(id1);
+        vm.prank(recoveryKey);
+        vm.expectRevert(EPKVault.NotAdminOrGuardian.selector);
         vault.cancel(id2);
-        vm.stopPrank();
+        _warp(DELAY);
+        vm.prank(admin);
+        vault.executeScheduled(resume, bytes32(0));
+        assertFalse(vault.paused());
+    }
+
+    /// The shield only removes the replaced key's own veto: guardians can still stop a recovery change
+    /// (e.g. one scheduled with a stolen admin key).
+    function test_guardianCanStillVetoARecoveryChange() public {
+        bytes32 id = _schedule(abi.encodeCall(EPKVault.setRecovery, (attacker)));
+        vm.prank(guardian);
+        vault.cancel(id);
         _warp(DELAY);
         vm.prank(admin);
         vm.expectRevert(EPKVault.UnknownOperation.selector);
-        vault.executeScheduled(replace, bytes32(0));
+        vault.executeScheduled(abi.encodeCall(EPKVault.setRecovery, (attacker)), bytes32(0));
         assertEq(vault.recovery(), recoveryKey);
-        assertTrue(vault.paused());
     }
 
-    /// KNOWN ISSUE B: an ERC-721 `approve(destination, 0)` approves token #0 and is not recorded as an
-    /// allowance, so it survives the batch. The spender must be an allowlisted destination.
-    /// Planned fix: record the spender of every approve, so NFT approvals fail closed.
-    function test_knownIssue_nftApprovalOfTokenZeroSurvives() public {
+    /// The other side of the shield: with the admin key stolen and every guardian away, an honest recovery
+    /// key still wins — its recoverAdmin (2 x delay) lands before the attacker's recovery change (3 x delay),
+    /// and the new admin cancels that change.
+    function test_honestRecoveryBeatsCompromisedAdmin() public {
+        bytes memory replace = abi.encodeCall(EPKVault.setRecovery, (attacker));
+        bytes32 id = _schedule(replace); // scheduled with the stolen admin key
+        address newAdmin = makeAddr("newAdmin");
+        vm.prank(recoveryKey);
+        vault.recoverAdmin(newAdmin, bytes32("rescue"));
+        _warp(2 * DELAY);
+        vm.prank(recoveryKey);
+        vault.executeScheduled(abi.encodeCall(EPKVault.setAdmin, (newAdmin)), bytes32("rescue"));
+        assertEq(vault.admin(), newAdmin);
+        vm.prank(newAdmin);
+        vault.cancel(id);
+        _warp(DELAY);
+        vm.prank(newAdmin);
+        vm.expectRevert(EPKVault.UnknownOperation.selector);
+        vault.executeScheduled(replace, bytes32(0));
+        assertEq(vault.recovery(), recoveryKey);
+    }
+
+    /// A panic invalidates a pending recovery change (only guardian removals survive a panic).
+    function test_panicCancelsARecoveryChange() public {
+        bytes memory replace = abi.encodeCall(EPKVault.setRecovery, (attacker));
+        _schedule(replace);
+        vm.prank(guardian);
+        vault.panic();
+        _warp(3 * DELAY);
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.StaleOperation.selector);
+        vault.executeScheduled(replace, bytes32(0));
+        assertEq(vault.recovery(), recoveryKey);
+    }
+
+    /// A5-4: an ERC-721 `approve(destination, 0)` approves token #0. Since 2.2.0 every approval is recorded
+    /// and checked after the batch; an NFT has no `allowance()`, so the batch fails closed.
+    function test_nftApprovalOfTokenZeroFailsClosed() public {
         AuditNFT nft = new AuditNFT();
         nft.mint(address(vault), 0);
         _activate(abi.encodeCall(EPKVault.setCall, (pid, address(nft), IERC20.approve.selector, true)));
-        _exec(address(nft), 0, abi.encodeCall(IERC20.approve, (address(router), 0)));
-        assertEq(nft.getApproved(0), address(router));
-        // a destination router with an arbitrary-pull bug could now move the NFT outside execute()
+        _fails("", address(nft), 0, abi.encodeCall(IERC20.approve, (address(router), 0)));
+        assertEq(nft.getApproved(0), address(0));
         vm.prank(address(router));
+        vm.expectRevert(bytes("not allowed"));
         nft.transferFrom(address(vault), attacker, 0);
-        assertEq(nft.ownerOf(0), attacker);
+    }
+
+    /// Resetting an ERC-20 allowance to zero (the normal end of a swap batch) still works.
+    function test_erc20AllowanceResetStillWorks() public {
+        EPKVault.Call[] memory c = new EPKVault.Call[](2);
+        c[0] = EPKVault.Call(address(token), 0, _approve(address(router), 1e18));
+        c[1] = EPKVault.Call(address(token), 0, _approve(address(router), 0));
+        _run(c, 0, false, "");
+        assertEq(token.allowance(address(vault), address(router)), 0);
+    }
+
+    /// An approval to address(0) is refused (it is never a destination).
+    function test_approvalToZeroAddressIsRefused() public {
+        _fails(abi.encodeWithSelector(EPKVault.DestinationNotAllowed.selector, address(0)), address(token), 0, _approve(address(0), 0));
     }
 }
 
-/// Minimal ERC-721 (approve / getApproved / transferFrom / ownerOf) for the known-issue test.
+/// Minimal ERC-721 (approve / getApproved / transferFrom / ownerOf) for the A5-4 tests.
 contract AuditNFT {
     mapping(uint256 => address) public ownerOf;
     mapping(uint256 => address) public getApproved;

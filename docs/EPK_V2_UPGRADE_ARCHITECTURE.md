@@ -102,10 +102,10 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 | IBITI registry owner | can list a malicious release (public for 7 days — 5 minutes on test networks — one major step at most), revoke releases, or permanently freeze the registry (no succession). Vaults keep working on their current release; new upgrades would need new vaults. **Cannot upgrade any vault, cannot touch funds.** |
 | Vault admin | can schedule loosening changes / an upgrade to an *approved* release; they are visible for ≥ delay (≥ 2 days for upgrades) and any other guardian or the recovery key can veto. **Cannot install unapproved code, cannot swap the registry, cannot squat the recovery.** |
 | Guardian | denial of service (pause, veto). Cannot move funds; cannot block its own removal. |
-| Recovery key | can schedule an admin change (2× delay, guardians can veto) and veto pending changes (denial of service). Cannot execute admin operations, cannot move funds. |
+| Recovery key | can schedule an admin change (2× delay, guardians can veto) and veto pending changes — a denial of service for at most 3× delay since 2.2.0, because it cannot veto its own replacement. Cannot execute admin operations, cannot move funds. |
 | Operator signer / agent / co-signer | bounded by outflow limits and destination allowlist. |
 
-**Takeover threshold.** Because removing a guardian is shielded from that guardian (so one rogue guardian cannot freeze the vault), a compromised admin can replace an honest guardian **unless another honest, online guardian or the recovery key vetoes it** within the delay. With 2 guardians and no recovery key, a compromised admin plus **one** absent guardian is enough. Therefore: use **≥ 3 independent guardians and a recovery key**, and a monitoring bot as one of the guardians. After such a takeover, everything (including an upgrade to an approved release) still takes ≥ the delays above.
+**Takeover threshold.** Because removing a guardian is shielded from that guardian (so one rogue guardian cannot freeze the vault), a compromised admin can replace an honest guardian **unless another honest, online guardian or the recovery key vetoes it** within the delay. From 2.2.0 the recovery key cannot veto its own replacement either, but that replacement waits 3× delay, so an honest recovery key that answers with `recoverAdmin` (2× delay) within one delay still wins. With 2 guardians and no recovery key, a compromised admin plus **one** absent guardian is enough. Therefore: use **≥ 3 independent guardians and a recovery key**, and a monitoring bot as one of the guardians. After such a takeover, everything (including an upgrade to an approved release) still takes ≥ the delays above.
 
 ## 8. Threats and mitigations
 
@@ -143,7 +143,7 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 6. Tests: full suite + an upgrade test from **every** previous release (including skipping releases) + invariants after upgrade.
 7. Independent audit → `proposeRelease` → 7 days → announce.
 8. Static analysis: Slither must report no unexplained findings ([SLITHER_TRIAGE.md](SLITHER_TRIAGE.md)).
-9. Bytecode budget: `EPKVault` is 24,562 B of the 24,576 B limit (v2 is compiled with optimizer_runs = 1 for size). New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
+9. Bytecode budget: `EPKVault` 2.2.0 is 24,102 B of the 24,576 B limit (v2 is compiled with optimizer_runs = 1 for size, for the Shanghai EVM since 2.2.0 — 2.1.0 was 24,562 B on Paris). New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
 
 ## 10. Test evidence
 

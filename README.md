@@ -28,7 +28,7 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 
 | Component | State |
 |---|---|
-| **EPK v2** — `EPKVault` 2.1 | **Live on BSC Testnet** since 2026-11-07. Five internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
+| **EPK v2** — `EPKVault` | 2.1.0 **live on BSC Testnet** since 2026-11-07; 2.2.0 (fixes from the fifth review) built and tested, not yet deployed. Five internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
 | **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). BUSL-1.1. |
 | **TypeScript SDK** — `@ibiti/epk-sdk` | Preview on npm, testnet only ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). MIT. |
 | **EPK Watchtower** | Automatic guardian, working on BSC Testnet. BUSL-1.1. |
@@ -118,8 +118,8 @@ Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
 
 ```bash
 forge build
-forge test                                               # 185 contract tests (3 of them fork BSC Testnet and need an RPC)
-python -m unittest discover -s watchtower -p "test_*.py" # 14 Watchtower tests, no network
+forge test                                               # 191 contract tests (3 of them fork BSC Testnet and need an RPC)
+python -m unittest discover -s watchtower -p "test_*.py" # 15 Watchtower tests, no network
 ```
 
 Every pull request and every push to `master` runs the tests in [CI](.github/workflows/ci.yml) and

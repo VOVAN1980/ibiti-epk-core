@@ -6,7 +6,9 @@ libs = ["lib"]
 solc = "0.8.24"
 optimizer = true
 optimizer_runs = 200
-evm_version = "paris"
+# Shanghai (PUSH0, EIP-3855): supported by BSC, BSC Testnet, Ethereum and Sepolia; saves ~500 bytes
+# of EPKVault (EIP-170). Chains without PUSH0 are not supported.
+evm_version = "shanghai"
 via_ir = true
 fs_permissions = [{ access = "read-write", path = "./" }]
 ffi = false

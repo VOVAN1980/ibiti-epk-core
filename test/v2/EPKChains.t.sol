@@ -62,7 +62,7 @@ contract EPKChainsTest is Test {
         vm.prank(admin);
         vault.executeScheduled(op, bytes32("fast"));
         assertEq(_impl(), address(next));
-        assertEq(vault.vaultVersion(), 20_200);
+        assertEq(vault.vaultVersion(), 20_300);
     }
 
     /// On test networks guardians can still veto, and an unlisted implementation is still refused.
