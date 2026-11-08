@@ -26,6 +26,8 @@ export const epkErrorHelp: Record<string, { meaning: string; fix: string }> = {
   TokenCallFailed: { meaning: "A token transfer / approve returned false.", fix: "Check balances and the token's rules." },
   BadTarget: { meaning: "The call targets the zero address or the vault itself.", fix: "Target the token, router or recipient instead." },
   GuardRequired: { meaning: "An agent session without a guard tried a call the vault cannot inspect itself (e.g. a swap).", fix: "Owner: give the envelope a guard (setEnvelopeGuard, timelocked) — or it is an agent going around the protection." },
+  NoColdWallet: { meaning: "Evacuation is off: the vault has no cold wallet registered.", fix: "Register the owner's cold wallet with setColdWallet (timelocked after setup)." },
+  NotEvacuator: { meaning: "Only the admin, the recovery key or the evacuator may evacuate.", fix: "Use one of those keys; guardians can panic but never move funds." },
   // ---- limits
   LimitExceeded: { meaning: "The vault-wide limit for this asset in the current window would be exceeded.", fix: "Wait for the window to refill (availableToSpend) or raise the limit through the timelock." },
   BudgetExceeded: { meaning: "This session's own budget for the asset would be exceeded.", fix: "Wait for it to refill (budgetAvailable) or use another session." },

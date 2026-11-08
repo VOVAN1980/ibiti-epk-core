@@ -6,6 +6,10 @@ export const epkVaultAbi = [
     "stateMutability": "nonpayable"
   },
   {
+    "type": "fallback",
+    "stateMutability": "nonpayable"
+  },
+  {
     "type": "receive",
     "stateMutability": "payable"
   },
@@ -273,6 +277,19 @@ export const epkVaultAbi = [
   },
   {
     "type": "function",
+    "name": "coldWallet",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "createPolicy",
     "inputs": [
       {
@@ -464,6 +481,19 @@ export const epkVaultAbi = [
         "name": "",
         "type": "uint64",
         "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "evacuator",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -1726,6 +1756,19 @@ export const epkVaultAbi = [
   },
   {
     "type": "event",
+    "name": "ColdWalletSet",
+    "inputs": [
+      {
+        "name": "coldWallet",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "DelaySet",
     "inputs": [
       {
@@ -1874,6 +1917,50 @@ export const epkVaultAbi = [
       },
       {
         "name": "by",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Evacuated",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "by",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EvacuatorSet",
+    "inputs": [
+      {
+        "name": "evacuator",
         "type": "address",
         "indexed": true,
         "internalType": "address"
@@ -2473,6 +2560,11 @@ export const epkVaultAbi = [
   },
   {
     "type": "error",
+    "name": "NoColdWallet",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "NonceTooLow",
     "inputs": []
   },
@@ -2489,6 +2581,11 @@ export const epkVaultAbi = [
   {
     "type": "error",
     "name": "NotAdminOrRecovery",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotEvacuator",
     "inputs": []
   },
   {
@@ -2639,5 +2736,44 @@ export const epkVaultAbi = [
     "type": "error",
     "name": "ZeroAddress",
     "inputs": []
+  },
+  {
+    "type": "function",
+    "name": "evacuate",
+    "inputs": [
+      {
+        "name": "tokens",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setColdWallet",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setEvacuator",
+    "inputs": [
+      {
+        "name": "newEvacuator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   }
 ] as const;

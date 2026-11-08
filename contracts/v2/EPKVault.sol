@@ -15,81 +15,27 @@ interface IERC20Minimal {
     function allowance(address owner, address spender) external view returns (uint256);
 }
 
+/// @notice Emergency functions of EPKVault 2.3.0+ (docs/EVACUATION_v2.md). The vault routes them to this
+///         release's EPKVaultEmergency code, which runs on the vault's own storage. Call them on the vault.
+interface IEPKVaultEmergency {
+    /// Emergency only: acts like `panic`, then sends the whole balance of each listed tracked asset (every
+    /// tracked asset if the list is empty) to the owner's cold wallet — nowhere else. Admin, recovery key or
+    /// the evacuator. Ordinary withdrawals never need this.
+    function evacuate(address[] calldata tokens) external;
+    /// The owner's cold wallet (0 = off). After setup: timelocked, max(3 x delay, 2 days); 3 x delay on test
+    /// networks; any guardian or the recovery key can cancel it, a `panic` kills it.
+    function setColdWallet(address wallet) external;
+    /// Optional extra key that may trigger `evacuate` (e.g. a Watchtower); 0 = none. Timelocked.
+    function setEvacuator(address newEvacuator) external;
+}
+
 interface IERC1271 {
     function isValidSignature(bytes32 hash, bytes calldata signature) external view returns (bytes4);
 }
 
-/// @title EPK Vault — v2 (one protected vault per customer)
-/// @notice Holds a customer's funds and lets agents act on them only within on-chain rules that a
-///         compromised operator key, server or AI agent cannot lift:
-///         - isolation: every customer has their own vault; calls are made from the vault itself,
-///           so nobody else's policy can ever reach these funds (no shared executor);
-///         - role separation: operator signer / admin / guardians (stop only) / recovery key;
-///         - outflow limits per asset, measured on real balance changes (token bucket);
-///         - destination allowlist for transfers, approvals and native value;
-///         - token allowances never outlive the signed batch that created them;
-///         - optional independent co-signer for large outflows;
-///         - asymmetric rule changes: tighten instantly, loosen only through a timelock that
-///           guardians can veto;
-///         - one-call kill switch (`panic`) that pauses and invalidates every policy and pending change;
-///         - opt-in upgrades: the vault keeps its address and funds; only its own admin can move it to
-///           a newer registry-approved implementation, through a 2x-delay timelock guardians can veto.
-/// @dev Threat model: the operator signer, the agent and the co-signer may all be compromised at the
-///      same time. Damage is then bounded by `maxPerWindow` per tracked asset and by the destination
-///      allowlist. See docs/SPEC_v2.md, docs/SECURITY_REVIEW_v2.md, docs/EPK_V2_UPGRADE_ARCHITECTURE.md.
-///      Deployed behind an ERC-1967 proxy. STORAGE LAYOUT IS APPEND-ONLY across versions
-///      (snapshot: docs/storage-layout/EPKVault-2.0.0.txt).
-contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
-    // ---------------------------------------------------------------------
-    // Types & constants
-    // ---------------------------------------------------------------------
-
-    struct Call {
-        address target;
-        uint256 value;
-        bytes data;
-    }
-
-    string internal constant EIP712_NAME = "EPK Vault";
-    string internal constant EIP712_VERSION = "2";
-
-    bytes32 private constant _DOMAIN_TYPEHASH =
-        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    bytes32 private constant _CALL_TYPEHASH = keccak256("Call(address target,uint256 value,bytes data)");
-    bytes32 private constant _EXECUTE_TYPEHASH = keccak256(
-        "Execute(uint256 policyId,address agent,Call[] calls,uint256 nonce,uint256 deadline)"
-        "Call(address target,uint256 value,bytes data)"
-    );
-    bytes32 private constant _COSIGN_TYPEHASH = keccak256("CoSign(bytes32 executeDigest)");
-
-    /// @notice Asset key used for the chain's native coin.
-    address public constant NATIVE = address(0);
-    /// @notice Selector key used in the call allowlist for a plain native transfer (empty calldata).
-    bytes4 internal constant NATIVE_TRANSFER_SELECTOR = bytes4(0);
-
-    uint256 internal constant MIN_DELAY = 1 hours;
-    /// @dev On public test networks only (EPKChains): the minimum timelock, same code.
-    uint256 internal constant TEST_MIN_DELAY = 5 minutes;
-    uint256 internal constant MAX_DELAY = 30 days;
-    /// @notice A ready operation must be executed within this period, otherwise it goes stale.
-    uint256 public constant GRACE_PERIOD = 14 days;
-    uint256 internal constant MAX_TRACKED_ASSETS = 16;
-    uint256 internal constant MAX_CALLS = 16;
-    uint256 internal constant SESSION_ID_BASE = 1 << 128;
-    /// @notice Guardians required before the vault can go live (admin is never a guardian).
-    uint256 internal constant MIN_GUARDIANS = 2;
-    /// @notice An upgrade always waits at least this long, whatever the vault delay is.
-    uint256 public constant UPGRADE_DELAY_FLOOR = 2 days;
-    /// @dev On public test networks only (EPKChains): an upgrade waits exactly this long, same code.
-    uint256 internal constant TEST_UPGRADE_WAIT = 5 minutes;
-
-    bytes4 private constant _ERC1271_MAGIC = 0x1626ba7e;
-    bytes4 private constant _SEL_TRANSFER = 0xa9059cbb; // transfer(address,uint256)
-    bytes4 private constant _SEL_TRANSFER_FROM = 0x23b872dd; // transferFrom(address,address,uint256)
-    bytes4 private constant _SEL_APPROVE = 0x095ea7b3; // approve(address,uint256)
-    bytes4 private constant _SEL_INCREASE_ALLOWANCE = 0x39509351; // increaseAllowance(address,uint256)
-    bytes4 private constant _SEL_SET_APPROVAL_FOR_ALL = 0xa22cb465; // setApprovalForAll(address,bool)
-
+/// @title Storage layout of EPKVault — shared with EPKVaultEmergency, which runs on the vault's storage
+/// @dev Append-only across releases. Both contracts inherit it, so they always agree on every slot.
+abstract contract EPKVaultLayout {
     struct Policy {
         address signer; // operator key (EOA or ERC-1271 contract); policy exists iff signer != 0
         bool active;
@@ -155,11 +101,11 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     bool public paused;
     bool public setupDone;
     uint64 public epoch;
-    bool private _locked;
+    bool internal _locked;
 
     mapping(address => bool) public isDestination;
     mapping(address => Asset) public assets;
-    address[] private _trackedAssets;
+    address[] internal _trackedAssets;
 
     mapping(uint256 => Policy) public policies;
     uint256 public nextPolicyId;
@@ -186,6 +132,174 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     //        calls the vault inspects itself — token transfers / approvals and plain native transfers).
     mapping(uint256 => address) public envelopeGuard;
 
+    // 2.3.0: emergency evacuation (docs/EVACUATION_v2.md). The owner's cold wallet is the only address
+    //        `evacuate` can send to (0 = evacuation off); the evacuator is an optional extra key that may
+    //        trigger it (0 = none). Neither shares a key with a role that runs the vault.
+    address public coldWallet;
+    address public evacuator;
+}
+
+/// @title EPKVault emergency module (release 2.3.0): evacuation to the owner's cold wallet
+/// @notice Deployed by the EPKVault implementation's constructor and only ever run through the vault's own
+///         `evacuate` / `setColdWallet` / `setEvacuator` (delegatecall), on the vault's storage. Called
+///         directly it has no admin, no cold wallet and no assets, so every call fails. docs/EVACUATION_v2.md.
+contract EPKVaultEmergency is EPKVaultLayout, IEPKVaultEmergency {
+    address internal constant NATIVE = address(0);
+    bytes4 private constant _SEL_TRANSFER = 0xa9059cbb; // transfer(address,uint256)
+
+    event Paused(address indexed by);
+    event EpochBumped(uint64 newEpoch, address indexed by);
+    event ColdWalletSet(address indexed coldWallet);
+    event EvacuatorSet(address indexed evacuator);
+    event Evacuated(address indexed token, uint256 amount, address indexed to, address indexed by);
+
+    error NotTimelocked();
+    error Reentrancy();
+    error BadRole(address account);
+    error UntrackedAsset(address token);
+    error TokenCallFailed(address token);
+    error NoColdWallet();
+    error NotEvacuator();
+
+    // slither-disable-start low-level-calls,arbitrary-send-eth,calls-loop,reentrancy-no-eth,reentrancy-benign,reentrancy-events
+    // low-level-calls / calls-loop: whole balances of the vault's TRACKED assets only, each checked;
+    // arbitrary-send-eth: the recipient is the owner's cold wallet, set through the timelock - no caller input;
+    // reentrancy-*: guarded by the vault's own lock (`_locked`, shared with execute / executeScheduled),
+    // proven by test_E8_reentrantColdWalletIsRefused.
+    function evacuate(address[] calldata tokens) external {
+        if (_locked) revert Reentrancy(); // the vault's own lock, shared with execute / executeScheduled
+        _locked = true;
+        if (msg.sender != admin && msg.sender != recovery && msg.sender != evacuator) revert NotEvacuator();
+        address to = coldWallet;
+        if (to == address(0)) revert NoColdWallet();
+        paused = true;
+        emit Paused(msg.sender);
+        uint64 e = epoch + 1;
+        epoch = e;
+        emit EpochBumped(e, msg.sender);
+        address[] memory list = tokens;
+        if (list.length == 0) list = _trackedAssets;
+        for (uint256 i = 0; i < list.length; i++) {
+            address token = list[i];
+            if (!assets[token].tracked) revert UntrackedAsset(token);
+            uint256 amount = token == NATIVE ? address(this).balance : IERC20Minimal(token).balanceOf(address(this));
+            if (amount == 0) continue;
+            bool ok;
+            bytes memory ret;
+            if (token == NATIVE) {
+                (ok,) = to.call{value: amount}("");
+            } else {
+                (ok, ret) = token.call(abi.encodeWithSelector(_SEL_TRANSFER, to, amount));
+                ok = ok && (ret.length == 0 || abi.decode(ret, (bool)));
+            }
+            if (!ok) revert TokenCallFailed(token);
+            emit Evacuated(token, amount, to, msg.sender);
+        }
+        _locked = false;
+    }
+    // slither-disable-end low-level-calls,arbitrary-send-eth,calls-loop,reentrancy-no-eth,reentrancy-benign,reentrancy-events
+
+    function setColdWallet(address wallet) external {
+        _onlyTimelocked();
+        _requireSeparateKey(wallet);
+        coldWallet = wallet;
+        emit ColdWalletSet(wallet);
+    }
+
+    function setEvacuator(address newEvacuator) external {
+        _onlyTimelocked();
+        _requireSeparateKey(newEvacuator);
+        evacuator = newEvacuator;
+        emit EvacuatorSet(newEvacuator);
+    }
+
+    /// @dev Same rule as the vault: the vault itself after setup (the timelock), the admin during setup.
+    function _onlyTimelocked() internal view {
+        if (msg.sender != address(this) && (setupDone || msg.sender != admin)) revert NotTimelocked();
+    }
+
+    /// @dev The cold wallet and the evacuator never share a key with a role that runs the vault or with
+    ///      each other, so stealing funds through `evacuate` always needs two different keys.
+    function _requireSeparateKey(address a) internal view {
+        if (a == address(0)) return;
+        if (
+            a == address(this) || a == admin || a == recovery || isGuardian[a] || a == sessionManager || a == coSigner
+                || a == coldWallet || a == evacuator
+        ) revert BadRole(a);
+    }
+}
+
+/// @title EPK Vault — v2 (one protected vault per customer)
+/// @notice Holds a customer's funds and lets agents act on them only within on-chain rules that a
+///         compromised operator key, server or AI agent cannot lift:
+///         - isolation: every customer has their own vault; calls are made from the vault itself,
+///           so nobody else's policy can ever reach these funds (no shared executor);
+///         - role separation: operator signer / admin / guardians (stop only) / recovery key;
+///         - outflow limits per asset, measured on real balance changes (token bucket);
+///         - destination allowlist for transfers, approvals and native value;
+///         - token allowances never outlive the signed batch that created them;
+///         - optional independent co-signer for large outflows;
+///         - asymmetric rule changes: tighten instantly, loosen only through a timelock that
+///           guardians can veto;
+///         - one-call kill switch (`panic`) that pauses and invalidates every policy and pending change;
+///         - opt-in upgrades: the vault keeps its address and funds; only its own admin can move it to
+///           a newer registry-approved implementation, through a 2x-delay timelock guardians can veto.
+/// @dev Threat model: the operator signer, the agent and the co-signer may all be compromised at the
+///      same time. Damage is then bounded by `maxPerWindow` per tracked asset and by the destination
+///      allowlist. See docs/SPEC_v2.md, docs/SECURITY_REVIEW_v2.md, docs/EPK_V2_UPGRADE_ARCHITECTURE.md.
+///      Deployed behind an ERC-1967 proxy. STORAGE LAYOUT IS APPEND-ONLY across versions
+///      (snapshot: docs/storage-layout/EPKVault-2.0.0.txt).
+contract EPKVault is EPKVaultLayout, Initializable, UUPSUpgradeable, IVersionedVault {
+    // ---------------------------------------------------------------------
+    // Types & constants
+    // ---------------------------------------------------------------------
+
+    struct Call {
+        address target;
+        uint256 value;
+        bytes data;
+    }
+
+    string internal constant EIP712_NAME = "EPK Vault";
+    string internal constant EIP712_VERSION = "2";
+
+    bytes32 private constant _DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 private constant _CALL_TYPEHASH = keccak256("Call(address target,uint256 value,bytes data)");
+    bytes32 private constant _EXECUTE_TYPEHASH = keccak256(
+        "Execute(uint256 policyId,address agent,Call[] calls,uint256 nonce,uint256 deadline)"
+        "Call(address target,uint256 value,bytes data)"
+    );
+    bytes32 private constant _COSIGN_TYPEHASH = keccak256("CoSign(bytes32 executeDigest)");
+
+    /// @notice Asset key used for the chain's native coin.
+    address public constant NATIVE = address(0);
+    /// @notice Selector key used in the call allowlist for a plain native transfer (empty calldata).
+    bytes4 internal constant NATIVE_TRANSFER_SELECTOR = bytes4(0);
+
+    uint256 internal constant MIN_DELAY = 1 hours;
+    /// @dev On public test networks only (EPKChains): the minimum timelock, same code.
+    uint256 internal constant TEST_MIN_DELAY = 5 minutes;
+    uint256 internal constant MAX_DELAY = 30 days;
+    /// @notice A ready operation must be executed within this period, otherwise it goes stale.
+    uint256 public constant GRACE_PERIOD = 14 days;
+    uint256 internal constant MAX_TRACKED_ASSETS = 16;
+    uint256 internal constant MAX_CALLS = 16;
+    uint256 internal constant SESSION_ID_BASE = 1 << 128;
+    /// @notice Guardians required before the vault can go live (admin is never a guardian).
+    uint256 internal constant MIN_GUARDIANS = 2;
+    /// @notice An upgrade always waits at least this long, whatever the vault delay is.
+    uint256 public constant UPGRADE_DELAY_FLOOR = 2 days;
+    /// @dev On public test networks only (EPKChains): an upgrade waits exactly this long, same code.
+    uint256 internal constant TEST_UPGRADE_WAIT = 5 minutes;
+
+    bytes4 private constant _ERC1271_MAGIC = 0x1626ba7e;
+    bytes4 private constant _SEL_TRANSFER = 0xa9059cbb; // transfer(address,uint256)
+    bytes4 private constant _SEL_TRANSFER_FROM = 0x23b872dd; // transferFrom(address,address,uint256)
+    bytes4 private constant _SEL_APPROVE = 0x095ea7b3; // approve(address,uint256)
+    bytes4 private constant _SEL_INCREASE_ALLOWANCE = 0x39509351; // increaseAllowance(address,uint256)
+    bytes4 private constant _SEL_SET_APPROVAL_FOR_ALL = 0xa22cb465; // setApprovalForAll(address,bool)
+
     // ---------------------------------------------------------------------
     // Events
     // ---------------------------------------------------------------------
@@ -198,6 +312,9 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     event EnvelopeCallSet(uint256 indexed envelopeId, address indexed target, bytes4 indexed selector, bool allowed);
     event EnvelopeBudgetCapSet(uint256 indexed envelopeId, address indexed asset, uint128 cap);
     event EnvelopeGuardSet(uint256 indexed envelopeId, address indexed guard);
+    event ColdWalletSet(address indexed coldWallet);
+    event EvacuatorSet(address indexed evacuator);
+    event Evacuated(address indexed token, uint256 amount, address indexed to, address indexed by);
     event SessionOpened(
         uint256 indexed policyId, uint256 indexed envelopeId, address signer, address indexed agent, uint48 validUntil
     );
@@ -281,6 +398,8 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     error BudgetExceeded(address token, uint256 amount, uint256 available);
     error NotNewerVersion(uint64 current, uint64 proposed);
     error GuardRequired();
+    error NoColdWallet();
+    error NotEvacuator();
 
     // ---------------------------------------------------------------------
     // Modifiers
@@ -329,8 +448,12 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     // ---------------------------------------------------------------------
 
     /// @dev The implementation itself can never be initialized; only proxies can.
+    /// @dev This release's emergency code (evacuation), deployed by this implementation's constructor.
+    address private immutable _emergency;
+
     constructor() {
         _disableInitializers();
+        _emergency = address(new EPKVaultEmergency());
     }
 
     /// @param recovery_ optional cold key that can replace a lost or compromised admin (0 = none).
@@ -420,6 +543,9 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
         } else if (sel == this.setRecovery.selector) {
             shielded = recovery;
             wait = delay * 3;
+        } else if (sel == IEPKVaultEmergency.setColdWallet.selector) {
+            wait = delay * 3;
+            if (wait < UPGRADE_DELAY_FLOOR && !EPKChains.isTestChain()) wait = UPGRADE_DELAY_FLOOR;
         }
         // guardian changes survive a panic; a recovery change does not (wait != delay)
         id = _schedule(data, salt, wait, shielded != address(0) && wait == delay, false, shielded);
@@ -583,6 +709,26 @@ contract EPKVault is Initializable, UUPSUpgradeable, IVersionedVault {
     // ---------------------------------------------------------------------
     // Loosening (timelocked; or admin during setup)
     // ---------------------------------------------------------------------
+
+    // ---------------------------------------------------------------------
+    // Emergency evacuation (2.3.0, docs/EVACUATION_v2.md)
+    // ---------------------------------------------------------------------
+
+    /// @notice IEPKVaultEmergency (`evacuate`, `setColdWallet`, `setEvacuator`): any selector the vault does not
+    ///         have runs this release's EPKVaultEmergency code on the vault's own storage (same layout, same
+    ///         release); the module has no other functions, so everything else still reverts. Not payable.
+    // slither-disable-next-line assembly,controlled-delegatecall
+    // delegatecall only to `_emergency`: an immutable deployed by this implementation's own constructor.
+    fallback() external {
+        address code = _emergency;
+        assembly ("memory-safe") {
+            calldatacopy(0, 0, calldatasize())
+            let ok := delegatecall(gas(), code, 0, calldatasize(), 0, 0)
+            returndatacopy(0, 0, returndatasize())
+            if iszero(ok) { revert(0, returndatasize()) }
+            return(0, returndatasize())
+        }
+    }
 
     function unpause() external onlyTimelocked {
         paused = false;
