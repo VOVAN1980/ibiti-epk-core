@@ -77,14 +77,14 @@
   <h1>Proof of <span class="grad">Security</span></h1>
 </div>
 <p class="lead">EPK gives every customer their own on-chain vault. Even if the server or AI agent holding a key is
-hacked, the vault itself enforces limits, allowed destinations, agent budgets, a panic button and timelocked
-upgrades. This page does not ask you to trust us: press the button and your browser checks every claim below
+hacked, the vault itself enforces limits, allowed destinations, agent budgets, a panic button, timelocked
+upgrades and an emergency evacuation to the owner's own cold wallet. This page does not ask you to trust us: press the button and your browser checks every claim below
 directly against BSC Testnet.</p>
 
 <div class="note"><b>What this is and is not.</b> These are verified test scenarios on BSC Testnet with a test token
 (eUSD). They prove that the listed protections worked in these scenarios. They are not a guarantee that no
 vulnerabilities exist. EPK v2 has not yet been independently audited; nothing goes to mainnet before an audit.
-<br><b>New, in development:</b> protected swaps for trading bots and AI agents (guards on EPKVault 2.2.0) have their
+<br><b>New, in development:</b> protected swaps for trading bots and AI agents (guards on EPKVault 2.3.0) have their
 own live proof on a separate demo vault — <a href="guards.html">Protected swaps</a>.</div>
 
 <div class="tiles">
@@ -114,14 +114,27 @@ own live proof on a separate demo vault — <a href="guards.html">Protected swap
   <p>The worst case: an attacker holds the vault's real admin key. Every change that could let money out has to
   wait in the vault's timelock, and any guardian may cancel it while it waits. The EPK Watchtower is a guardian
   that keeps watching while it runs. In steps <b>W1–W3</b> the attacker scheduled "allow payments to my address"; the Watchtower
-  cancelled it 5 blocks later, and the attacker's attempt to push it through anyway was rejected with
+  cancelled it 9 blocks (about 4 seconds) later, and the attacker's attempt to push it through anyway was rejected with
   <code>UnknownOperation</code> — the change no longer existed. All three transactions are checked in the tables
   on this page. <a data-tree="watchtower">How the Watchtower works</a>.</p>
 </section>
 
+<section id="s-evacuation">
+  <h2>Emergency evacuation to the owner's cold wallet</h2>
+  <p>When control is lost, the owner moves everything to safety in one transaction — but only to the cold wallet
+  registered in advance, so nobody can choose a destination in the moment of the emergency. In step <b>E1</b> the
+  attacker with the stolen admin key tried to point that cold wallet at their own address; the Watchtower cancelled
+  it 6 blocks (about 3 seconds) later (<b>E2</b>), and executing it anyway was rejected with
+  <code>UnknownOperation</code> (<b>E3</b>). A guardian's attempt to evacuate was refused with
+  <code>NotEvacuator</code> (<b>E4</b>) — guardians stop, they never move funds. Then the owner's recovery key
+  evacuated all 9,940 eUSD to the registered cold wallet and paused the vault (<b>E5</b>). Every step is checked in
+  the tables on this page. <a data-blob="docs/EVACUATION_v2.md">Design and threat model</a>.</p>
+</section>
+
 <section id="s-flow">
   <h2>Real transactions on BSC Testnet</h2>
-  <p>The whole lifecycle: deploy, a customer's vault, an AI agent paying on its own, panic, recovery.</p>
+  <p>The whole lifecycle: deploy, a customer's vault, an AI agent paying on its own, panic, recovery, the stolen
+  admin key, the emergency evacuation.</p>
   <div class="scroll"><table id="tbl-tx"><thead><tr><th>Step</th><th>What</th><th>From</th><th>Result</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -193,7 +206,7 @@ own live proof on a separate demo vault — <a href="guards.html">Protected swap
 "use strict";
 // ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
 const REPO = "VOVAN1980/ibiti-epk-core";
-const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT) || "d99008c33c8a44632c2779f832db85e6b5599371";
+const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT) || "223e56fd1f546b39ca1c9ea3d16bdd60edc7e39d";
 const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
 const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
 const EV_PATH = "deployments/bsc-testnet/epk-v2-evidence.json";

@@ -53,10 +53,10 @@ if (missing.length) throw new Error("missing exports: " + missing);
 const missingRoot = need.filter((n) => !(n in root));
 if (missingRoot.length) throw new Error("root entry point is missing: " + missingRoot);
 // offline: the digest the live vault computes (same vector as the SDK tests)
-const d = v2.executeDigest(97, "0x5c2585f1f0725E54F8742798A20972Caa192eCba", { policyId: 0n, agent: "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+const d = v2.executeDigest(97, "0x3Bdd9c884B168bbFa41C181328548a5e42180FD3", { policyId: 0n, agent: "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
   calls: [{ target: "0xc58699856ED5c978F7bf47e46650Bdb23d9bB119", value: 0n, data: "0xa9059cbb000000000000000000000000c93ec67f65530e5997e0a54826d1de1243e204dd0000000000000000000000000000000000000000000000000de0b6b3a7640000" },
           { target: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1", value: 100000000000000n, data: "0x1234" }], nonce: 7n, deadline: 1800000000n });
-if (d !== "0x99371c5cdf6e643f44d3f4b75442e884b01b49a29f002aefb360f56c1f6dcb44") throw new Error("digest mismatch " + d);
+if (d !== "0x24f37c36eb1c9c1a5d775369a7649e82be0606b4af54c5a85dbbf2b571c2f4c1") throw new Error("digest mismatch " + d);
 console.log("imports OK (" + Object.keys(root).length + " exports, same from @ibiti/epk-sdk and /v2), offline digest OK");
 if (process.env.LIVE !== "0") {
   const pc = createPublicClient({ chain: bscTestnet, transport: http(process.env.BSC_TESTNET_RPC ?? "https://bsc-testnet-rpc.publicnode.com") });

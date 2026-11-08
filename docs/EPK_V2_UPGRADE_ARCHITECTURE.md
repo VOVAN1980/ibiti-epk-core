@@ -143,7 +143,7 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 6. Tests: full suite + an upgrade test from **every** previous release (including skipping releases) + invariants after upgrade.
 7. Independent audit → `proposeRelease` → 7 days → announce.
 8. Static analysis: Slither must report no unexplained findings ([SLITHER_TRIAGE.md](SLITHER_TRIAGE.md)).
-9. Bytecode budget: `EPKVault` 2.2.0 is 24,102 B of the 24,576 B limit (v2 is compiled with optimizer_runs = 1 for size, for the Shanghai EVM since 2.2.0 — 2.1.0 was 24,562 B on Paris). New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
+9. Bytecode budget: `EPKVault` 2.3.0 is 24,390 B of the 24,576 B limit (v2 is compiled with optimizer_runs = 1 for size, for the Shanghai EVM). Its emergency evacuation lives in a separate module, `EPKVaultEmergency` (3,726 B), deployed by the implementation's constructor and reached through the vault's fallback; a size test fails the build with less than 100 B of headroom. New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
 
 ## 10. Test evidence
 

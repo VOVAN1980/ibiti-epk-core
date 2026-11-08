@@ -38,7 +38,7 @@ the incident is over.
 ```bash
 python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json            # live
 python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json --dry-run  # decide only, send nothing
-python -m unittest discover -s watchtower -p "test_*.py" -v                                # 12 tests, no network
+python -m unittest discover -s watchtower -p "test_*.py" -v                                # 16 tests, no network
 ```
 
 - Python 3.8+, no packages (its own keccak256). Signing uses Foundry's `cast`.
@@ -54,20 +54,26 @@ python -m unittest discover -s watchtower -p "test_*.py" -v                     
 
 ## Live demo on BSC Testnet — "the admin key was stolen"
 
-1. The Watchtower watches the demo vault `0x14026E45…43fa` (EPKVault 2.2.0) with the guardian2 key;
-   `config.bsc-testnet.json` pre-approves nothing, so every scheduled change is treated as unexpected.
+1. The Watchtower watches the demo vault `0x1538f0Ce…bD4Db` (EPKVault 2.3.0, 5-minute timelock) with the
+   guardian2 key; `config.bsc-testnet.json` pre-approves nothing, so every scheduled change is treated as
+   unexpected.
 2. An attacker who holds the **real admin key** schedules `addDestination(0xBAD1)` — the one change
    that would let money leave the vault for their own address
-   ([0x0c13847e…](https://testnet.bscscan.com/tx/0x0c13847ef76301c7de2b5cc594c973449b88495ea3aabd70422319436ded6a44), block 141578898).
-3. The Watchtower cancels it **4 blocks (about 11 seconds) later**
-   ([0x22c88ddb…](https://testnet.bscscan.com/tx/0x22c88ddbab659a89bb9b0e955f54d998e0df692add738f03e7036a4132c559b9), block 141578902).
+   ([0x898a5c22…](https://testnet.bscscan.com/tx/0x898a5c22176a44ddd08ca83050609df076cbe15b10e7e3a0414c3a2a9603cf29), block 141607584).
+3. The Watchtower cancels it **9 blocks (about 4 seconds) later**
+   ([0xf840e927…](https://testnet.bscscan.com/tx/0xf840e92713ec0609e82298b8ba8df6dbd938df88268a585c1c959318e26762c0), block 141607593).
 4. The attacker tries to execute the change anyway and is rejected with `UnknownOperation()` — the
    change no longer exists (proven by the execution trace of that transaction;
-   [0x8ae785d2…](https://testnet.bscscan.com/tx/0x8ae785d2cdf7b1919e3897d5fb3c0d73734519514bc0ab3e06e1c1ea6c628144)).
+   [0x546714e9…](https://testnet.bscscan.com/tx/0x546714e9af91412eaca6336e769a5a49cc6eac9d39d2ab5e5e7932360de9e550)).
    `0xBAD1` never became an allowed destination; the vault balance stayed 9,940 eUSD.
+5. The attacker then tries the emergency route: `setColdWallet(0xBAD2)`, so that an evacuation would pay
+   them ([0x4ed25a8a…](https://testnet.bscscan.com/tx/0x4ed25a8ac08934553869fd13710baf836a929a4ce3e3744d01ad181a79485942)). The Watchtower raises the **COLD WALLET CHANGE** alarm and
+   cancels it **6 blocks (about 3 seconds) later** ([0x6a53e86e…](https://testnet.bscscan.com/tx/0x6a53e86e0e4278b8ccf87ecaf6c92043273a35ec6cf1f3bd8cada37a91756b4c)); executing it anyway
+   fails with `UnknownOperation()`. The owner's recovery key then evacuates all 9,940 eUSD to the cold wallet
+   registered at setup ([0xa36d6be2…](https://testnet.bscscan.com/tx/0xa36d6be26185ed11fe75ac4c83ee99741faa82956663f25a5946b0169a9da3ba)), and the Watchtower reports the vault paused.
 
 The Watchtower's own log of that run: `deployments/bsc-testnet/watchtower/2026-11-08-alerts.log`.
-All of it is re-checked by `scripts/v2/verify_evidence.py` (steps W1–W3, [`docs/TESTNET_V2.md`](../docs/TESTNET_V2.md)).
+All of it is re-checked by `scripts/v2/verify_evidence.py` (steps W1–W3 and E1–E5, [`docs/TESTNET_V2.md`](../docs/TESTNET_V2.md)).
 
 Rehearsed on a local fork as well: the attack above, an approved upgrade (left alone), and a burst of
 three unexpected changes (each cancelled, then `panic`).

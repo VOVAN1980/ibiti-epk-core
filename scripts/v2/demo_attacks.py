@@ -17,11 +17,12 @@ import json
 import os
 import re
 import subprocess
+import time
 import sys
 import urllib.request
 from datetime import datetime, timezone
 
-KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian2": "V2_GUARDIAN2_PRIVATE_KEY", "admin": "PRIVATE_KEY",
+KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian1": "V2_GUARDIAN1_PRIVATE_KEY", "guardian2": "V2_GUARDIAN2_PRIVATE_KEY", "admin": "PRIVATE_KEY",
            # guard demo (separate vault and keys)
            "operator": "V21_OPERATOR_PRIVATE_KEY", "guardAgent": "V21_AGENT_PRIVATE_KEY", "guardAdmin": "V21_ADMIN_PRIVATE_KEY"}
 ERROR_SOURCES = ["contracts/v2/EPKVault.sol:EPKVault", "contracts/v2/guards/DexGuard.sol:DexGuard",
@@ -99,13 +100,27 @@ def main():
         m = re.search(r"0x[0-9a-fA-F]{8}", sim.stderr + sim.stdout)
         observed = errors.get(m.group(0).lower(), m.group(0)) if (sim.returncode != 0 and m) else "NOT REVERTED"
 
-        sent = run(["cast", "send", vault, data, "--gas-limit", "900000", "--rpc-url", rpc, "--json",
-                    "--private-key", pk])
-        try:
-            receipt = json.loads(sent.stdout)
-            tx, status = receipt.get("transactionHash"), int(receipt.get("status", "0x0"), 16)
-        except (json.JSONDecodeError, ValueError):
-            tx, status = None, None
+        tx, status = None, None
+        for attempt in range(3):  # a node error must never leave an attack silently unsent
+            sent = run(["cast", "send", vault, data, "--gas-limit", "900000", "--rpc-url", rpc, "--json",
+                        "--private-key", pk])
+            try:
+                receipt = json.loads(sent.stdout)
+                tx, status = receipt.get("transactionHash"), int(receipt.get("status", "0x0"), 16)
+                break
+            except (json.JSONDecodeError, ValueError):
+                out = (sent.stderr + sent.stdout).strip()
+                h = re.search(r"\b0x[0-9a-fA-F]{64}\b", out)
+                if h:  # it went out but no receipt came back: read the receipt
+                    rc = run(["cast", "receipt", h.group(0), "--rpc-url", rpc, "--json"])
+                    try:
+                        r = json.loads(rc.stdout)
+                        tx, status = r["transactionHash"], int(r["status"], 16)
+                        break
+                    except (json.JSONDecodeError, ValueError, KeyError):
+                        pass
+                print(f"  send failed ({(out.splitlines() or ['no output'])[-1][:160]}); retrying")
+                time.sleep(4)
         if tx and status == 0:
             save_trace(rpc, tx)  # right away: public nodes keep the state needed for traces only briefly
         results.append({"attack": name, "from": sender_role, "sender": sender, "error": observed,

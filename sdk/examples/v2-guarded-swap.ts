@@ -1,4 +1,4 @@
-// SDK v2 walkthrough against the guard demo (EPKVault 2.2.0) on BSC Testnet. Read-only: it signs and SIMULATES,
+// SDK v2 walkthrough against the guard demo (EPKVault 2.3.0) on BSC Testnet. Read-only: it signs and SIMULATES,
 // it never sends a transaction.
 //   npm run example:v2            (the operator key V21_OPERATOR_PRIVATE_KEY in ../.env is optional:
 //                                  without it the signing and simulation steps are skipped)
@@ -9,7 +9,7 @@ import { bscTestnet } from "viem/chains";
 
 import { EPKVaultClient, DexGuardClient, planGuardedSwap, v2SwapExactNative, NATIVE } from "../src/v2/index.js";
 
-const dep = JSON.parse(readFileSync("../deployments/bsc-testnet/epk-v2.2-guards.json", "utf8")) as Record<string, string>;
+const dep = JSON.parse(readFileSync("../deployments/bsc-testnet/epk-guards.json", "utf8")) as Record<string, string>;
 const rpc = process.env.BSC_TESTNET_RPC ?? "https://bsc-testnet-rpc.publicnode.com";
 const publicClient = createPublicClient({ chain: bscTestnet, transport: http(rpc) });
 const vault = new EPKVaultClient({ address: dep.vault as Address, publicClient });

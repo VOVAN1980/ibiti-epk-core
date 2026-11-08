@@ -32,7 +32,7 @@ contract FastUpgradeDemo is Script {
         g[0] = vm.addr(vm.envUint("V21_GUARDIAN1_PRIVATE_KEY"));
         g[1] = vm.addr(vm.envUint("V21_GUARDIAN2_PRIVATE_KEY"));
         address recovery = vm.addr(vm.envUint("V21_RECOVERY_PRIVATE_KEY"));
-        EPKTestUSD tusd = EPKTestUSD(vm.parseJsonAddress(vm.readFile("deployments/bsc-testnet/epk-v2.2-guards.json"), ".tusd"));
+        EPKTestUSD tusd = EPKTestUSD(vm.parseJsonAddress(vm.readFile("deployments/bsc-testnet/epk-guards.json"), ".tusd"));
 
         vm.startBroadcast(pk);
         EPKVault genesis = new EPKVault();

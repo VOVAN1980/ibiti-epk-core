@@ -1,0 +1,12 @@
+{
+  "chainId": 97,
+  "codehash": "0x39333931f5618d09a33bbe2e5a4efe5af85a3fe33e6467b670654197db3f1845",
+  "fastVault": "0x9248fb523dE74420b56c733fB9FA14917A054FEb",
+  "fastVaultTokensBefore": 10000000000000000000,
+  "implementation": "0x214c7a5a9B6b25d559ac714050B66A09E050eA32",
+  "registry": "0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db",
+  "startedAtBlock": 141605181,
+  "version": 20300,
+  "factory": "0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B",
+  "emergencyModule": "0xFc7eE3221d93E06F781B33fbe9a1a7Bbc074d003"
+}

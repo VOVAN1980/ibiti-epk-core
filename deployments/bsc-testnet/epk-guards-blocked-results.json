@@ -1,0 +1,13 @@
+{
+  "vault": "0x3Bdd9c884B168bbFa41C181328548a5e42180FD3",
+  "results": [
+    {
+      "attack": "k_payBlockedSupplier",
+      "from": "operator",
+      "sender": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+      "error": "BlockedAddress(address)",
+      "tx": "0x7df9d850634c92981cf73ff1a46ce065dd7e266e668def74f58a19924f819a53",
+      "status": "rejected"
+    }
+  ]
+}

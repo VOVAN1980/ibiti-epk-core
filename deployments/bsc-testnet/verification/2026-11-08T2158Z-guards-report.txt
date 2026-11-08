@@ -1,0 +1,190 @@
+EPK v2 evidence check — nodes, asked in this order (the next one only when a node has no answer):
+  1. https://bsc-testnet.bnbchain.org
+  2. https://97.rpc.thirdweb.com
+  3. https://bsc-testnet-rpc.publicnode.com
+
+Network
+  OK   chainId 97 (expected 97, BSC Testnet)
+
+Document vs evidence file
+  OK   docs/TESTNET_GUARDS.md and deployments/bsc-testnet/epk-guards-evidence.json list the same 24 transactions
+  OK   every contract linked in the document is in the evidence file
+
+Contracts and bytecode
+  OK   0x214c7a5a9B6b25d559ac714050B66A09E050eA32  EPKVault 2.3.0 implementation (the current public release): has code (24,390 bytes)
+  OK   code hash 0x39333931f5618d09a33bbe2e5a4efe5af85a3fe33e6467b670654197db3f1845 = recorded 0x39333931f5...
+  OK   registry pins this exact code hash (version 20300, revoked: False)
+         usable by vaults from 2026-11-08 21:32 UTC
+  OK   vaultVersion() = 20300 (claimed 20300)
+  OK   0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db  EPKRegistry of the public stack (5-minute test-network release window): has code (2,228 bytes)
+  OK   code hash 0xbbd98e762333270989f783029a4bb6f21fe51c7572dbe19c4bdeec37168e86d3 = recorded 0xbbd98e7623...
+  OK   0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B  EPKVaultFactory for 2.3.0 — the SDK's public factory: has code (2,331 bytes)
+  OK   code hash 0x1fd35f57f6c9c942f34275b9d2e020f08c168a871f4c27f917cd2abc382616a0 = recorded 0x1fd35f57f6...
+  OK   0x3Bdd9c884B168bbFa41C181328548a5e42180FD3  EPKVault 2.3.0 guard demo vault (proxy): has code (137 bytes)
+  OK   code hash 0x623c50c40e8f9c4f6957d2ce7a0dc247cc59e62d73fbc27ee3ec312962586480 = recorded 0x623c50c40e...
+  OK   EIP-1967 implementation slot -> implementation (0x214c7a5a9b6b25d559ac714050b66a09e050ea32)
+  OK   0x1FC77bbe5947687e4094b0cD8842b6C7d4485C31  DexGuard (with the 2026-11-08 fixes): has code (8,694 bytes)
+  OK   code hash 0x04a03b84dcff81aa53835f70ebc19e42bb157f382abb72f15f2ec94341064818 = recorded 0x04a03b84dc...
+  OK   0xC30d44F5c87c91d8a5EF3942546Ee478abD40815  ThreatFeed V2 (ThreatFeedGuard): has code (3,253 bytes)
+  OK   code hash 0xbb045979aad1666a65ca96420693d19a4132d48f5032432f14303860ed4e6f93 = recorded 0xbb045979aa...
+  OK   0xc46373543fA89c36D6Eca1455A28C3FDbCCc3C0B  CompositeGuard (ThreatFeed V2 + DexGuard): has code (3,155 bytes)
+  OK   code hash 0x8b1bfefe5532c7c85416a21fbf13e657f47c280263a1765c2f37c3522e19a562 = recorded 0x8b1bfefe55...
+  OK   0xc58699856ED5c978F7bf47e46650Bdb23d9bB119  tUSD — the guard demo's test stablecoin: has code (1,950 bytes)
+  OK   code hash 0xf8b937569bbdc39778f7725a53e9ffe79cf8d9b70adf49ca87642cec279d4861 = recorded 0xf8b937569b...
+  OK   0xD246D8d4d58d7b444159Bd8cFf9B6fb00f27105C  fixed $1 test feed for tUSD: has code (667 bytes)
+  OK   code hash 0xa95aabc0b8e2c71d1a0dda9f22ffc61df65d60c4c27553709170c7f8b23faa59 = recorded 0xa95aabc0b8...
+  OK   0xD99D1c33F9fC3444f8101754aBC46c52416550D1  PancakeSwap V2 router (BSC Testnet, not ours): has code (18,089 bytes)
+  OK   code hash 0x89c56da835bced0ca70200b1628ccc5c2af177e22d2471f5637977419b1681a1 = recorded 0x89c56da835...
+  OK   0x6d370d9654daafda5d0bb89080e1d7b7c2f80c9e  PancakeSwap tUSD/WBNB pool, kept at the Chainlink price by the demo admin: has code (8,666 bytes)
+  OK   code hash 0x3d0e7f1e341e5f6c886edc91f3b92bef13faef208182137e95420f544f024061 = recorded 0x3d0e7f1e34...
+  OK   0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7  BUSD (BSC Testnet, not ours): has code (7,763 bytes)
+  OK   code hash 0xd48ad9c1cc12fea3926b743c2c46bc6e7bcc7848eb5a8207bd9c4a65bbce53fe = recorded 0xd48ad9c1cc...
+  OK   0x85ecdcdd01ebe0bfd0aba74b81ca6d7f4a53582b  PancakeSwap WBNB/BUSD pool (BSC Testnet, not ours): has code (8,666 bytes)
+  OK   code hash 0x3d0e7f1e341e5f6c886edc91f3b92bef13faef208182137e95420f544f024061 = recorded 0x3d0e7f1e34...
+  OK   0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526  Chainlink BNB / USD (BSC Testnet): has code (9,571 bytes)
+  OK   code hash 0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2 = recorded 0xbd6f524cdc...
+  OK   0x9331b55D9830EF609A2aBCfAc0FBCE050A52fdEa  Chainlink BUSD / USD (BSC Testnet): has code (9,571 bytes)
+  OK   code hash 0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2 = recorded 0xbd6f524cdc...
+
+Transactions
+  D2  0xa75969b2d6...  admin creates a new EPKVault 2.3.0 through the PUBLIC 2.3.0 factory (5-minute test-network upgrade clocks)
+         block 141608560, 2026-11-08 21:52:12 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to factory
+  OK   succeeded on-chain
+  OK   event VaultCreated from factory
+  D3  0x4c843ec596...  trading policy for the operator key, guarded by ThreatFeed V2 + DexGuard
+         block 141608620, 2026-11-08 21:52:39 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   succeeded on-chain
+  OK   event PolicyUpdated from vault
+  D4  0x474bdb1d90...  agent-session envelope 1 gets the same guard (envelope 2 stays unguarded on purpose)
+         block 141608773, 2026-11-08 21:53:48 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   succeeded on-chain
+  OK   event EnvelopeGuardSet from vault
+  D5  0x1ec4145cd1...  setup finished: from now on every loosening needs the 5-minute timelock
+         block 141608779, 2026-11-08 21:53:50 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   succeeded on-chain
+  OK   event SetupFinalized from vault
+  S1  0x1527d86a2d...  operator: vault swaps 0.0001 BNB for tUSD on PancakeSwap — at a fair price, output to the vault
+         block 141608892, 2026-11-08 21:54:41 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Outflow from vault, amounts 0.0001 / 0.0019 BNB
+  OK   event Transfer from token, amounts 0.068788438033774419 tUSD
+  S2  0xfb0837323c...  operator: vault sells 0.05 tUSD for BNB (approve, swap, allowance reset)
+         block 141608900, 2026-11-08 21:54:45 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Transfer from token, amounts 0.05 tUSD
+  S3  0x75776f3505...  operator: vault pays the supplier 1 tUSD (plain payments pass the guards)
+         block 141608907, 2026-11-08 21:54:48 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   succeeded on-chain
+  OK   event Transfer from token, amounts 1 tUSD
+  S4  0x419f94ecd4...  session manager opens an AI-agent session in the GUARDED envelope 1
+         block 141608911, 2026-11-08 21:54:50 UTC
+  OK   sent by sessionManager (0x81dc14f9b68a8ad78350815d28b75d78bc81442e) to vault
+  OK   succeeded on-chain
+  OK   event SessionOpened from vault
+  S5  0x6e9af42dd2...  session manager opens an AI-agent session in the UNGUARDED envelope 2
+         block 141608919, 2026-11-08 21:54:53 UTC
+  OK   sent by sessionManager (0x81dc14f9b68a8ad78350815d28b75d78bc81442e) to vault
+  OK   succeeded on-chain
+  OK   event SessionOpened from vault
+  S6  0x22e29186b9...  AI agent, on its own, swaps 0.0001 BNB for tUSD inside the guarded session
+         block 141608923, 2026-11-08 21:54:55 UTC
+  OK   sent by agent (0x602d636dc4ea21ac4a1278cc589e9ab1cfd03201) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Transfer from token, amounts 0.068663689539257837 tUSD
+  A1  0x42ec5b4de2...  operator key signs a swap whose output goes to the attacker
+         block 141608961, 2026-11-08 21:55:12 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 122,563 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:14 UTC): this exact tx reverted with RecipientNotVault(attacker)
+  A2  0x50cbd2b2e1...  operator key signs a swap that accepts any price (minimum out = 1)
+         block 141608971, 2026-11-08 21:55:17 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 157,533 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:19 UTC): this exact tx reverted with PriceTooLow(1, 0.0681 tUSD)
+  A3  0x2588f59932...  operator key signs a swap on the REAL WBNB/BUSD pool at that pool's own quote (~37 % below Chainlink)
+         block 141608982, 2026-11-08 21:55:22 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 172,945 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:24 UTC): this exact tx reverted with PriceTooLow(0.0431 tUSD, 0.0681 tUSD)
+  A4  0x5d76ae6d62...  operator key uses an unsupported router function (fee-on-transfer variant)
+         block 141608992, 2026-11-08 21:55:26 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 116,559 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:29 UTC): this exact tx reverted with UnsupportedCall(router, 82,762,419,566,005,341,292,617,378,150,000,000,000,000,000,000,000,000,000,000 tUSD)
+  A5  0x09593e8da4...  operator key signs a swap valid for 2 days (to run later at a worse price)
+         block 141609003, 2026-11-08 21:55:31 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 122,720 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:33 UTC): this exact tx reverted with BadDeadline(1794347700)
+  A6  0xa0012be506...  operator key approves a non-router (the supplier) to pull tUSD
+         block 141609014, 2026-11-08 21:55:36 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 104,974 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:38 UTC): this exact tx reverted with ApproveToNonRouter(supplier)
+  A7  0x5fb4626c08...  operator key swaps into a token that is not on the guard's list (CAKE)
+         block 141609025, 2026-11-08 21:55:41 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 122,097 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:43 UTC): this exact tx reverted with TokenNotAllowed(0xfa60d973f7642b748046464e165a65b7323b0dee)
+  A8  0x44fc5eb9b3...  AI agent (guarded session) sends a swap's output to the attacker
+         block 141609034, 2026-11-08 21:55:45 UTC
+  OK   sent by agent (0x602d636dc4ea21ac4a1278cc589e9ab1cfd03201) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 127,743 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:47 UTC): this exact tx reverted with RecipientNotVault(attacker)
+  A9  0x1ece4ab487...  AI agent uses the UNGUARDED session to call the router — the other path
+         block 141609045, 2026-11-08 21:55:50 UTC
+  OK   sent by agent (0x602d636dc4ea21ac4a1278cc589e9ab1cfd03201) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 54,006 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:52 UTC): this exact tx reverted with GuardRequired()
+  A10 0x7fbafb3cea...  admin key tries to remove the session guard without the timelock
+         block 141609055, 2026-11-08 21:55:54 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 29,036 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:55:57 UTC): this exact tx reverted with NotTimelocked()
+  A11 0xfca148d7be...  operator key parks 1 tUSD at the router, where anyone could sweep it
+         block 141609066, 2026-11-08 21:55:59 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 104,127 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:56:02 UTC): this exact tx reverted with RecipientNotAllowed(router)
+  C1  0xc4aecc5b77...  control: a PLAIN wallet (no EPK) makes the same 0.0001 BNB -> BUSD trade on the real pool
+         block 141609114, 2026-11-08 21:56:21 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to router
+  OK   succeeded on-chain
+  OK   event Transfer from busd, amounts 0.043090275865776213 BUSD
+  A12 0x667951e85f...  ThreatFeed V2: a responder blocks the supplier (reported as a drainer) — instantly
+         block 141609136, 2026-11-08 21:56:31 UTC
+  OK   sent by responder (0x303fdc8733f7ca4223d2bed55d02d3e22cdf10f3) to threatFeed
+  OK   succeeded on-chain
+  OK   event Blocked from threatFeed
+  A13 0x7df9d85063...  after the block: operator key tries to pay the supplier again
+         block 141609157, 2026-11-08 21:56:40 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 89,759 of 900,000)
+  OK   STRICT  saved trace (https://data-seed-prebsc-1-s1.binance.org:8545, 2026-11-08 21:56:43 UTC): this exact tx reverted with BlockedAddress(supplier)
+
+Checkpoints — the vault at fixed blocks
+  STATE  = historical state read from a node (most free nodes keep it only for recent blocks)
+  EVENTS = derived from event logs, when no node asked keeps the state
+
+Attack windows (vault balance before the first and after the last attack)
+  OK   STATE (97.rpc.thirdweb.com) attacks A1-A13 (no tUSD may leave the vault): blocks 141608960..141609157, 49.0875 -> 49.0875 tUSD, moved out: 0
+
+Demo vault now
+  implementation implementation (0x214c7a5a9b6b25d559ac714050b66a09e050ea32), vaultVersion 20300
+  paused: False
+  tUSD balance: 49.0875
+
+Rejection reasons proven by execution trace (STRICT): 12, by historical replay (REPLAY): 0
+Answers per node: bsc-testnet.bnbchain.org 95, 97.rpc.thirdweb.com 2, bsc-testnet-rpc.publicnode.com 0
+RESULT: 113 checks OK, 0 mismatches, 0 not checkable, 0 need an archive node (OLD: history no node asked still keeps) — everything checkable matches the evidence
+raw node answers archived: deployments/bsc-testnet/verification/2026-11-08T2158Z-guards-rpc-snapshot.json (111 calls)
