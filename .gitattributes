@@ -1,0 +1,3 @@
+# Solidity stays LF on every OS: Slither's line-based suppressions and the bytecode
+# metadata hash depend on the exact bytes of each source file.
+*.sol text eol=lf

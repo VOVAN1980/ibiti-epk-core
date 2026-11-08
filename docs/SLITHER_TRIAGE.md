@@ -137,7 +137,7 @@ numbers shift and inline suppressions stop matching. Keep the working copy of `c
 python -m venv .venv-slither
 .venv-slither/Scripts/pip install slither-analyzer   # or bin/pip on Linux/macOS
 forge build
-.venv-slither/Scripts/slither . --foundry-out-directory out --exclude-dependencies --filter-paths "contracts/epk|contracts/validators|contracts/mocks|test/|lib/|scripts/"
+.venv-slither/Scripts/slither . --foundry-out-directory out --exclude-dependencies --filter-paths "test/|lib/|scripts/"
 ```
 
 Every future change to `contracts/v2/` must keep this run free of unexplained findings.

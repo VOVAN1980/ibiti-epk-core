@@ -7,7 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EPKVault} from "../../contracts/v2/EPKVault.sol";
 import {EPKVaultFactory} from "../../contracts/v2/EPKVaultFactory.sol";
 import {EPKRegistry} from "../../contracts/v2/EPKRegistry.sol";
-import {MockTarget} from "../../contracts/mocks/MockTarget.sol";
+import {MockTarget} from "./MockTarget.sol";
 import {
     TestToken,
     FalseToken,
@@ -233,7 +233,7 @@ contract EPKVaultTest is Test {
         assertEq(token.balanceOf(friend), 1e18);
     }
 
-    // ------------------------------------------------------------------ isolation (v1 shared-executor issue)
+    // ------------------------------------------------------------------ isolation (no shared executor)
 
     function test_strangerCannotTouchAnotherCustomersVault() public {
         address strangerAdmin = makeAddr("strangerAdmin");

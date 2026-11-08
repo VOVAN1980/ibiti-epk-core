@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.24;
 
-import {IPolicyValidator} from "../../epk/IPolicyValidator.sol";
+import {IPolicyValidator} from "../IPolicyValidator.sol";
 
 /// @title EPK guard interface (guard modules for EPKVault)
 /// @notice A guard is an external, immutable rule set that a vault consults for a policy or a session

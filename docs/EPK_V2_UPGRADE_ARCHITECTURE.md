@@ -19,7 +19,6 @@ Tests: `test/v2/EPKVault.upgrade.t.sol`. Storage snapshot: `docs/storage-layout/
 3. New versions are deployed separately; **old versions keep working** (no forced upgrades).
 4. **No single key** (IBITI or anyone) can replace a vault's logic, disable protection or access funds.
 5. Critical changes need authorization **and** a delay; the **emergency stop is always available**.
-6. EPK v1 stays fully working and untouched.
 
 ## 3. Options compared
 

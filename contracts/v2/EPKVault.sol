@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.24;
 
-import {IPolicyValidator} from "../epk/IPolicyValidator.sol";
+import {IPolicyValidator} from "./IPolicyValidator.sol";
 import {IEPKGuard} from "./guards/IEPKGuard.sol";
 import {IEPKRegistry, IVersionedVault} from "./IEPK.sol";
 import {EPKChains} from "./EPKChains.sol";
@@ -23,7 +23,7 @@ interface IERC1271 {
 /// @notice Holds a customer's funds and lets agents act on them only within on-chain rules that a
 ///         compromised operator key, server or AI agent cannot lift:
 ///         - isolation: every customer has their own vault; calls are made from the vault itself,
-///           so nobody else's policy can ever reach these funds (fixes the v1 shared-executor issue);
+///           so nobody else's policy can ever reach these funds (no shared executor);
 ///         - role separation: operator signer / admin / guardians (stop only) / recovery key;
 ///         - outflow limits per asset, measured on real balance changes (token bucket);
 ///         - destination allowlist for transfers, approvals and native value;

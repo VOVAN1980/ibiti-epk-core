@@ -62,8 +62,7 @@ by default.
   operator).
 - Blocking is instant; **unblocking waits a delay**, so a captured feed key cannot quietly open a
   blocked address.
-- Replaces the v1 `ThreatFeedBlocklistValidator`, which compares a single hash with the root instead
-  of checking a real list.
+- Checks a real list (not a single hash compared with a root).
 
 ## 5. SDK v2 (TypeScript, viem)
 

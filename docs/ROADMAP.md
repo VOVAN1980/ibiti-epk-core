@@ -10,7 +10,6 @@ Last updated: 2026-11-07.
 
 | Component | Status |
 |---|---|
-| **EPK v1** — `EPKernel` + validators | Released (`v1.0.0`, MIT), deployed on BSC testnet. Reference kernel; **not for holding real funds** (shared executor, see `docs/THREAT_MODEL.md`). |
 | **EPK v2** — `EPKVault` | The main version of this repository: 2.1 preview, BUSL-1.1, TypeScript SDK `@ibiti/epk-sdk@preview` on npm. Not audited. **Live on BSC Testnet** since 2026-11-07 with an end-to-end demo anyone can re-check (`docs/TESTNET_V2.md`, `docs/proof/`); not on mainnet. |
 | **EPK Watchtower** | Automatic guardian (`watchtower/`, BUSL-1.1). Working on BSC Testnet: cancelled a change scheduled with the stolen admin key 5 blocks after it appeared. |
 
@@ -22,7 +21,7 @@ EPK v2 today:
 - **Separate roles**: operator, admin, ≥ 2 guardians (can only stop), recovery key, session manager.
 - **Tighten instantly, loosen only through a timelock** that guardians can veto; `panic()` stops everything.
 - **Upgradeable without moving funds — only by the owner's decision**: registry of reviewed releases (7-day public delay), ≥ 2-day per-vault delay, guardian veto; nobody (including IBITI) can upgrade a vault for its owner. From 2.1 both delays run in parallel (7 days, not 9), and public test networks use 5-minute delays with the same code.
-- **Quality**: 120 v2 tests (322 contract tests in the repository including v1, plus 12 Watchtower tests) incl. fuzz and stateful invariants (compromised operator, compromised admin, compromised session manager), four internal security reviews, Slither with every finding fixed or justified.
+- **Quality**: 176 contract tests (plus 12 Watchtower and 14 SDK tests) incl. fuzz and stateful invariants (compromised operator, compromised admin, compromised session manager), four internal security reviews, Slither with every finding fixed or justified.
 
 ## Next milestones
 
