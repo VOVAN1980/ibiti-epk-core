@@ -28,7 +28,7 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 
 | Component | State |
 |---|---|
-| **EPK v2** — `EPKVault` | **Live on BSC Testnet**: 2.1 since 2026-11-07, release 2.2.0 (the fifth review's fixes) since 2026-11-08 — the public factory creates vaults on 2.2.0 and existing demo vaults opt in ([`docs/TESTNET_V22.md`](docs/TESTNET_V22.md)). Five internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
+| **EPK v2** — `EPKVault` | **Live on BSC Testnet**: release 2.3.0 since 2026-11-08 — emergency evacuation to the owner's cold wallet, minute-scale timelocks on test networks; the public factory creates vaults on 2.3.0 and existing vaults opt in ([`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md)). Five internal security reviews; **not yet independently audited, not on mainnet** (the evacuation needs an independent review first). BUSL-1.1. |
 | **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). BUSL-1.1. |
 | **TypeScript SDK** — `@ibiti/epk-sdk` | In this repository, testnet only; on npm with the finished release ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). MIT. |
 | **EPK Watchtower** | Automatic guardian, working on BSC Testnet. BUSL-1.1. |
@@ -41,21 +41,25 @@ truth for this README, the website and DoraHacks.
 ## Proven on BSC Testnet
 
 One vault at one address from start to finish
-([`0x14026E45…1a43fa`](https://testnet.bscscan.com/address/0x14026E45D119Af294cFb48Ddf7904299641a43fa), EPKVault 2.2.0),
-every step a real transaction:
+([`0x1538f0Ce…bD4Db`](https://testnet.bscscan.com/address/0x1538f0Cee859c883E12046a6aa52c7CA0f4bD4Db), EPKVault 2.3.0,
+5-minute timelock), every step a real transaction:
 
 | What happened | Result |
 |---|---|
 | The AI agent opens a session and pays the treasury 50 eUSD on its own | ✅ paid |
 | 5 attacks: over budget, unknown destination, forbidden call, forged signature, not the agent | ❌ all rejected on-chain |
 | A guardian calls `panic()` | everything stops in one transaction |
-| Recovery: unpause through the timelock, new agent session | ✅ service restored; the old session stays dead (`PolicyInactive`) |
-| A **stolen admin key** schedules a new withdrawal address | 🛡 the Watchtower cancelled it **4 blocks (about 11 seconds) later**; executing it anyway was rejected (`UnknownOperation`) |
+| Recovery: unpause through the timelock (5 minutes later), new agent session | ✅ service restored; the old session stays dead (`PolicyInactive`) |
+| A **stolen admin key** schedules a new withdrawal address | 🛡 the Watchtower cancelled it **9 blocks (about 4 seconds) later**; executing it anyway was rejected (`UnknownOperation`) |
+| The stolen admin key tries to **redirect the owner's cold wallet** to itself | 🛡 the Watchtower cancelled it **6 blocks (about 3 seconds) later**; executing it anyway was rejected (`UnknownOperation`) |
+| A guardian tries to evacuate the vault | ❌ rejected (`NotEvacuator`) — guardians stop, they never move funds |
+| **Emergency evacuation** by the owner's recovery key | ✅ all 9,940 eUSD moved to the cold wallet registered at setup, and the vault paused — in one transaction |
 
-**7 of 7** attack transactions rejected · **0 eUSD** left the vault during the attacks.
-Opt-in upgrades are shown live: a vault took release 2.2.0 through the SDK at the same address with the
+**9 of 9** attack transactions rejected · **0 eUSD** left the vault during the attacks; the only way out in an
+emergency was the owner's own cold wallet.
+Opt-in upgrades are shown live: a vault took release 2.3.0 through the SDK at the same address with the
 same funds, 5 minutes after the release was listed (test networks run 5-minute release and upgrade clocks;
-mainnet keeps 7 days + 2 days) — [`docs/TESTNET_V22.md`](docs/TESTNET_V22.md).
+mainnet keeps 7 days + 2 days) — [`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md).
 
 ### Check it yourself
 
@@ -86,6 +90,7 @@ The report labels how each fact was proven (**STRICT** execution trace, **REPLAY
 - **Agent sessions**: AI agents get instant, short-lived sessions with their own budgets — only inside envelopes the owner approved through the timelock; one switch stops every session of an envelope.
 - **Tighten instantly, loosen only through a timelock** that guardians can veto.
 - **`panic()`**: one call pauses the vault and invalidates every policy, session and pending change.
+- **Emergency evacuation**: the admin, the recovery key or an optional evacuator moves every tracked asset at once — only to the cold wallet the owner registered in advance, never anywhere else; changing that wallet waits 3× the timelock (≥ 2 days on mainnet) and guardians can veto it ([design](docs/EVACUATION_v2.md)).
 - **Upgrades only by the owner's decision**: registry of reviewed releases (7-day public window), ≥ 2-day per-vault timelock, guardian veto; nobody — including IBITI — can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)).
 
 ### Watchtower — the automatic guardian
@@ -119,8 +124,8 @@ Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
 
 ```bash
 forge build
-forge test                                               # 191 contract tests (3 of them fork BSC Testnet and need an RPC)
-python -m unittest discover -s watchtower -p "test_*.py" # 15 Watchtower tests, no network
+forge test                                               # 214 contract tests (3 of them fork BSC Testnet and need an RPC)
+python -m unittest discover -s watchtower -p "test_*.py" # 16 Watchtower tests, no network
 ```
 
 Every pull request and every push to `master` runs the tests in [CI](.github/workflows/ci.yml) and
@@ -133,7 +138,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
-- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_V22_GUARDS.md) · [release 2.2.0](docs/TESTNET_V22.md)
+- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_GUARDS.md) · [release 2.3.0](docs/TESTNET_RELEASE.md)
 - [Guard modules](docs/GUARDS_v2.md)
 - [Roadmap](docs/ROADMAP.md)
 

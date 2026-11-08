@@ -194,11 +194,15 @@
         // 3) blocks between the thief's change and the Watchtower's cancel
         if (w1 && w2) Promise.all([rpc("eth_getTransactionReceipt", [w1.tx]), rpc("eth_getTransactionReceipt", [w2.tx])])
           .then(function (rs) { EPK.countTo(el("blocks"), parseInt(rs[1].blockNumber, 16) - parseInt(rs[0].blockNumber, 16)); setSrc("blocks", true); })
-          .catch(function () { el("blocks").textContent = "4"; setSrc("blocks", false); });
+          .catch(function () { el("blocks").textContent = "9"; setSrc("blocks", false); });
 
-        // 4) what is in the vault right now
-        rpc("eth_call", [{ to: token, data: "0x70a08231" + pad(vault).slice(2) }, "latest"])
-          .then(function (b) { EPK.countTo(el("balance"), Number(BigInt(b) / 10n ** 18n), fmtInt); setSrc("balance", true); })
+        // 4) what is safe right now: in the vault, plus what an evacuation moved to the owner's cold wallet
+        var holders = [vault].concat(ev.roles && ev.roles.coldWallet ? [ev.roles.coldWallet] : []);
+        Promise.all(holders.map(function (h) { return rpc("eth_call", [{ to: token, data: "0x70a08231" + pad(h).slice(2) }, "latest"]); }))
+          .then(function (bs) {
+            var sum = bs.reduce(function (s, b) { return s + BigInt(b); }, 0n);
+            EPK.countTo(el("balance"), Number(sum / 10n ** 18n), fmtInt); setSrc("balance", true);
+          })
           .catch(function () { el("balance").textContent = "9,940"; setSrc("balance", false); });
       })
       .catch(function () { /* evidence unreachable: the static numbers in the HTML stay */ });

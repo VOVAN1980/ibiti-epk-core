@@ -9,7 +9,7 @@
 > [INTEGRATION_v2.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/master/docs/INTEGRATION_v2.md) ·
 > licence: SDK code MIT; bundled EPK v2 contract bytecode BUSL-1.1 (see `LICENSE`).
 
-TypeScript SDK for **EPK** (IBITI Labs) built on **viem**: EPK vaults (2.0.x, 2.1.x and 2.2.x), AI-agent sessions,
+TypeScript SDK for **EPK** (IBITI Labs) built on **viem**: EPK vaults (2.0.x to 2.3.x), AI-agent sessions,
 the timelock and the guards (DexGuard, ThreatFeed V2, CompositeGuard). In development, like EPK v2 itself.
 `@ibiti/epk-sdk` and `@ibiti/epk-sdk/v2` export the same API.
 
@@ -74,7 +74,7 @@ Also: `availableToSpend` / `budgetAvailable` (limits left), `openSession` (AI-ag
 
 ```bash
 npm run test:v2      # offline: digest and operation ids equal the live vault's; all 11 on-chain rejections decode
-npm run example:v2   # read-only walkthrough against the guard demo vault (EPKVault 2.2.0) on BSC Testnet (signs and simulates, sends nothing)
+npm run example:v2   # read-only walkthrough against the guard demo vault (EPKVault 2.3.0) on BSC Testnet (signs and simulates, sends nothing)
 npm run example:v2-upgrade   # opt-in upgrade on BSC Testnet driven by the SDK (needs the demo admin key; sends transactions)
 ```
 

@@ -10,7 +10,8 @@
 // What it does (all real transactions on BSC Testnet, ~0.005 tBNB):
 //   1. creates YOUR vault through the public EPK factory (you are its admin)
 //   2. configures it: native-coin limit, your treasury as the only payee, a policy for your bot
-//   3. finalizes setup (from now on loosening changes need the 1-hour timelock) and deposits 0.003 tBNB
+//   3. finalizes setup (from now on loosening changes wait out the timelock: 5 minutes, the test-network minimum;
+//      on a mainnet at least 1 hour) and deposits 0.003 tBNB
 //   4. your bot pays the treasury on its own
 //   5. a "stolen" bot key tries to pay a stranger and to exceed the limit — the SDK shows the vault's answer
 //      before any gas is spent
@@ -58,8 +59,9 @@ async function main() {
   // 1. create the vault
   const factory = new EPKFactoryClient(net.epk.factory, publicClient, admin);
   const salt = keccak256(toBytes(`quickstart ${Date.now()}`));
-  const predicted = await factory.predictVault({ admin: admin.account.address, guardians, delay: 3600n, recovery, salt });
-  const { vault } = await factory.createVault({ guardians, delay: 3600n, recovery, salt });
+  const delay = 300n; // timelock: 5 minutes, the test-network minimum (mainnet: at least 3600n)
+  const predicted = await factory.predictVault({ admin: admin.account.address, guardians, delay, recovery, salt });
+  const { vault } = await factory.createVault({ guardians, delay, recovery, salt });
   log(`1. vault created: ${vault} (predicted ${predicted === vault ? "correctly" : "WRONG"})`);
 
   // 2. configure during setup (takes effect at once)

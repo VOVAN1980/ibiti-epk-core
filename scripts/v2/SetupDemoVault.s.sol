@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "forge-std/console2.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {EPKVault} from "../../contracts/v2/EPKVault.sol";
+import {EPKVault, IEPKVaultEmergency} from "../../contracts/v2/EPKVault.sol";
 import {EPKVaultFactory} from "../../contracts/v2/EPKVaultFactory.sol";
 import {EPKDemoToken} from "./demo/EPKDemoToken.sol";
 
@@ -30,7 +30,10 @@ contract SetupDemoVault is Script {
         address recovery = vm.addr(vm.envUint("V2_RECOVERY_PRIVATE_KEY"));
         address manager = vm.addr(vm.envUint("V2_SESSION_MANAGER_PRIVATE_KEY"));
         address agent = vm.addr(vm.envUint("V2_AGENT_PRIVATE_KEY"));
-        uint256 delay = vm.envOr("V2_DELAY", uint256(3600));
+        // the owner's cold wallet: a separate key that runs no role in the vault (evacuation goes only there)
+        address cold = vm.addr(vm.envUint("V21_INTEGRATOR_PRIVATE_KEY"));
+        // test networks allow a 5-minute timelock (vault 2.3.0+), so panic -> unpause takes minutes
+        uint256 delay = vm.envOr("V2_DELAY", uint256(5 minutes));
 
         string memory json = vm.readFile(IN);
         EPKVaultFactory factory = EPKVaultFactory(vm.parseJsonAddress(json, ".factory"));
@@ -42,7 +45,7 @@ contract SetupDemoVault is Script {
 
         vm.startBroadcast(adminPk);
         EPKVault vault =
-            EPKVault(payable(factory.createVault(guardians, delay, recovery, keccak256("EPK v2 testnet demo vault"))));
+            EPKVault(payable(factory.createVault(guardians, delay, recovery, keccak256(abi.encode("EPK demo vault", block.number)))));
 
         // setup phase: the admin configures directly; afterwards loosening needs the timelock
         vault.setAsset(address(token), 1_000e18, 1 days, type(uint128).max);
@@ -52,6 +55,7 @@ contract SetupDemoVault is Script {
         vault.setEnvelope(ENVELOPE, true, 7 days, 0);
         vault.setEnvelopeCall(ENVELOPE, address(token), IERC20.transfer.selector, true);
         vault.setEnvelopeBudgetCap(ENVELOPE, address(token), 100e18);
+        IEPKVaultEmergency(address(vault)).setColdWallet(cold);
         vault.finalizeSetup();
 
         token.mint(address(vault), 10_000e18);
@@ -70,6 +74,7 @@ contract SetupDemoVault is Script {
         vm.serializeAddress(o, "recovery", recovery);
         vm.serializeAddress(o, "sessionManager", manager);
         vm.serializeAddress(o, "agent", agent);
+        vm.serializeAddress(o, "coldWallet", cold);
         vm.serializeUint(o, "delay", delay);
         string memory out = vm.serializeUint(o, "envelope", ENVELOPE);
         vm.writeJson(out, OUT);

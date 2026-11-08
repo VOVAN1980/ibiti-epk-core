@@ -31,7 +31,7 @@ to pay: bots and agents that trade.
 
 **Agent sessions needed a vault release.** On 2.0.x vaults sessions run with no validator. Vault release **2.1.0** adds a guard to each session envelope (set through the
 timelock; applies to every session of the envelope). `EPKVault` 2.1.0 was 24,562 of 24,576 bytes, so the
-change was kept small (2.2.0: 24,102 bytes, compiled for the Shanghai EVM). Each vault opts in through the registry and its own timelock.
+change was kept small (compiled for the Shanghai EVM since 2.2.0; 2.3.0 is 24,390 bytes, its emergency code in a separate module). Each vault opts in through the registry and its own timelock.
 
 ## 3. DEX Guard
 

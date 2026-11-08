@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EPK v2 — Secure on-chain vaults for autonomous AI agents | IBITI Labs</title>
-<meta name="description" content="EPK v2 by IBITI Labs: a personal on-chain vault for AI agents and teams. Spending limits, agent budgets, a panic button and an automatic Watchtower, enforced by the contract. Live on BSC Testnet with public, re-checkable proof.">
+<meta name="description" content="EPK v2 by IBITI Labs: a personal on-chain vault for AI agents and teams. Spending limits, agent budgets, a panic button, emergency evacuation to the owner's cold wallet and an automatic Watchtower, enforced by the contract. Live on BSC Testnet with public, re-checkable proof.">
 <meta property="og:title" content="EPK v2 — Secure on-chain vaults for autonomous AI agents">
 <meta property="og:description" content="A personal on-chain vault for AI agents and teams. Every attack in the demo was rejected on-chain — check it yourself.">
 <meta property="og:image" content="https://vovan1980.github.io/ibiti-epk-core/img/epk-investor-hero.webp">
@@ -70,10 +70,10 @@
       </div>
 
       <div class="stats" data-live-stats>
-        <div class="crystal stat reveal d1"><div class="n" data-stat="attacks">7/7</div><div class="l">attacks rejected on-chain</div><div class="src" data-src="attacks"><span class="dot"></span>checking…</div></div>
+        <div class="crystal stat reveal d1"><div class="n" data-stat="attacks">9/9</div><div class="l">attacks rejected on-chain</div><div class="src" data-src="attacks"><span class="dot"></span>checking…</div></div>
         <div class="crystal stat reveal d2"><div class="n"><span data-stat="moved">0</span> <small style="font-size:.45em;color:var(--dim)">eUSD</small></div><div class="l">moved by those attacks</div><div class="src" data-src="moved"><span class="dot"></span>checking…</div></div>
-        <div class="crystal stat reveal d3"><div class="n"><span data-stat="blocks">4</span> <small style="font-size:.45em;color:var(--dim)">blocks</small></div><div class="l">until the Watchtower cancelled a thief's change</div><div class="src" data-src="blocks"><span class="dot"></span>checking…</div></div>
-        <div class="crystal stat reveal d4"><div class="n"><span data-stat="balance">9,940</span> <small style="font-size:.45em;color:var(--dim)">eUSD</small></div><div class="l">still in the demo vault</div><div class="src" data-src="balance"><span class="dot"></span>checking…</div></div>
+        <div class="crystal stat reveal d3"><div class="n"><span data-stat="blocks">9</span> <small style="font-size:.45em;color:var(--dim)">blocks</small></div><div class="l">until the Watchtower cancelled a thief's change</div><div class="src" data-src="blocks"><span class="dot"></span>checking…</div></div>
+        <div class="crystal stat reveal d4"><div class="n"><span data-stat="balance">9,940</span> <small style="font-size:.45em;color:var(--dim)">eUSD</small></div><div class="l">kept safe: in the vault or the owner's cold wallet</div><div class="src" data-src="balance"><span class="dot"></span>checking…</div></div>
       </div>
     </div>
   </section>
@@ -119,7 +119,7 @@
       </div>
 
       <div class="crystal terminal reveal" data-type>
-        <div class="term-bar"><div class="term-dots"><i></i><i></i><i></i></div><div class="term-title">vault 0xB216…A340 · rejected on-chain</div></div>
+        <div class="term-bar"><div class="term-dots"><i></i><i></i><i></i></div><div class="term-title">vault 0x1538…D4Db · rejected on-chain</div></div>
         <div class="term-body"><span class="ln c-dim">#   attempt                                 vault's answer          result</span>
 <span class="ln">4a  agent pays 60 eUSD, 50 left in budget   <span class="c-hi">BudgetExceeded</span>          <span class="c-bad">REJECTED</span></span>
 <span class="ln">4b  agent pays an unknown address           <span class="c-hi">DestinationNotAllowed</span>   <span class="c-bad">REJECTED</span></span>
@@ -128,6 +128,8 @@
 <span class="ln">4e  stranger replays the agent&#39;s signature  <span class="c-hi">AgentNotAllowed</span>         <span class="c-bad">REJECTED</span></span>
 <span class="ln">6f  pre-panic session tries again           <span class="c-hi">PolicyInactive</span>          <span class="c-bad">REJECTED</span></span>
 <span class="ln">W3  thief pushes a cancelled change         <span class="c-hi">UnknownOperation</span>        <span class="c-bad">REJECTED</span></span>
+<span class="ln">E3  thief pushes a cold-wallet redirect     <span class="c-hi">UnknownOperation</span>        <span class="c-bad">REJECTED</span></span>
+<span class="ln">E4  a guardian tries to evacuate            <span class="c-hi">NotEvacuator</span>            <span class="c-bad">REJECTED</span></span>
 <span class="ln c-dim">────────────────────────────────────────────────────────────────────────────</span>
 <span class="ln c-ok">moved by attacks: 0 eUSD · re-check it: scripts/v2/verify_evidence.py <span class="caret"></span></span></div>
         <div class="scanline"></div><div class="beam"></div>
@@ -136,22 +138,22 @@
       <div class="grid g3" style="margin-top:18px">
         <article class="crystal hover attack reveal d1"><span class="who">Hacked agent</span><h3>Tries to overspend its budget</h3>
           <p class="card-text">Its session may spend 100 eUSD a day; it already spent 50 and asks for 60.</p>
-          <div class="answer"><span class="err">BudgetExceeded</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x1f894a8062d3f67336a3789180f8dacbcf7400d20d1674744ef0ec5fb4c4b78b">tx 0x1f89…b78b ↗</a></div></article>
+          <div class="answer"><span class="err">BudgetExceeded</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x21b49dd4bc0e6f091c8f99049784712d15ed1ba5e51996ed922c5e7a292a874b">tx 0x21b4…874b ↗</a></div></article>
         <article class="crystal hover attack reveal d2"><span class="who">Hacked agent</span><h3>Sends money to a new address</h3>
           <p class="card-text">The vault only pays addresses on its own list — the owner's treasury.</p>
-          <div class="answer"><span class="err">DestinationNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0xba1d5b687f29a4128f1393fc53754e9990750a15e0a80a7dea79bf5007a76e12">tx 0xba1d…6e12 ↗</a></div></article>
+          <div class="answer"><span class="err">DestinationNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x7c60c4213d487bf05f8e3cef6151c531c07bad2753a1ec36ecf4a9da685b1962">tx 0x7c60…1962 ↗</a></div></article>
         <article class="crystal hover attack reveal d3"><span class="who">Hacked agent</span><h3>Calls a function it may not use</h3>
           <p class="card-text">Token approvals are the classic drain. This agent's envelope allows only transfers, so <code>approve()</code> is refused.</p>
-          <div class="answer"><span class="err">CallNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x806b001fd66db317114bd895f9a5c1a798fc50aa075f8b906c5ab338d645c49e">tx 0x806b…c49e ↗</a></div></article>
+          <div class="answer"><span class="err">CallNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x4083a697c43a76c25dbf657a75415d900f015b743a500f70780db5c9caed2fbc">tx 0x4083…2fbc ↗</a></div></article>
         <article class="crystal hover attack reveal d1"><span class="who">Forger</span><h3>Signs with the wrong key</h3>
           <p class="card-text">Only the session's own key can authorise a batch.</p>
-          <div class="answer"><span class="err">BadSignature</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0xc301be1bdac7993d932d0ff3ec3363a0193b2764c795d83f2ad39cf06bbb1477">tx 0xc301…1477 ↗</a></div></article>
+          <div class="answer"><span class="err">BadSignature</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x752e0f2de741737dbd090c20b65099b7de5896cefa98a44a3b3ed7483cd157ea">tx 0x752e…57ea ↗</a></div></article>
         <article class="crystal hover attack reveal d2"><span class="who">Stranger</span><h3>Replays the agent's valid signature</h3>
           <p class="card-text">A signature alone is not enough — only the agent itself may submit it.</p>
-          <div class="answer"><span class="err">AgentNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x746c76f1f772785726b0f5b79512b2f84dbb480a8d750ef2b1a2a9adf3834ce3">tx 0x746c…4ce3 ↗</a></div></article>
+          <div class="answer"><span class="err">AgentNotAllowed</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x1d9fab8760842ea4e780a10c736f81cd8fd79fb291abab3eeb9ae9593392ae24">tx 0x1d9f…ae24 ↗</a></div></article>
         <article class="crystal hover attack reveal d3"><span class="who">After a panic</span><h3>An old session tries again</h3>
           <p class="card-text">A panic revokes every earlier permission for good; only new sessions work after recovery.</p>
-          <div class="answer"><span class="err">PolicyInactive</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x7310bcc7d20efa8396e7eb61c55b3b3738a8e0e484728955b5bbf373542648d0">tx 0x7310…48d0 ↗</a></div></article>
+          <div class="answer"><span class="err">PolicyInactive</span><a class="txlink" target="_blank" rel="noopener" href="https://testnet.bscscan.com/tx/0x0be10eb0a5d54627a00c2e166e43485c1cc5b1e484329f72632fce5f9fc21dcc">tx 0x0be1…1dcc ↗</a></div></article>
       </div>
     </div>
   </section>
@@ -166,8 +168,10 @@
           cancel it while it waits. The EPK Watchtower is a guardian that keeps watching while it runs; an always-on service is next.</p>
         <ol class="steps">
           <li class="bad"><strong>The thief uses the real admin key</strong> to schedule "allow payments to my address".</li>
-          <li class="good"><strong>The Watchtower cancels it 4 blocks later</strong> — no human involved.</li>
+          <li class="good"><strong>The Watchtower cancels it 9 blocks (about 4 seconds) later</strong> — no human involved.</li>
           <li class="bad"><strong>The thief tries to push it through anyway</strong> and the vault answers <code>UnknownOperation</code>: the change no longer exists.</li>
+          <li class="bad"><strong>The thief tries to redirect the owner's cold wallet</strong> to their own address — so that an evacuation would pay them.</li>
+          <li class="good"><strong>Cancelled too, 6 blocks later.</strong> The owner then evacuates: all 9,940 eUSD go to the cold wallet registered in advance, in one transaction.</li>
         </ol>
         <div class="cta" style="justify-content:flex-start;margin-top:28px">
           <a class="btn btn-ghost btn-small" target="_blank" rel="noopener" href="https://github.com/VOVAN1980/ibiti-epk-core/tree/master/watchtower">How the Watchtower works ↗</a>
@@ -175,19 +179,23 @@
       </div>
       <div class="crystal terminal reveal d2" data-type data-tilt>
         <div class="term-bar"><div class="term-dots"><i></i><i></i><i></i></div><div class="term-title">epk watchtower · live log · UTC</div></div>
-        <div class="term-body"><span class="ln c-dim">18:09:34  watching vault 0x1402…43fa</span>
+        <div class="term-body"><span class="ln c-dim">21:44:32  watching vault 0x1538…d4db</span>
 <span class="ln c-dim">          guardian 0xD1e7…7Fa0 · confirmed by the vault</span>
-<span class="ln c-dim">          0 approved changes</span>
 <span class="ln"> </span>
-<span class="ln c-bad">18:09:44  UNEXPECTED change by 0xa2bd…15f8</span>
+<span class="ln c-bad">21:44:55  UNEXPECTED change by 0xa2bd…15f8</span>
 <span class="ln c-bad">          addDestination(0x…bad1)</span>
-<span class="ln c-bad">          "allow payments to a new address"</span>
-<span class="ln"> </span>
-<span class="ln c-ok">18:09:47  STOPPED — change cancelled</span>
-<span class="ln c-ok">          tx 0x22c8…59b9 · block 141578902</span>
-<span class="ln"> </span>
+<span class="ln c-ok">21:44:58  STOPPED — change cancelled</span>
+<span class="ln c-ok">          tx 0xf840…62c0 · block 141607593</span>
 <span class="ln c-warn">thief: executeScheduled(…) → UnknownOperation</span>
-<span class="ln c-ok">moved: 0 eUSD <span class="caret"></span></span></div>
+<span class="ln"> </span>
+<span class="ln c-bad">21:45:27  CHANGE THE COLD WALLET by 0xa2bd…15f8</span>
+<span class="ln c-bad">          setColdWallet(0x…bad2)</span>
+<span class="ln c-ok">21:45:30  STOPPED — change cancelled</span>
+<span class="ln c-ok">          tx 0x6a53…6b4c · block 141607664</span>
+<span class="ln"> </span>
+<span class="ln c-warn">21:46:10  vault PAUSED by the recovery key</span>
+<span class="ln c-dim">          evacuated: 9,940 eUSD → the owner's cold wallet</span>
+<span class="ln c-ok">moved by the thief: 0 eUSD <span class="caret"></span></span></div>
         <div class="scanline"></div><div class="beam"></div>
       </div>
     </div>
@@ -208,8 +216,8 @@
           <div class="facts"><span class="fact">per-token limits</span><span class="fact">destination list</span><span class="fact">no lingering approvals</span></div></div>
         <div class="crystal layer reveal d2"><div class="num">03</div><div><h3>Agent sessions with budgets</h3><p>AI agents get short sessions with their own budget and expiry, only for the calls the owner approved in advance.</p></div>
           <div class="facts"><span class="fact">own budget</span><span class="fact">expiry</span><span class="fact">approved calls only</span></div></div>
-        <div class="crystal layer reveal d3"><div class="num">04</div><div><h3>Guardians, timelock and panic</h3><p>Tightening is instant; loosening waits in a timelock that any guardian can veto. One panic pauses everything and revokes every earlier permission.</p></div>
-          <div class="facts"><span class="fact">≥ 2 guardians</span><span class="fact">timelock</span><span class="fact">panic</span><span class="fact">recovery key</span></div></div>
+        <div class="crystal layer reveal d3"><div class="num">04</div><div><h3>Guardians, timelock, panic and evacuation</h3><p>Tightening is instant; loosening waits in a timelock that any guardian can veto. One panic pauses everything and revokes every earlier permission. In an emergency the owner moves everything at once — only to a cold wallet registered in advance.</p></div>
+          <div class="facts"><span class="fact">≥ 2 guardians</span><span class="fact">timelock</span><span class="fact">panic</span><span class="fact">recovery key</span><span class="fact">evacuation</span></div></div>
         <div class="crystal layer reveal d4"><div class="num">05</div><div><h3>Watchtower</h3><p>An automatic guardian cancels any change the owner did not approve, presses panic on a burst of them and alerts the owner.</p></div>
           <div class="facts"><span class="fact">cancels in seconds</span><span class="fact">alerts</span><span class="fact">can't move funds</span></div></div>
       </div>
@@ -225,7 +233,7 @@
         <article class="crystal hover pad reveal d1">
           <div class="icon tone-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
           <h3>Built and checked like infrastructure</h3>
-          <p class="card-text">222 automated tests across contracts, Watchtower and SDK, including fuzzing and stateful
+          <p class="card-text">246 automated tests across contracts, Watchtower and SDK, including fuzzing and stateful
             invariants (compromised operator, admin and session manager), Slither static analysis with every finding fixed or justified, five internal security reviews,
             deployed bytecode checked against this repository's build.</p>
         </article>
@@ -263,8 +271,8 @@ python scripts/v2/verify_evidence.py
 
 <span class="c-dim"># + byte-for-byte: on-chain code = open-source build</span>
 forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
-          <p class="card-text" style="margin-top:16px">Last run (2026-11-08): <b style="color:#fff">110 checks OK, 0 mismatches</b>;
-            with <code>--build</code> the vault implementation, the factory and the vault proxy equal the repository's build.</p>
+          <p class="card-text" style="margin-top:16px">Last run (2026-11-08): <b style="color:#fff">137 checks OK, 0 mismatches</b>;
+            with <code>--build</code> the vault implementation, its emergency module, the factory and the vault proxy equal the repository's build.</p>
         </div>
       </div>
     </div>
@@ -305,8 +313,8 @@ forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
         <h2>Honest status.</h2>
       </div>
       <div class="road r4">
-        <div class="crystal st now reveal"><div class="when">Nov 2026 · now</div><h3>EPK 2.2 on testnet</h3><p>Per-customer vaults, agent sessions, Watchtower, guarded swaps, opt-in upgrades at the same address in minutes on test networks, TypeScript SDK, public proof.</p></div>
-        <div class="crystal st reveal d1"><div class="when">next</div><h3>Watchtower service &amp; emergency response</h3><p>Always-on Watchtower with alerts, emergency evacuation to the owner's cold wallet.</p></div>
+        <div class="crystal st now reveal"><div class="when">Nov 2026 · now</div><h3>EPK 2.3 on testnet</h3><p>Per-customer vaults, agent sessions, Watchtower, guarded swaps, emergency evacuation to the owner's cold wallet, opt-in upgrades at the same address in minutes on test networks, TypeScript SDK, public proof.</p></div>
+        <div class="crystal st reveal d1"><div class="when">next</div><h3>Watchtower service &amp; emergency response</h3><p>Always-on Watchtower with alerts; a fast track for critical security fixes that needs the owner and the guardians.</p></div>
         <div class="crystal st reveal d2"><div class="when">then</div><h3>Independent audit</h3><p>Professional audit of vault, sessions and upgrades; public bug bounty.</p></div>
         <div class="crystal st reveal d3"><div class="when">after the audit</div><h3>Mainnet</h3><p>Production deployments under commercial licenses.</p></div>
       </div>

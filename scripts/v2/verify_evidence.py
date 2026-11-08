@@ -3,7 +3,7 @@
 
 Usage (from the repo root; Python 3.8+ only — no Foundry, no keys, no packages):
     python scripts/v2/verify_evidence.py [--rpc-url URL[,URL...]] [--build]
-    python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.2-guards-evidence.json --doc docs/TESTNET_V22_GUARDS.md
+    python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-guards-evidence.json --doc docs/TESTNET_GUARDS.md
 
 The claims live in deployments/bsc-testnet/epk-v2-evidence.json (and, for people, in
 docs/TESTNET_V2.md — the script first checks that both list the same transactions and contracts).

@@ -1,0 +1,495 @@
+{
+ "about": "Machine-readable claims of the guard demo on EPKVault 2.3.0 on BSC Testnet: a vault created through the public 2.3.0 factory (5-minute test-network upgrade clocks), with DexGuard, ThreatFeed V2 and CompositeGuard on the real PancakeSwap V2 testnet router and real Chainlink feeds. scripts/v2/verify_evidence.py --evidence <this file> --doc docs/TESTNET_GUARDS.md checks every claim. Amounts have 18 decimals. Testnet only; not audited.",
+ "chainId": 97,
+ "tokenSymbol": "tUSD",
+ "contracts": {
+  "implementation": {
+   "address": "0x214c7a5a9B6b25d559ac714050B66A09E050eA32",
+   "label": "EPKVault 2.3.0 implementation (the current public release)",
+   "codeHash": "0x39333931f5618d09a33bbe2e5a4efe5af85a3fe33e6467b670654197db3f1845",
+   "artifact": "out/EPKVault.sol/EPKVault.json",
+   "pinnedInRegistry": true,
+   "vaultVersion": 20300
+  },
+  "registry": {
+   "address": "0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db",
+   "label": "EPKRegistry of the public stack (5-minute test-network release window)",
+   "codeHash": "0xbbd98e762333270989f783029a4bb6f21fe51c7572dbe19c4bdeec37168e86d3"
+  },
+  "factory": {
+   "address": "0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B",
+   "label": "EPKVaultFactory for 2.3.0 \u2014 the SDK's public factory",
+   "codeHash": "0x1fd35f57f6c9c942f34275b9d2e020f08c168a871f4c27f917cd2abc382616a0",
+   "artifact": "out/EPKVaultFactory.sol/EPKVaultFactory.json"
+  },
+  "vault": {
+   "address": "0x3Bdd9c884B168bbFa41C181328548a5e42180FD3",
+   "label": "EPKVault 2.3.0 guard demo vault (proxy)",
+   "codeHash": "0x623c50c40e8f9c4f6957d2ce7a0dc247cc59e62d73fbc27ee3ec312962586480",
+   "artifact": "out/EPKVaultFactory.sol/EPKVaultProxy.json",
+   "proxyImplementation": "implementation",
+   "createdAtBlock": 141608501
+  },
+  "dexGuard": {
+   "address": "0x1FC77bbe5947687e4094b0cD8842b6C7d4485C31",
+   "label": "DexGuard (with the 2026-11-08 fixes)",
+   "codeHash": "0x04a03b84dcff81aa53835f70ebc19e42bb157f382abb72f15f2ec94341064818",
+   "artifact": "out/DexGuard.sol/DexGuard.json"
+  },
+  "threatFeed": {
+   "address": "0xC30d44F5c87c91d8a5EF3942546Ee478abD40815",
+   "label": "ThreatFeed V2 (ThreatFeedGuard)",
+   "codeHash": "0xbb045979aad1666a65ca96420693d19a4132d48f5032432f14303860ed4e6f93",
+   "artifact": "out/ThreatFeedGuard.sol/ThreatFeedGuard.json"
+  },
+  "compositeGuard": {
+   "address": "0xc46373543fA89c36D6Eca1455A28C3FDbCCc3C0B",
+   "label": "CompositeGuard (ThreatFeed V2 + DexGuard)",
+   "codeHash": "0x8b1bfefe5532c7c85416a21fbf13e657f47c280263a1765c2f37c3522e19a562",
+   "artifact": "out/CompositeGuard.sol/CompositeGuard.json"
+  },
+  "token": {
+   "address": "0xc58699856ED5c978F7bf47e46650Bdb23d9bB119",
+   "label": "tUSD \u2014 the guard demo's test stablecoin",
+   "codeHash": "0xf8b937569bbdc39778f7725a53e9ffe79cf8d9b70adf49ca87642cec279d4861"
+  },
+  "tusdFeed": {
+   "address": "0xD246D8d4d58d7b444159Bd8cFf9B6fb00f27105C",
+   "label": "fixed $1 test feed for tUSD",
+   "codeHash": "0xa95aabc0b8e2c71d1a0dda9f22ffc61df65d60c4c27553709170c7f8b23faa59"
+  },
+  "router": {
+   "address": "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+   "label": "PancakeSwap V2 router (BSC Testnet, not ours)",
+   "codeHash": "0x89c56da835bced0ca70200b1628ccc5c2af177e22d2471f5637977419b1681a1"
+  },
+  "tusdPool": {
+   "address": "0x6d370d9654daafda5d0bb89080e1d7b7c2f80c9e",
+   "label": "PancakeSwap tUSD/WBNB pool, kept at the Chainlink price by the demo admin",
+   "codeHash": "0x3d0e7f1e341e5f6c886edc91f3b92bef13faef208182137e95420f544f024061"
+  },
+  "busd": {
+   "address": "0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7",
+   "label": "BUSD (BSC Testnet, not ours)",
+   "codeHash": "0xd48ad9c1cc12fea3926b743c2c46bc6e7bcc7848eb5a8207bd9c4a65bbce53fe"
+  },
+  "busdPool": {
+   "address": "0x85ecdcdd01ebe0bfd0aba74b81ca6d7f4a53582b",
+   "label": "PancakeSwap WBNB/BUSD pool (BSC Testnet, not ours)",
+   "codeHash": "0x3d0e7f1e341e5f6c886edc91f3b92bef13faef208182137e95420f544f024061"
+  },
+  "bnbUsdFeed": {
+   "address": "0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526",
+   "label": "Chainlink BNB / USD (BSC Testnet)",
+   "codeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2"
+  },
+  "busdUsdFeed": {
+   "address": "0x9331b55D9830EF609A2aBCfAc0FBCE050A52fdEa",
+   "label": "Chainlink BUSD / USD (BSC Testnet)",
+   "codeHash": "0xbd6f524cdc4268b6bd1bb6f77a8821faeea9c52ee9e0afa0b6d948ce82c966c2"
+  }
+ },
+ "roles": {
+  "admin": "0x8502C5cFdaF6Dbad23995a68735534d813672A71",
+  "guardian1": "0xdc5550eBF607F3893759e986a875881d0050712b",
+  "guardian2": "0x19BF2DB88690fB915D1bB8274F5c29C75B741173",
+  "recovery": "0xE31dcda0eEf6fccE4E36899877B14AdC4DbE041a",
+  "sessionManager": "0x81DC14f9B68A8Ad78350815D28B75D78bc81442e",
+  "operator": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+  "agent": "0x602D636dC4eA21Ac4a1278CC589E9Ab1CfD03201",
+  "responder": "0x303fDc8733f7Ca4223d2bed55D02D3e22CDf10F3",
+  "supplier": "0xc93eC67f65530E5997e0a54826d1dE1243E204dD",
+  "attacker": "0x2dC3fb90a9211A2e824B438C8E60137C2EdE8Ed8"
+ },
+ "sessions": {
+  "guarded": "340282366920938463463374607431768211456",
+  "unguarded": "340282366920938463463374607431768211457"
+ },
+ "transactions": [
+  {
+   "step": "D2",
+   "what": "admin creates a new EPKVault 2.3.0 through the PUBLIC 2.3.0 factory (5-minute test-network upgrade clocks)",
+   "tx": "0xa75969b2d6ae450a92d6f034697a8a7b8405bac692129336f38442c024bd2eee",
+   "from": "admin",
+   "to": "factory",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "factory",
+     "event": "VaultCreated(address,address,uint256,address)",
+     "indexed": [
+      "vault",
+      "admin"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "D3",
+   "what": "trading policy for the operator key, guarded by ThreatFeed V2 + DexGuard",
+   "tx": "0x4c843ec5960a71b921da1fa927c753f4a12e8cd8ac82284c981753a9414dd752",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "PolicyUpdated(uint256,address,uint48,uint128,address)",
+     "indexed": [
+      "uint:0",
+      "operator"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "D4",
+   "what": "agent-session envelope 1 gets the same guard (envelope 2 stays unguarded on purpose)",
+   "tx": "0x474bdb1d907677c50d64de271ae3057ee43f1dcaf438105e7dd0a6849541867d",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "EnvelopeGuardSet(uint256,address)",
+     "indexed": [
+      "uint:1",
+      "compositeGuard"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "D5",
+   "what": "setup finished: from now on every loosening needs the 5-minute timelock",
+   "tx": "0x1ec4145cd1364861e296b6198b1d364661909c1ded8666f178da89e6114c8f2b",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SetupFinalized()"
+    }
+   ]
+  },
+  {
+   "step": "S1",
+   "what": "operator: vault swaps 0.0001 BNB for tUSD on PancakeSwap \u2014 at a fair price, output to the vault",
+   "tx": "0x1527d86a2dcd4e893739f7cb6d085ce71649bc79346cc61e2bd62c87561b86f0",
+   "from": "operator",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Executed(uint256,address,address,uint256,uint256)",
+     "indexed": [
+      "uint:0",
+      "operator",
+      "operator"
+     ]
+    },
+    {
+     "emitter": "vault",
+     "event": "Outflow(address,uint256,uint256)",
+     "indexed": [
+      "0x0000000000000000000000000000000000000000"
+     ],
+     "data": [
+      "0.0001",
+      "0.0019"
+     ],
+     "unit": "BNB"
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "tusdPool",
+      "vault"
+     ],
+     "data": [
+      "0.068788438033774419"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S2",
+   "what": "operator: vault sells 0.05 tUSD for BNB (approve, swap, allowance reset)",
+   "tx": "0xfb0837323cc62b03eac47228dbde7381c817b245d55753f49330d4790035db18",
+   "from": "operator",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Executed(uint256,address,address,uint256,uint256)",
+     "indexed": [
+      "uint:0",
+      "operator",
+      "operator"
+     ]
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "vault",
+      "tusdPool"
+     ],
+     "data": [
+      "0.05"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S3",
+   "what": "operator: vault pays the supplier 1 tUSD (plain payments pass the guards)",
+   "tx": "0x75776f350511254df9e047d06a7540e117f2df90aa5e102480546cacbffa633c",
+   "from": "operator",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "vault",
+      "supplier"
+     ],
+     "data": [
+      "1"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S4",
+   "what": "session manager opens an AI-agent session in the GUARDED envelope 1",
+   "tx": "0x419f94ecd415ba8254e1a00325f00a804fae2c576f71e2fc4f68f6b1db47e519",
+   "from": "sessionManager",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SessionOpened(uint256,uint256,address,address,uint48)",
+     "indexed": [
+      "session:guarded",
+      "uint:1",
+      "agent"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S5",
+   "what": "session manager opens an AI-agent session in the UNGUARDED envelope 2",
+   "tx": "0x6e9af42dd2f5b8e2d26b834700a0d646a825200c8bf60c1b4fb3d4c4eb3e63ea",
+   "from": "sessionManager",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SessionOpened(uint256,uint256,address,address,uint48)",
+     "indexed": [
+      "session:unguarded",
+      "uint:2",
+      "agent"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S6",
+   "what": "AI agent, on its own, swaps 0.0001 BNB for tUSD inside the guarded session",
+   "tx": "0x22e29186b9c83b490c2b0d26a186487cf828cfabde1140e83f4a839eb3ef0cd0",
+   "from": "agent",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Executed(uint256,address,address,uint256,uint256)",
+     "indexed": [
+      "session:guarded",
+      "agent",
+      "agent"
+     ]
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "tusdPool",
+      "vault"
+     ],
+     "data": [
+      "0.068663689539257837"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "A1",
+   "what": "operator key signs a swap whose output goes to the attacker",
+   "tx": "0x42ec5b4de2735e1c04330b6c9c28aa34d74cee2a2c12e3e8031ab450a5053e23",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "RecipientNotVault(address)"
+  },
+  {
+   "step": "A2",
+   "what": "operator key signs a swap that accepts any price (minimum out = 1)",
+   "tx": "0x50cbd2b2e197692e41b8cfb402054a677486433a568a62ce22bd53040fc9c161",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "PriceTooLow(uint256,uint256)"
+  },
+  {
+   "step": "A3",
+   "what": "operator key signs a swap on the REAL WBNB/BUSD pool at that pool's own quote (~37 % below Chainlink)",
+   "tx": "0x2588f5993219594651b72899be1c7b4f2fc9b6edfb5c0dedee6e6ecbd62eb40f",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "PriceTooLow(uint256,uint256)"
+  },
+  {
+   "step": "A4",
+   "what": "operator key uses an unsupported router function (fee-on-transfer variant)",
+   "tx": "0x5d76ae6d627afba3e0689f37ba60ae79219db0ef33b5ff228681b14c5bc225a9",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "UnsupportedCall(address,bytes4)"
+  },
+  {
+   "step": "A5",
+   "what": "operator key signs a swap valid for 2 days (to run later at a worse price)",
+   "tx": "0x09593e8da443bf8943f0c08d8b95e63924378825e1fbb2d78085dd3cd5588c93",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "BadDeadline(uint256)"
+  },
+  {
+   "step": "A6",
+   "what": "operator key approves a non-router (the supplier) to pull tUSD",
+   "tx": "0xa0012be506b84a49f2030ce601303ac79fa086b30ef9ee38fedf77abf9f5b3e7",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "ApproveToNonRouter(address)"
+  },
+  {
+   "step": "A7",
+   "what": "operator key swaps into a token that is not on the guard's list (CAKE)",
+   "tx": "0x5fb4626c086a03e3557f5f01c1cd4261e9134785df2f422e38cbb30047074d5f",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "TokenNotAllowed(address)"
+  },
+  {
+   "step": "A8",
+   "what": "AI agent (guarded session) sends a swap's output to the attacker",
+   "tx": "0x44fc5eb9b3b311e2a6ebd1e6374dc215ac25438a02847737f1a279751e10a49d",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "RecipientNotVault(address)"
+  },
+  {
+   "step": "A9",
+   "what": "AI agent uses the UNGUARDED session to call the router \u2014 the other path",
+   "tx": "0x1ece4ab4873d6a79d3ded40471b35e21bc61b1a65a3ae253aec64db1209801d4",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "GuardRequired()"
+  },
+  {
+   "step": "A10",
+   "what": "admin key tries to remove the session guard without the timelock",
+   "tx": "0x7fbafb3cea45261b2bdb1e495972c89d58571eb08ae3c3d0a170afa65a373b11",
+   "from": "admin",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "NotTimelocked()"
+  },
+  {
+   "step": "A11",
+   "what": "operator key parks 1 tUSD at the router, where anyone could sweep it",
+   "tx": "0xfca148d7be662e732f85e4009daae4a2a549c641cab70db6bfb762ca182d8d98",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "RecipientNotAllowed(address)"
+  },
+  {
+   "step": "C1",
+   "what": "control: a PLAIN wallet (no EPK) makes the same 0.0001 BNB -> BUSD trade on the real pool",
+   "tx": "0xc4aecc5b77eede91860c75c5dd4c224d7fea8aa67f079a4931c3cedea113dd83",
+   "from": "operator",
+   "to": "router",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "busd",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "busdPool",
+      "operator"
+     ],
+     "data": [
+      "0.043090275865776213"
+     ],
+     "unit": "BUSD"
+    }
+   ]
+  },
+  {
+   "step": "A12",
+   "what": "ThreatFeed V2: a responder blocks the supplier (reported as a drainer) \u2014 instantly",
+   "tx": "0x667951e85fa01dd7a2720ab1d8f9ff44828a5880a4b0175323b8bde515470f30",
+   "from": "responder",
+   "to": "threatFeed",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "threatFeed",
+     "event": "Blocked(address,address,bytes32)",
+     "indexed": [
+      "supplier",
+      "responder"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "A13",
+   "what": "after the block: operator key tries to pay the supplier again",
+   "tx": "0x7df9d850634c92981cf73ff1a46ce065dd7e266e668def74f58a19924f819a53",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "BlockedAddress(address)"
+  }
+ ],
+ "checkpoints": [],
+ "attackWindows": [
+  {
+   "label": "attacks A1-A13 (no tUSD may leave the vault)",
+   "fromBlock": 141608960,
+   "toBlock": 141609157
+  }
+ ]
+}

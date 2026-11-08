@@ -2,7 +2,7 @@
   "about": "EPK Watchtower for the BSC Testnet demo vault. No secrets here: the guardian key is read from the environment variable or .env entry named in guardianKeyEnv.",
   "rpc": "https://bsc-testnet-rpc.publicnode.com",
   "chainId": 97,
-  "vault": "0x14026E45D119Af294cFb48Ddf7904299641a43fa",
+  "vault": "0x1538f0Cee859c883E12046a6aa52c7CA0f4bD4Db",
   "startBlock": "latest",
   "pollSeconds": 3,
   "guardianKeyEnv": "V2_GUARDIAN2_PRIVATE_KEY",

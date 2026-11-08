@@ -3,9 +3,10 @@
 Status: **design agreed by the owner on 2026-11-08** (option C, §4; both decisions of §8 "yes"); **implemented in
 this repository for vault release 2.3.0** (roadmap item 6a): the `EPKVaultEmergency` module, 22 tests in
 `test/v2/EPKVault.evacuation.t.sol` (attacks E1–E11, the size guard; E12 is the existing rule that ordinary
-operations die with an upgrade), the Watchtower's COLD WALLET CHANGE alarm and the SDK's vault ABI. Nothing here
-is deployed yet. It ships to BSC Testnet only with
-the attack tests of §7, and before any mainnet it must pass an independent security review.
+operations die with an upgrade), the Watchtower's COLD WALLET CHANGE alarm and the SDK's vault ABI. **On BSC
+Testnet since 2026-11-08** ([`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)), with the testnet attacks of §7 run
+on the main demo vault — redirect cancelled by the Watchtower, guardian refused, then the evacuation itself
+([`TESTNET_V2.md`](TESTNET_V2.md) steps E1–E5). Before any mainnet it must pass an independent security review.
 
 Evacuation is an emergency function for a hack or a loss of control. Ordinary withdrawals never need it: they
 work as today, through policies, sessions and the timelock.

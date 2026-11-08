@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BUSL-1.1
 """Write deployments/bsc-testnet/epk-v2-evidence.json — the machine-readable claims of the EPK demo on BSC Testnet
-(vault on EPKVault 2.2.0, agent session, attacks, panic and recovery, stolen admin key vs the Watchtower) — from
+(vault on the current EPKVault release, agent session, attacks, panic and recovery, stolen admin key vs the
+Watchtower, emergency evacuation to the owner's cold wallet) — from
 the deployment / run files, the mined receipts and the vault's state at fixed blocks.
 
 Every claim is then re-checked against the chain by:
@@ -38,22 +39,29 @@ def by_selector(txs, sig):
 
 def main():
     core = json.load(open(f"{D}/epk-v2.json"))
+    rel = json.load(open(f"{D}/epk-release.json"))
+    vtext = f"{rel['version'] // 10000}.{rel['version'] // 100 % 100}.{rel['version'] % 100}"
     v = json.load(open(f"{D}/epk-v2-vault.json"))
     attacks = json.load(open(f"{D}/epk-v2-attacks.json"))
     after = json.load(open(f"{D}/epk-v2-after-panic.json"))
     stolen = json.load(open(f"{D}/epk-v2-stolen-key.json"))
-    results = {r["attack"]: r for f in ("attacks", "after-panic", "stolen-key")
+    evac = json.load(open(f"{D}/epk-v2-evacuation.json"))
+    results = {r["attack"]: r for f in ("attacks", "after-panic", "stolen-key", "evacuation")
                for r in json.load(open(f"{D}/epk-v2-{f}-results.json"))["results"]}
     vault, token = v["vault"], core["token"]
 
     setup, session = broadcast("SetupDemoVault.s.sol"), broadcast("DemoSession.s.sol")
     panic, recover = broadcast("DemoPanic.s.sol", "panicAndScheduleUnpause"), broadcast("DemoPanic.s.sol", "recover")
     stolen_tx = broadcast("DemoStolenKey.s.sol")
+    redirect_tx = broadcast("DemoEvacuation.s.sol", "redirect")
+    evacuate_tx = broadcast("DemoEvacuation.s.sol", "evacuate")
 
     contracts_spec = [
-        ("implementation_2_2_0", core["implementation"], "EPKVault 2.2.0 implementation", "out/EPKVault.sol/EPKVault.json"),
+        ("implementation", rel["implementation"], f"EPKVault {vtext} implementation", "out/EPKVault.sol/EPKVault.json"),
+        ("emergencyModule", rel["emergencyModule"], f"EPKVaultEmergency — the {vtext} release's emergency module, deployed by the implementation",
+         "out/EPKVault.sol/EPKVaultEmergency.json"),
         ("registry", core["registry"], "EPKRegistry (5-minute test-network release window)", None),
-        ("factory", core["factory"], "EPKVaultFactory for 2.2.0 — the SDK's public factory", "out/EPKVaultFactory.sol/EPKVaultFactory.json"),
+        ("factory", rel["factory"], f"EPKVaultFactory for {vtext} — the SDK's public factory", "out/EPKVaultFactory.sol/EPKVaultFactory.json"),
         ("token", token, "EPK Demo USD (eUSD) test token", None),
         ("vault", vault, "Demo vault (customer proxy)", "out/EPKVaultFactory.sol/EPKVaultProxy.json"),
     ]
@@ -64,7 +72,7 @@ def main():
         if artifact:
             c["artifact"] = artifact
         contracts[key] = c
-    contracts["implementation_2_2_0"].update({"pinnedInRegistry": True, "vaultVersion": 20200})
+    contracts["implementation"].update({"pinnedInRegistry": True, "vaultVersion": rel["version"]})
 
     def receipt(h):
         return chain("eth_getTransactionReceipt", h)
@@ -73,8 +81,8 @@ def main():
         return int(receipt(h)["blockNumber"], 16)
 
     create = by_selector(setup, "createVault(address[],uint256,address,bytes32)")[0]
-    contracts["vault"].update({"proxyImplementation": "implementation_2_2_0", "createdAtBlock": block_of(create)})
-    roles = {k: v[k] for k in ("admin", "guardian1", "guardian2", "recovery", "sessionManager", "agent")}
+    contracts["vault"].update({"proxyImplementation": "implementation", "createdAtBlock": block_of(create)})
+    roles = {k: v[k] for k in ("admin", "guardian1", "guardian2", "recovery", "sessionManager", "agent", "coldWallet")}
     sessions = {"demo": str(attacks["sessionId"]), "recovery": str(after["newSessionId"])}
 
     T = "Transfer(address,address,uint256)"
@@ -96,7 +104,8 @@ def main():
         assert r["status"] == "rejected", (name, r)
         add(step, what, r["tx"], frm, "vault", expect="reverted", error=r["error"])
 
-    add("1", "admin creates the demo vault through the public 2.2.0 factory", create, "admin", "factory",
+    add("1", f"admin creates the demo vault through the public {vtext} factory (5-minute timelock, the owner's cold wallet registered)",
+        create, "admin", "factory",
         [{"emitter": "factory", "event": "VaultCreated(address,address,uint256,address)", "indexed": ["vault", "admin"]}])
     fin = by_selector(setup, "finalizeSetup()")[0]
     add("2", "setup finalized: 1,000 eUSD/day vault limit, 100 eUSD/day per agent session, only the treasury allowed",
@@ -118,10 +127,10 @@ def main():
         [{"emitter": "vault", "event": "Paused(address)", "indexed": ["guardian1"]},
          {"emitter": "vault", "event": "EpochBumped(uint64,address)", "indexed": ["guardian1"]}])
     sch = by_selector(panic, "schedule(bytes,bytes32)")[0]
-    add("5b", "admin schedules unpause through the timelock (1 hour)", sch, "admin", "vault",
+    add("5b", "admin schedules unpause through the timelock (5 minutes on test networks)", sch, "admin", "vault",
         [{"emitter": "vault", "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)"}])
     unp = by_selector(recover, "executeScheduled(bytes,bytes32)")[0]
-    add("6a", "admin executes the timelocked unpause (1 hour after the panic)", unp, "admin", "vault",
+    add("6a", "admin executes the timelocked unpause (5 minutes after the panic)", unp, "admin", "vault",
         [{"emitter": "vault", "event": "Unpaused()"}, {"emitter": "vault", "event": "OperationExecuted(bytes32)"}])
     add("6b", "session manager opens a new agent session", by_selector(recover, "openSession(uint256,address,address,uint48)")[0],
         "sessionManager", "vault", [{"emitter": "vault", "event": OPEN, "indexed": ["session:recovery", "uint:1", "agent"]}])
@@ -136,23 +145,45 @@ def main():
     w1 = by_selector(stolen_tx, "schedule(bytes,bytes32)")[0]
     add("W1", "attacker with the stolen admin key schedules addDestination(0xBAD1)", w1, "admin", "vault",
         [{"emitter": "vault", "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)", "indexed": [op, "admin"]}])
+    def cancel_of(op_id, from_block):
+        for url in NODES:  # the Watchtower's cancel: the vault's OperationCancelled log for this operation
+            try:
+                last = min(from_block + 900, int(chain.only(url)("eth_blockNumber"), 16))
+                logs = chain.only(url)("eth_getLogs", {"address": vault, "fromBlock": hex(from_block), "toBlock": hex(last),
+                                                       "topics": [topic0("OperationCancelled(bytes32,address)"), op_id]})
+            except Exception:  # noqa: BLE001 — try the next node
+                continue
+            if logs:
+                return logs[0]
+        raise AssertionError(f"the Watchtower's cancel of {op_id} was not found")
+
     b1 = block_of(w1)
-    cancel = None
-    for url in NODES:  # the Watchtower's cancel: the vault's OperationCancelled log for this operation
-        try:
-            last = min(b1 + 900, int(chain.only(url)("eth_blockNumber"), 16))
-            logs = chain.only(url)("eth_getLogs", {"address": vault, "fromBlock": hex(b1), "toBlock": hex(last),
-                                                   "topics": [topic0("OperationCancelled(bytes32,address)"), op]})
-        except Exception:  # noqa: BLE001 — try the next node
-            continue
-        if logs:
-            cancel = logs[0]
-            break
-    assert cancel, "the Watchtower's cancel was not found"
+    cancel = cancel_of(op, b1)
     add("W2", f"the Watchtower (guardian2 key) cancels it, {int(cancel['blockNumber'], 16) - b1} blocks later",
         cancel["transactionHash"], "guardian2", "vault",
         [{"emitter": "vault", "event": "OperationCancelled(bytes32,address)", "indexed": [op, "guardian2"]}])
     attack("W3", "g_executeCancelledChange", "attacker tries to execute the change anyway", "admin")
+
+    op2 = evac["operationId"]
+    e1 = by_selector(redirect_tx, "schedule(bytes,bytes32)")[0]
+    add("E1", "attacker with the stolen admin key schedules setColdWallet(0xBAD2) — so that an evacuation would pay them",
+        e1, "admin", "vault",
+        [{"emitter": "vault", "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)", "indexed": [op2, "admin"]}])
+    eb = block_of(e1)
+    c2 = cancel_of(op2, eb)
+    add("E2", f"the Watchtower (guardian2 key) cancels it, {int(c2['blockNumber'], 16) - eb} blocks later",
+        c2["transactionHash"], "guardian2", "vault",
+        [{"emitter": "vault", "event": "OperationCancelled(bytes32,address)", "indexed": [op2, "guardian2"]}])
+    attack("E3", "h_executeColdWalletChange", "attacker tries to execute the cold-wallet change anyway", "admin")
+    attack("E4", "i_guardianEvacuates", "a guardian tries to evacuate — guardians stop, they never move funds", "guardian1")
+    ev5 = by_selector(evacuate_tx, "evacuate(address[])")[0]
+    add("E5", "the owner's recovery key evacuates everything to the cold wallet registered at setup (and pauses the vault)",
+        ev5, "recovery", "vault",
+        [{"emitter": "vault", "event": "Paused(address)", "indexed": ["recovery"]},
+         {"emitter": "vault", "event": "EpochBumped(uint64,address)", "indexed": ["recovery"]},
+         {"emitter": "vault", "event": "Evacuated(address,uint256,address,address)", "indexed": ["token", "coldWallet", "recovery"],
+          "data": ["9940"]},
+         {"emitter": "token", "event": T, "indexed": ["vault", "coldWallet"], "data": ["9940"]}])
 
     # ---- checkpoints: the vault's state at fixed blocks, read now and checked against what the demo did ----
     def state(b):
@@ -180,7 +211,7 @@ def main():
         assert bal == want_bal * E18 and paused is want_paused and im == impl, (label, bal, paused, im)
         c = {"label": label, "block": b, "paused": paused}
         if with_impl:
-            c["implementation"] = "implementation_2_2_0"
+            c["implementation"] = "implementation"
         c["eUSD"] = eusd(bal)
         if limit is not None:
             assert left == limit * E18, (label, left)
@@ -201,16 +232,19 @@ def main():
     cp("right after the new session's 10 eUSD payment", by_step["6c"], 9_940, False, sess=("recovery", 90))
     cp("after the old session's attempt (nothing moved)", by_step["6f"], 9_940, False, with_impl=False)
     cp("after the attacker's attempt (nothing moved, still unpaused)", by_step["W3"], 9_940, False)
+    cp("after the guardian's evacuation attempt (nothing moved)", by_step["E4"], 9_940, False)
+    cp("after the evacuation: everything in the owner's cold wallet, the vault paused", by_step["E5"], 0, True)
 
     windows = [
         {"label": "attacks 4a-4e", "fromBlock": by_step["3b"], "toBlock": by_step["4e"]},
         {"label": "old-session attempt 6f", "fromBlock": by_step["6c"], "toBlock": by_step["6f"]},
         {"label": "stolen admin key W1-W3", "fromBlock": by_step["W1"] - 1, "toBlock": by_step["W3"]},
+        {"label": "cold-wallet redirect and guardian evacuation E1-E4", "fromBlock": by_step["E1"] - 1, "toBlock": by_step["E4"]},
     ]
     ev = {
-        "about": "Machine-readable claims of the EPK demo on BSC Testnet: a vault on EPKVault 2.2.0 created through the public "
-                 "factory, an AI-agent session, rejected attacks, panic and timelocked recovery, and a stolen admin key stopped "
-                 "by the Watchtower. scripts/v2/verify_evidence.py checks every claim against the chain. Amounts are in eUSD "
+        "about": f"Machine-readable claims of the EPK demo on BSC Testnet: a vault on EPKVault {vtext} created through the "
+                 "public factory, an AI-agent session, rejected attacks, panic and timelocked recovery, a stolen admin key stopped "
+                 "by the Watchtower, and an emergency evacuation to the owner's cold wallet. scripts/v2/verify_evidence.py checks every claim against the chain. Amounts are in eUSD "
                  "(18 decimals). Testnet only; not audited.",
         "chainId": 97,
         "contracts": contracts,
