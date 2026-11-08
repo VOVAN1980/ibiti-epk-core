@@ -5,7 +5,7 @@ EPKVault 2.2.0 (BSC Testnet) — from the deployment / run files and the mined r
 Every claim is then re-checked against the chain by:
     python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.2-guards-evidence.json --doc docs/TESTNET_V22_GUARDS.md
 
-Same structure as build_v21_evidence.py (the 2.1 guard demo, kept as history). Amounts are read from the
+Amounts are read from the
 receipts (exact, 18 decimals); the expected revert reason of every attack is the one the vault returned
 when it was sent, and the verifier proves it from the execution trace (STRICT) or a replay.
 """
@@ -60,8 +60,8 @@ def main():
         ("dexGuard", dep["dexGuard"], "DexGuard (with the 2026-11-08 fixes)", "out/DexGuard.sol/DexGuard.json"),
         ("threatFeed", dep["threatFeed"], "ThreatFeed V2 (ThreatFeedGuard)", "out/ThreatFeedGuard.sol/ThreatFeedGuard.json"),
         ("compositeGuard", dep["compositeGuard"], "CompositeGuard (ThreatFeed V2 + DexGuard)", "out/CompositeGuard.sol/CompositeGuard.json"),
-        ("token", dep["tusd"], "tUSD — the guard demos' test stablecoin (since the 2.1 demo)", None),
-        ("tusdFeed", dep["tusdFeed"], "fixed $1 test feed for tUSD (since the 2.1 demo)", None),
+        ("token", dep["tusd"], "tUSD — the guard demo's test stablecoin", None),
+        ("tusdFeed", dep["tusdFeed"], "fixed $1 test feed for tUSD", None),
         ("router", dep["router"], "PancakeSwap V2 router (BSC Testnet, not ours)", None),
         ("tusdPool", tusd_pool, "PancakeSwap tUSD/WBNB pool, kept at the Chainlink price by the demo admin", None),
         ("busd", dep["busd"], "BUSD (BSC Testnet, not ours)", None),
@@ -114,7 +114,7 @@ def main():
     def alignment(t, step, when):
         rc = receipt(t["hash"])
         sold = words(log_data(rc, dep["tusd"], TRANSFER, [dep["admin"], tusd_pool]), 1)
-        add(step, f"{when}: admin moves the demo pool back to the Chainlink BNB price (sells {sold[0]} freshly minted tUSD into it)",
+        add(step, f"{when}: admin puts the demo pool at the Chainlink BNB price (sells {sold[0]} freshly minted tUSD into it)",
             t["hash"], "admin", "router", [{"emitter": "token", "event": TRANSFER, "indexed": ["admin", "tusdPool"], "data": sold}])
 
     # ---- setup (selected transactions) ------------------------------------------------------------
@@ -180,10 +180,10 @@ def main():
         "h_sessionToAttacker": ("A8", "AI agent (guarded session) sends a swap's output to the attacker"),
         "i_unguardedSessionSwap": ("A9", "AI agent uses the UNGUARDED session to call the router — the other path"),
         "j_removeGuardWithoutTimelock": ("A10", "admin key tries to remove the session guard without the timelock"),
-        "l_transferToRouter": ("A11", "operator key parks 1 tUSD at the router, where anyone could sweep it (passed the 2.1 demo's guard; fixed 2026-11-08)"),
+        "l_transferToRouter": ("A11", "operator key parks 1 tUSD at the router, where anyone could sweep it"),
         "k_payBlockedSupplier": ("A13", "after the block: operator key tries to pay the supplier again"),
     }
-    sender = {"operator": "operator", "agent21": "agent", "admin21": "admin"}
+    sender = {"operator": "operator", "guardAgent": "agent", "guardAdmin": "admin"}
     for r in attacks:
         step, what = words_for[r["attack"]]
         add(step, what, r["tx"], sender[r["from"]], "vault", expect="reverted", error=r["error"])

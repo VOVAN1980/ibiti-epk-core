@@ -59,7 +59,7 @@
     },
     {
       "attack": "h_sessionToAttacker",
-      "from": "agent21",
+      "from": "guardAgent",
       "sender": "0x602D636dC4eA21Ac4a1278CC589E9Ab1CfD03201",
       "error": "RecipientNotVault(address)",
       "tx": "0xabbca00fdbcfb548aef4450b63504efc737f79eee8184de5802e7dcca549738f",
@@ -67,7 +67,7 @@
     },
     {
       "attack": "i_unguardedSessionSwap",
-      "from": "agent21",
+      "from": "guardAgent",
       "sender": "0x602D636dC4eA21Ac4a1278CC589E9Ab1CfD03201",
       "error": "GuardRequired()",
       "tx": "0x3b7b081aa823db8ef9c9251f2f7ac2f31efc43d92b3abb8ff3795b0ba594a164",
@@ -75,7 +75,7 @@
     },
     {
       "attack": "j_removeGuardWithoutTimelock",
-      "from": "admin21",
+      "from": "guardAdmin",
       "sender": "0x8502C5cFdaF6Dbad23995a68735534d813672A71",
       "error": "NotTimelocked()",
       "tx": "0x9922269c83f475f3356cd59fe6ccfd259fc9975b3d05c350519cf071510a84af",

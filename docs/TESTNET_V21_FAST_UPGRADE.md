@@ -5,7 +5,7 @@ a 5-minute release window and a 5-minute upgrade wait, and both run **in paralle
 production rules (7-day release window, 2-day upgrade floor) — and from 2.1 those also run in parallel,
 so a new release reaches a vault in 7 days, not 7 + 2. Existing vaults keep the rules of the code they run.
 
-Done on 2026-11-07 on a **separate** vault (the 2.0.x demo vault and the 2.1 guard demo vault are not touched). Testnet only.
+Done on 2026-11-07 on a **separate** vault (the 2.0.x demo vault is not touched). Testnet only.
 
 | Step | Time (UTC, block time) | Transaction |
 |---|---|---|

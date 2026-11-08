@@ -86,9 +86,7 @@ Press the button and your browser checks every claim below directly against BSC 
 separate demo vault (the EPK v2 demo vault on the <a href="./">main proof page</a> is not involved). They prove that
 the listed protections worked in these scenarios — not that no other attack exists; what the guards do not cover is
 listed in <a data-blob="docs/GUARDS_v2.md">GUARDS_v2.md</a>. EPK is in development and not yet independently
-audited; nothing goes to mainnet before an audit.
-<br><b>Earlier run:</b> the first guard demo, on EPKVault 2.1.0 (2026-11-07), stays with its proofs —
-<a href="guards-2.1.html">Protected swaps 2.1</a>.</div>
+audited; nothing goes to mainnet before an audit.</div>
 
 <div class="tiles">
   <div class="tile"><div class="n" id="t-attacks">–</div><div class="l">attacks rejected on-chain</div></div>
@@ -124,10 +122,10 @@ audited; nothing goes to mainnet before an audit.
 
 <section id="s-fix">
   <h2>A fix you can check: tokens parked at the router</h2>
-  <p>The fifth internal review (2026-11-08) found that tokens sent to a router — an allowed destination — can be
-  swept by anyone. The first guard demo's DexGuard let such a transfer through; this demo's DexGuard, deployed from
-  the fixed code, refuses it. In step <b>A11</b> the operator key tries exactly that and the vault answers
-  <code>RecipientNotAllowed</code>. The vault itself runs release 2.2.0 with the review's two vault fixes.</p>
+  <p>The fifth internal review (2026-11-08) found that tokens sent to a router — an allowed destination — could be
+  swept by anyone, so DexGuard refuses any token transfer to a router. In step <b>A11</b> the operator key tries
+  exactly that and the vault answers <code>RecipientNotAllowed</code>. The vault runs release 2.2.0 with the
+  review's two vault fixes.</p>
 </section>
 
 <section id="s-flow">
@@ -142,8 +140,8 @@ audited; nothing goes to mainnet before an audit.
   <p>Each contract's bytecode hash is checked; the vault's 2.2.0 implementation must be the one pinned in the
   registry of the public 2.2.0 stack (5-minute release window on test networks), and the vault proxy must point to
   it. On the command line, <code>--build</code> shows that the implementation, the factory, the vault proxy and the
-  three guards equal this repository's build byte for byte. tUSD, its test feed and the tUSD pool come from the
-  first guard demo; PancakeSwap, BUSD and the Chainlink feeds are third-party contracts on BSC Testnet.</p>
+  three guards equal this repository's build byte for byte. tUSD and its fixed $1 feed are the demo's own test
+  contracts; PancakeSwap, BUSD and the Chainlink feeds are third-party contracts on BSC Testnet.</p>
   <div class="scroll"><table id="tbl-code"><thead><tr><th>Contract</th><th>Address</th><th>Code hash</th><th>Result</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -196,7 +194,7 @@ audited; nothing goes to mainnet before an audit.
 "use strict";
 // ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
 const REPO = "VOVAN1980/ibiti-epk-core";
-const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT_V22G) || "cbf22bf43ed4d60ff1cdaf575013549b7b023499";
+const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT_GUARDS) || "cbf22bf43ed4d60ff1cdaf575013549b7b023499";
 const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
 const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
 const EV_PATH = "deployments/bsc-testnet/epk-v2.2-guards-evidence.json";

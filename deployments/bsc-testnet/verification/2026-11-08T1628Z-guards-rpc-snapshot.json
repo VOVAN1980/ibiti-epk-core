@@ -1,6 +1,6 @@
 {
  "about": "Raw JSON-RPC answers used by verify_evidence.py, kept in case public nodes drop BSC Testnet history. A snapshot for reference, not a substitute for re-checking.",
- "capturedAt": "2026-11-08 16:06:10 UTC",
+ "capturedAt": "2026-11-08 16:29:25 UTC",
  "result": {
   "ok": 116,
   "bad": 0,

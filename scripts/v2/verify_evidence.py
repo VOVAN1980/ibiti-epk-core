@@ -3,7 +3,7 @@
 
 Usage (from the repo root; Python 3.8+ only — no Foundry, no keys, no packages):
     python scripts/v2/verify_evidence.py [--rpc-url URL[,URL...]] [--build]
-    python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.1-evidence.json --doc docs/TESTNET_V21.md
+    python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-v2.2-guards-evidence.json --doc docs/TESTNET_V22_GUARDS.md
 
 The claims live in deployments/bsc-testnet/epk-v2-evidence.json (and, for people, in
 docs/TESTNET_V2.md — the script first checks that both list the same transactions and contracts).
@@ -341,7 +341,7 @@ def main():
     trace_url = sys.argv[sys.argv.index("--trace-rpc") + 1] if "--trace-rpc" in sys.argv else TRACE_RPC
     build, save_traces = "--build" in sys.argv, "--save-traces" in sys.argv
     methods = {"STRICT": 0, "REPLAY": 0}
-    # --evidence / --doc check another claims file the same way (e.g. the EPK 2.1 guard demo)
+    # --evidence / --doc check another claims file the same way (e.g. the guard demo)
     global EVIDENCE, DOC
     EVIDENCE = sys.argv[sys.argv.index("--evidence") + 1] if "--evidence" in sys.argv else EVIDENCE
     DOC = sys.argv[sys.argv.index("--doc") + 1] if "--doc" in sys.argv else DOC

@@ -1,51 +1,38 @@
-# EPK guard demo on EPKVault 2.2.0 — BSC Testnet (current)
+# EPK guard demo — BSC Testnet
 
 Goal: show on a real chain that **DexGuard**, **ThreatFeed V2** and **CompositeGuard** protect a vault's
 trades — for an ordinary trading policy and for autonomous AI-agent sessions — using the **real
-PancakeSwap V2 router** and **real Chainlink price feeds** on BSC Testnet (chainId 97), now on the current
-vault release **2.2.0**.
+PancakeSwap V2 router** and **real Chainlink price feeds** on BSC Testnet (chainId 97).
 
-Status: **done on 2026-11-08** (15:58–16:05 UTC), on a **new** EPKVault 2.2.0 created through the **public
-2.2.0 factory** — the same way any integrator's vault is created (SDK `networks.bscTestnet.epk.factory`). Its
-registry and vault run the clocks of public test networks (`contracts/v2/EPKChains.sol`): a future release
-is usable after a 5-minute public window and a vault upgrades 5 minutes after scheduling, so new versions are
-tested in minutes. Production rules (7-day window, at least 2 days per upgrade) apply on every other chain,
-and contracts that already have production clocks written into their code keep them. The vault's own
-timelock for loosening its settings is 1 hour (the minimum on every network). Testnet only, test funds
-only, **not audited**.
-
-The first guard demo, on EPKVault 2.1.0 (2026-11-07, [`TESTNET_V21.md`](TESTNET_V21.md)), stays as it is —
-its vault, transactions and proofs are history and are still checked live
-([`proof/guards-2.1.html`](proof/guards-2.1.html)). The 2.0.x demo vault ([`TESTNET_V2.md`](TESTNET_V2.md),
-9,940 eUSD) is not touched.
-
-What is new compared with the 2.1 run:
-
-- **Vault release 2.2.0** — the fifth review's vault fixes A5-3 and A5-4
-  ([SECURITY_REVIEW_v2.md §1e](SECURITY_REVIEW_v2.md), [`TESTNET_V22.md`](TESTNET_V22.md)).
-- **Guards from the current code**, with the 2026-11-08 guard fixes. Attack **A11** shows one of them
-  (A5-2): the operator key tries to park the vault's tUSD at the router, where anyone could sweep it. The
-  2.1 demo's guard let such a transfer through; this one refuses it with `RecipientNotAllowed`.
+Status: **done on 2026-11-08** (15:58–16:05 UTC), on an EPKVault **2.2.0** created through the **public 2.2.0
+factory** — the same way any integrator's vault is created (SDK `networks.bscTestnet.epk.factory`). Its
+registry and vault run the clocks of public test networks (`contracts/v2/EPKChains.sol`): a new release is
+usable after a 5-minute public window and a vault upgrades 5 minutes after scheduling. Production rules
+(7-day window, at least 2 days per upgrade) apply on every other chain. The vault's own timelock for
+loosening its settings is 1 hour (the minimum on every network). The guards are deployed from this
+repository's code. Testnet only, test funds only, **not audited**. The EPK v2 demo vault
+([`TESTNET_V2.md`](TESTNET_V2.md), 9,940 eUSD) is not involved.
 
 What this proves: the listed attacks were rejected on-chain in these scenarios, and allowed trades went
 through at fair prices. It is **not** a guarantee that no other attack exists — see
-[`GUARDS_v2.md`](GUARDS_v2.md) §2 for what the guards do not cover.
+[`GUARDS_v2.md`](GUARDS_v2.md) §2 for what the guards do not cover. Step **A11** shows a fix of the fifth
+internal review (A5-2, [SECURITY_REVIEW_v2.md §1e](SECURITY_REVIEW_v2.md)): tokens sent to a router — an
+allowed destination — could be swept by anyone, so DexGuard refuses any token transfer to a router.
 
 ## Setup
 
 - **Guard of the trading policy and of session envelope 1:** CompositeGuard = ThreatFeed V2 (checked first)
   + DexGuard (PancakeSwap V2 router only; tokens WBNB, BUSD, tUSD; 1 % slippage against Chainlink;
-  swaps expire within 10 minutes; at most 0.001 BNB / 10 tokens per trade) — the same rules as the 2.1 demo.
-- **Prices:** BNB and BUSD from the real Chainlink BNB/USD and BUSD/USD feeds. tUSD is the guard demos' own
-  test stablecoin with a fixed $1 test feed, and a small tUSD/WBNB pool; all three were created by the 2.1
-  demo and are reused. Only the demo admin can mint tUSD, so only the admin can move that pool's price; BNB
-  had moved since 2026-11-07, so step D1 put the pool back at the Chainlink price ($697.47) by selling
-  0.1166 freshly minted tUSD into it.
+  swaps expire within 10 minutes; at most 0.001 BNB / 10 tokens per trade).
+- **Prices:** BNB and BUSD from the real Chainlink BNB/USD and BUSD/USD feeds. tUSD is the demo's own test
+  stablecoin with a fixed $1 test feed, and a small tUSD/WBNB pool on the real router. Only the demo admin
+  can mint tUSD, so only the admin can move that pool's price: step D1 put it at the Chainlink price
+  ($697.47) by selling 0.1166 freshly minted tUSD into it.
 - **Session envelope 2** has the same calls but no guard — to show that an agent cannot use it to reach
   the router.
-- **Roles:** the same testnet keys as the 2.1 demo (local `.env`, never committed): admin, two guardians,
-  recovery, session manager, operator (signs and submits the trading policy's batches), AI agent,
-  ThreatFeed responder, a supplier (payee) and an attacker address that must never receive anything.
+- **Roles** (separate testnet keys, local `.env`, never committed): admin, two guardians, recovery, session
+  manager, operator (signs and submits the trading policy's batches), AI agent, ThreatFeed responder, a
+  supplier (payee) and an attacker address that must never receive anything.
 
 ## Contracts
 
@@ -58,8 +45,8 @@ through at fair prices. It is **not** a guarantee that no other attack exists �
 | DexGuard (with the 2026-11-08 fixes) | [0xE40E81fc52d54F20ff883C3177878A3ECc03e152](https://testnet.bscscan.com/address/0xE40E81fc52d54F20ff883C3177878A3ECc03e152) |
 | ThreatFeed V2 (ThreatFeedGuard) | [0xAc4128402295c8e8e68b77b518B1ae823BFcB271](https://testnet.bscscan.com/address/0xAc4128402295c8e8e68b77b518B1ae823BFcB271) |
 | CompositeGuard (ThreatFeed V2 + DexGuard) | [0xCc6a261A6FD502F9122Bf0CEAd4a03157988577D](https://testnet.bscscan.com/address/0xCc6a261A6FD502F9122Bf0CEAd4a03157988577D) |
-| tUSD — the guard demos' test stablecoin (since the 2.1 demo) | [0xc58699856ED5c978F7bf47e46650Bdb23d9bB119](https://testnet.bscscan.com/address/0xc58699856ED5c978F7bf47e46650Bdb23d9bB119) |
-| fixed $1 test feed for tUSD (since the 2.1 demo) | [0xD246D8d4d58d7b444159Bd8cFf9B6fb00f27105C](https://testnet.bscscan.com/address/0xD246D8d4d58d7b444159Bd8cFf9B6fb00f27105C) |
+| tUSD — the guard demo's test stablecoin | [0xc58699856ED5c978F7bf47e46650Bdb23d9bB119](https://testnet.bscscan.com/address/0xc58699856ED5c978F7bf47e46650Bdb23d9bB119) |
+| fixed $1 test feed for tUSD | [0xD246D8d4d58d7b444159Bd8cFf9B6fb00f27105C](https://testnet.bscscan.com/address/0xD246D8d4d58d7b444159Bd8cFf9B6fb00f27105C) |
 | PancakeSwap V2 router (BSC Testnet, not ours) | [0xD99D1c33F9fC3444f8101754aBC46c52416550D1](https://testnet.bscscan.com/address/0xD99D1c33F9fC3444f8101754aBC46c52416550D1) |
 | PancakeSwap tUSD/WBNB pool, kept at the Chainlink price by the demo admin | [0x6d370d9654daafda5d0bb89080e1d7b7c2f80c9e](https://testnet.bscscan.com/address/0x6d370d9654daafda5d0bb89080e1d7b7c2f80c9e) |
 | BUSD (BSC Testnet, not ours) | [0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7](https://testnet.bscscan.com/address/0x78867BbEeF44f2326bF8DDd1941a4439382EF2A7) |
@@ -71,7 +58,7 @@ through at fair prices. It is **not** a guarantee that no other attack exists �
 
 | # | What | Transaction | Result |
 |---|---|---|---|
-| D1 | setup: admin moves the demo pool back to the Chainlink BNB price (sells 0.11663690678691548 freshly minted tUSD into it) | [0x8bbf81f2…](https://testnet.bscscan.com/tx/0x8bbf81f23b5b4a196b90777245ed6228091d8d364e516686a1b25360b75b9cec) | success |
+| D1 | setup: admin puts the demo pool at the Chainlink BNB price (sells 0.11663690678691548 freshly minted tUSD into it) | [0x8bbf81f2…](https://testnet.bscscan.com/tx/0x8bbf81f23b5b4a196b90777245ed6228091d8d364e516686a1b25360b75b9cec) | success |
 | D2 | admin creates a new EPKVault 2.2.0 through the PUBLIC 2.2.0 factory (5-minute test-network upgrade clocks) | [0x4c993749…](https://testnet.bscscan.com/tx/0x4c993749ba85851533890b6f8be72d0bd6f080118d1f929e103dec29817775f4) | success |
 | D3 | trading policy for the operator key, guarded by ThreatFeed V2 + DexGuard | [0x7466a115…](https://testnet.bscscan.com/tx/0x7466a115a3aaf46cdd3d08a9f29720f091fdc4e202ac2702287cc908bcaef349) | success |
 | D4 | agent-session envelope 1 gets the same guard (envelope 2 stays unguarded on purpose) | [0x2386e1d7…](https://testnet.bscscan.com/tx/0x2386e1d7fa856d9687d3f0f7d15a6dfb474616c501496215825bdda0b788c5b3) | success |
@@ -92,16 +79,16 @@ through at fair prices. It is **not** a guarantee that no other attack exists �
 | A8 | AI agent (guarded session) sends a swap's output to the attacker | [0xabbca00f…](https://testnet.bscscan.com/tx/0xabbca00fdbcfb548aef4450b63504efc737f79eee8184de5802e7dcca549738f) | **rejected**: `RecipientNotVault` |
 | A9 | AI agent uses the UNGUARDED session to call the router — the other path | [0x3b7b081a…](https://testnet.bscscan.com/tx/0x3b7b081aa823db8ef9c9251f2f7ac2f31efc43d92b3abb8ff3795b0ba594a164) | **rejected**: `GuardRequired` |
 | A10 | admin key tries to remove the session guard without the timelock | [0x9922269c…](https://testnet.bscscan.com/tx/0x9922269c83f475f3356cd59fe6ccfd259fc9975b3d05c350519cf071510a84af) | **rejected**: `NotTimelocked` |
-| A11 | operator key parks 1 tUSD at the router, where anyone could sweep it (passed the 2.1 demo's guard; fixed 2026-11-08) | [0x3214e7a7…](https://testnet.bscscan.com/tx/0x3214e7a7c881f70e28d0bc557c6c7cbab0797cac3af0f9d828dc053998918aa3) | **rejected**: `RecipientNotAllowed` |
+| A11 | operator key parks 1 tUSD at the router, where anyone could sweep it | [0x3214e7a7…](https://testnet.bscscan.com/tx/0x3214e7a7c881f70e28d0bc557c6c7cbab0797cac3af0f9d828dc053998918aa3) | **rejected**: `RecipientNotAllowed` |
 | C1 | control: a PLAIN wallet (no EPK) makes the same 0.0001 BNB -> BUSD trade on the real pool | [0x5fe1a6ca…](https://testnet.bscscan.com/tx/0x5fe1a6ca1b105408bfc847ae443ee642b8e8bc76ec633ea332efd4bbca6f4fdf) | success |
 | A12 | ThreatFeed V2: a responder blocks the supplier (reported as a drainer) — instantly | [0x8bc5f0bf…](https://testnet.bscscan.com/tx/0x8bc5f0bfa5de037945fb07301fec359ab0e180d02e9ff3c54863042c06db0aae) | success |
 | A13 | after the block: operator key tries to pay the supplier again | [0x40c5a495…](https://testnet.bscscan.com/tx/0x40c5a4958de345c29409f7f918d7e3f86445b23c2c322791156fb2af53d6727d) | **rejected**: `BlockedAddress` |
 
-**The headline result (A3 vs C1):** the real WBNB/BUSD pool on BSC Testnet still pays about **38 % less**
-than the Chainlink price. A plain wallet that trusts the pool's own quote made that trade and received
-0.0431 BUSD for 0.0001 BNB instead of about 0.0698 (C1). The EPK vault, asked to make the same trade by a
-compromised operator key, refused it on-chain with `PriceTooLow` (A3). On the fair pool the vault's own
-trade (S1) received 0.0694 tUSD for 0.0001 BNB — 99.5 % of the Chainlink value.
+**The headline result (A3 vs C1):** the real WBNB/BUSD pool on BSC Testnet pays about **38 % less** than the
+Chainlink price. A plain wallet that trusts the pool's own quote made that trade and received 0.0431 BUSD for
+0.0001 BNB instead of about 0.0698 (C1). The EPK vault, asked to make the same trade by a compromised operator
+key, refused it on-chain with `PriceTooLow` (A3). On the fair pool the vault's own trade (S1) received
+0.0694 tUSD for 0.0001 BNB — 99.5 % of the Chainlink value.
 
 During all attacks not a single tUSD left the vault, and the attacker address received nothing.
 
@@ -120,10 +107,11 @@ and the revert reason of every attack — **STRICT** from the execution traces s
 (see "How long history lasts" in [TESTNET_V2.md](TESTNET_V2.md)); what no node asked can answer is reported
 as OLD, never as passed.
 
-Run right after the demo, 2026-11-08 with the default nodes: **116 checks OK, 0 mismatches, 0 OLD** — all 12
-attack reasons STRICT, no tUSD left the vault (`deployments/bsc-testnet/verification/2026-11-08T1605Z-v22-guards-report.txt`
-and the raw node answers `…-rpc-snapshot.json`). With `--build`: **122 checks OK** — the vault implementation, the
-factory, the vault proxy and the three guards equal this repository's build byte for byte (`2026-11-08T1606Z-v22-guards-build-report.txt`).
+Last run 2026-11-08 with the default nodes: **116 checks OK, 0 mismatches, 0 OLD** — all 12 attack reasons
+STRICT, no tUSD left the vault (`deployments/bsc-testnet/verification/2026-11-08T1628Z-guards-report.txt` and the
+raw node answers `2026-11-08T1628Z-guards-rpc-snapshot.json`). With `--build`: **122 checks OK** — the vault
+implementation, the factory, the vault proxy and the three guards equal this repository's build byte for byte
+(`2026-11-08T1632Z-guards-build-report.txt`).
 
 ## How it was run
 

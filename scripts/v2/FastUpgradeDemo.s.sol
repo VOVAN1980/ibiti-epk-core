@@ -12,7 +12,7 @@ import {EPKVaultDemoRelease211} from "./demo/EPKVaultDemoRelease211.sol";
 import {EPKVaultDemoRelease212} from "./demo/EPKVaultDemoRelease212.sol";
 
 /// @title Full opt-in upgrade on BSC Testnet in minutes (test-network delays, same code as mainnet)
-/// @notice A separate stack (the 2.0.x demo vault and the 2.1 guard demo vault are not touched):
+/// @notice A separate stack (the 2.0.x demo vault is not touched):
 ///         registry + factory on EPKVault 2.1.0, a vault holding 10 tUSD, release 2.1.1 proposed and the
 ///         vault's upgrade scheduled in the same run — both clocks run in parallel (5 minutes each on test
 ///         networks). `execute()` finishes the upgrade at the same address with the same funds.
@@ -32,7 +32,7 @@ contract FastUpgradeDemo is Script {
         g[0] = vm.addr(vm.envUint("V21_GUARDIAN1_PRIVATE_KEY"));
         g[1] = vm.addr(vm.envUint("V21_GUARDIAN2_PRIVATE_KEY"));
         address recovery = vm.addr(vm.envUint("V21_RECOVERY_PRIVATE_KEY"));
-        EPKTestUSD tusd = EPKTestUSD(vm.parseJsonAddress(vm.readFile("deployments/bsc-testnet/epk-v2.1.json"), ".tusd"));
+        EPKTestUSD tusd = EPKTestUSD(vm.parseJsonAddress(vm.readFile("deployments/bsc-testnet/epk-v2.2-guards.json"), ".tusd"));
 
         vm.startBroadcast(pk);
         EPKVault genesis = new EPKVault();

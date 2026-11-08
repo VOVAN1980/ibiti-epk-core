@@ -50,12 +50,12 @@
   },
   "token": {
    "address": "0xc58699856ED5c978F7bf47e46650Bdb23d9bB119",
-   "label": "tUSD \u2014 the guard demos' test stablecoin (since the 2.1 demo)",
+   "label": "tUSD \u2014 the guard demo's test stablecoin",
    "codeHash": "0xf8b937569bbdc39778f7725a53e9ffe79cf8d9b70adf49ca87642cec279d4861"
   },
   "tusdFeed": {
    "address": "0xD246D8d4d58d7b444159Bd8cFf9B6fb00f27105C",
-   "label": "fixed $1 test feed for tUSD (since the 2.1 demo)",
+   "label": "fixed $1 test feed for tUSD",
    "codeHash": "0xa95aabc0b8e2c71d1a0dda9f22ffc61df65d60c4c27553709170c7f8b23faa59"
   },
   "router": {
@@ -108,7 +108,7 @@
  "transactions": [
   {
    "step": "D1",
-   "what": "setup: admin moves the demo pool back to the Chainlink BNB price (sells 0.11663690678691548 freshly minted tUSD into it)",
+   "what": "setup: admin puts the demo pool at the Chainlink BNB price (sells 0.11663690678691548 freshly minted tUSD into it)",
    "tx": "0x8bbf81f23b5b4a196b90777245ed6228091d8d364e516686a1b25360b75b9cec",
    "from": "admin",
    "to": "router",
@@ -448,7 +448,7 @@
   },
   {
    "step": "A11",
-   "what": "operator key parks 1 tUSD at the router, where anyone could sweep it (passed the 2.1 demo's guard; fixed 2026-11-08)",
+   "what": "operator key parks 1 tUSD at the router, where anyone could sweep it",
    "tx": "0x3214e7a7c881f70e28d0bc557c6c7cbab0797cac3af0f9d828dc053998918aa3",
    "from": "operator",
    "to": "vault",

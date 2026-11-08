@@ -22,8 +22,8 @@ import urllib.request
 from datetime import datetime, timezone
 
 KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian2": "V2_GUARDIAN2_PRIVATE_KEY", "admin": "PRIVATE_KEY",
-           # EPK 2.1 guard demo (separate vault and keys)
-           "operator": "V21_OPERATOR_PRIVATE_KEY", "agent21": "V21_AGENT_PRIVATE_KEY", "admin21": "V21_ADMIN_PRIVATE_KEY"}
+           # guard demo (separate vault and keys)
+           "operator": "V21_OPERATOR_PRIVATE_KEY", "guardAgent": "V21_AGENT_PRIVATE_KEY", "guardAdmin": "V21_ADMIN_PRIVATE_KEY"}
 ERROR_SOURCES = ["contracts/v2/EPKVault.sol:EPKVault", "contracts/v2/guards/DexGuard.sol:DexGuard",
                  "contracts/v2/guards/ThreatFeedGuard.sol:ThreatFeedGuard",
                  "contracts/v2/guards/CompositeGuard.sol:CompositeGuard"]

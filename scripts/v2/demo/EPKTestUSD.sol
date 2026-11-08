@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/// @title EPK test stablecoin for the 2.1 guard demo — TESTNET ONLY, no value
+/// @title EPK test stablecoin for the guard demo — TESTNET ONLY, no value
 /// @notice Only the deployer can mint, so nobody else can move the demo pool's price.
 contract EPKTestUSD is ERC20 {
     address public immutable minter;

@@ -1,5 +1,5 @@
-// Offline tests for SDK v2. Reference values were read from the live EPKVault 2.1.0 on BSC Testnet
-// (0x83c6D86019BfF5ebBb7bd955aa63878DAa60f674): the vault's own getExecuteDigest / hashOperation.
+// Offline tests for SDK v2. Reference values were read from the live EPKVault 2.2.0 guard demo vault on BSC Testnet
+// (0x5c2585f1f0725E54F8742798A20972Caa192eCba): the vault's own getExecuteDigest / hashOperation.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
@@ -17,7 +17,7 @@ import {
   SESSION_ID_BASE,
 } from "../../src/v2/index.js";
 
-const VAULT = "0x83c6D86019BfF5ebBb7bd955aa63878DAa60f674";
+const VAULT = "0x5c2585f1f0725E54F8742798A20972Caa192eCba";
 const OPERATOR = "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef";
 const TUSD = "0xc58699856ED5c978F7bf47e46650Bdb23d9bB119";
 const ROUTER = "0xD99D1c33F9fC3444f8101754aBC46c52416550D1";
@@ -37,7 +37,7 @@ const message = {
 } as const;
 
 test("executeDigest equals the vault's own getExecuteDigest", () => {
-  assert.equal(executeDigest(97, VAULT, message), "0x07550881657f463f93c1876ba53cb9c1cf829730e99f33995e2ae9e5bea8d7c4");
+  assert.equal(executeDigest(97, VAULT, message), "0x99371c5cdf6e643f44d3f4b75442e884b01b49a29f002aefb360f56c1f6dcb44");
 });
 
 test("the digest depends on chain, vault, nonce and every call", () => {
@@ -91,9 +91,9 @@ test("swap batches: approve, swap to the vault, allowance reset", () => {
   assert.equal(native[0].value, 7n);
 });
 
-test("decodeEpkError names every on-chain rejection of the 2.1 testnet demo", () => {
+test("decodeEpkError names every on-chain rejection of the testnet guard demo", () => {
   const root = "../deployments/bsc-testnet";
-  const evidence = JSON.parse(readFileSync(`${root}/epk-v2.1-evidence.json`, "utf8"));
+  const evidence = JSON.parse(readFileSync(`${root}/epk-v2.2-guards-evidence.json`, "utf8"));
   const traces = new Set(readdirSync(`${root}/traces`));
   let checked = 0;
   for (const t of evidence.transactions) {
@@ -105,5 +105,5 @@ test("decodeEpkError names every on-chain rejection of the 2.1 testnet demo", ()
     assert.equal(decoded?.errorName, t.error.split("(")[0], `step ${t.step}`);
     checked++;
   }
-  assert.equal(checked, 11);
+  assert.equal(checked, 12);
 });

@@ -73,7 +73,7 @@ Also: `availableToSpend` / `budgetAvailable` (limits left), `openSession` (AI-ag
 
 ```bash
 npm run test:v2      # offline: digest and operation ids equal the live vault's; all 11 on-chain rejections decode
-npm run example:v2   # read-only walkthrough against the EPK 2.1 demo vault on BSC Testnet (signs and simulates, sends nothing)
+npm run example:v2   # read-only walkthrough against the guard demo vault (EPKVault 2.2.0) on BSC Testnet (signs and simulates, sends nothing)
 npm run example:v2-upgrade   # opt-in upgrade on BSC Testnet driven by the SDK (needs the demo admin key; sends transactions)
 ```
 
