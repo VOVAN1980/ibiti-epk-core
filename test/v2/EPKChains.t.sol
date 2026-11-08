@@ -62,7 +62,38 @@ contract EPKChainsTest is Test {
         vm.prank(admin);
         vault.executeScheduled(op, bytes32("fast"));
         assertEq(_impl(), address(next));
-        assertEq(vault.vaultVersion(), 20_300);
+        assertEq(vault.vaultVersion(), 20_400);
+    }
+
+    /// On test networks the vault's own timelock may be as short as 5 minutes (production: 1 hour), so a
+    /// panic -> unpause or any loosening change is tested in minutes; below 5 minutes is still refused.
+    function test_testnet_minimumTimelockFiveMinutes() public {
+        _deploy(97, 5 minutes);
+        assertEq(vault.delay(), 5 minutes);
+
+        bytes memory unpause = abi.encodeCall(EPKVault.unpause, ());
+        vm.prank(makeAddr("g1"));
+        vault.panic();
+        vm.prank(admin);
+        vault.schedule(unpause, bytes32("u"));
+        vm.warp(_now() + 5 minutes - 1);
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.OperationNotReady.selector);
+        vault.executeScheduled(unpause, bytes32("u"));
+        vm.warp(_now() + 1);
+        vm.prank(admin);
+        vault.executeScheduled(unpause, bytes32("u"));
+        assertFalse(vault.paused());
+
+        EPKVault genesis = new EPKVault();
+        EPKRegistry r = new EPKRegistry(registryOwner, address(genesis));
+        EPKVaultFactory f = new EPKVaultFactory(address(genesis), address(r));
+        address[] memory g = new address[](2);
+        g[0] = makeAddr("g1");
+        g[1] = makeAddr("g2");
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.BadDelay.selector);
+        f.createVault(g, 5 minutes - 1, recoveryKey, bytes32("short"));
     }
 
     /// On test networks guardians can still veto, and an unlisted implementation is still refused.

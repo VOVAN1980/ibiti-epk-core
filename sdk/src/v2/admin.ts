@@ -175,7 +175,7 @@ export class EPKFactoryClient {
 
   /**
    * Create a vault. `guardians`: at least 2 independent keys or services (they can only stop, never move
-   * funds); `delay`: timelock for loosening changes (>= 1 hour); `recovery`: a cold key that can replace
+   * funds); `delay`: timelock for loosening changes (>= 1 hour; >= 5 minutes on test networks from vault 2.3.0); `recovery`: a cold key that can replace
    * the admin through the timelock.
    */
   async createVault(args: { guardians: readonly Address[]; delay: bigint; recovery: Address; salt: Hex }): Promise<{ vault: Address; hash: Hex }> {

@@ -85,7 +85,8 @@ No need to trust this page. The same claims are written in machine-readable form
 packages) checks every one of them against free public BSC Testnet nodes:
 
 ```bash
-python scripts/v2/verify_evidence.py            # add --build after `forge build` to compare bytecode with this repo
+python scripts/v2/verify_evidence.py
+git checkout d99008c && forge build && python scripts/v2/verify_evidence.py --build   # bytecode = the code these contracts were deployed from
 ```
 
 | What | How it is checked |
