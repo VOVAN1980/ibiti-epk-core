@@ -64,7 +64,7 @@
         <a class="btn btn-ghost" href="pilot.html">Pilot &amp; licensing</a>
       </div>
       <div class="trust-row reveal active d4">
-        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Source verified on BscScan</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Deployed code checked against the source</span>
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Fuzz &amp; invariant tested</span>
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Every claim re-checkable</span>
       </div>
@@ -163,7 +163,7 @@
         <p class="eyebrow">The worst case</p>
         <h2>A stolen admin key, <span class="grad">stopped in seconds.</span></h2>
         <p class="lead">Every change that could let money out has to wait in the vault's timelock, and any guardian may
-          cancel it while it waits. The EPK Watchtower is a guardian that never sleeps.</p>
+          cancel it while it waits. The EPK Watchtower is a guardian that keeps watching while it runs; an always-on service is next.</p>
         <ol class="steps">
           <li class="bad"><strong>The thief uses the real admin key</strong> to schedule "allow payments to my address".</li>
           <li class="good"><strong>The Watchtower cancels it 5 blocks later</strong> — no human involved.</li>
@@ -177,7 +177,7 @@
         <div class="term-bar"><div class="term-dots"><i></i><i></i><i></i></div><div class="term-title">epk watchtower · live log · UTC</div></div>
         <div class="term-body"><span class="ln c-dim">14:05:17  watching vault 0xB216…A340</span>
 <span class="ln c-dim">          guardian 0xD1e7…7Fa0 · confirmed by the vault</span>
-<span class="ln c-dim">          1 approved change: upgrade to 2.0.1</span>
+<span class="ln c-dim">          1 approved change: upgrade to 2.0.1 (planned then, later cancelled)</span>
 <span class="ln"> </span>
 <span class="ln c-bad">14:05:33  UNEXPECTED change by 0xa2bd…15f8</span>
 <span class="ln c-bad">          addDestination(0x…bad1)</span>
@@ -199,10 +199,10 @@
       <div class="section-head reveal">
         <p class="eyebrow">How it works</p>
         <h2>Five layers between an attacker<br>and your funds.</h2>
-        <p class="lead">Each layer works on its own. To take money, an attacker would have to beat all of them at once.</p>
+        <p class="lead">Each layer works on its own. To take more than your limits, an attacker would have to beat all of them at once.</p>
       </div>
       <div class="layers">
-        <div class="crystal layer reveal"><div class="num">01</div><div><h3>Your own vault</h3><p>Every customer gets a separate vault at a permanent address. No shared contract, no shared risk.</p></div>
+        <div class="crystal layer reveal"><div class="num">01</div><div><h3>Your own vault</h3><p>Every customer gets a separate vault at a permanent address. No shared executor, no shared funds.</p></div>
           <div class="facts"><span class="fact">1 vault per customer</span><span class="fact">permanent address</span></div></div>
         <div class="crystal layer reveal d1"><div class="num">02</div><div><h3>Limits and allowed addresses</h3><p>Daily outflow limits per token, measured on the vault's real balance; money can only go to addresses on the vault's list; approvals cannot outlive a batch.</p></div>
           <div class="facts"><span class="fact">per-token limits</span><span class="fact">destination list</span><span class="fact">no lingering approvals</span></div></div>
@@ -219,15 +219,15 @@
           <div class="icon tone-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v6h-6"/></svg></div>
           <h3>Upgrades without moving funds — only if the owner wants</h3>
           <p class="card-text">New versions go through a public registry with a 7-day waiting window. A vault opts in through its
-            own timelock (at least 2 days) that guardians can veto. Same address, same funds. Nobody — including IBITI Labs —
+            own timelock (at least 2 days, running in parallel since 2.1; 5 minutes on test networks) that guardians can veto. Same address, same funds. Nobody — including IBITI Labs —
             can upgrade a customer's vault for them.</p>
         </article>
         <article class="crystal hover pad reveal d1">
           <div class="icon tone-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
           <h3>Built and checked like infrastructure</h3>
-          <p class="card-text">202 automated tests across contracts, Watchtower and SDK, including fuzzing and stateful
-            invariants (compromised operator, admin and session manager), Slither static analysis with every finding fixed or justified, four internal security reviews,
-            verified source on BscScan.</p>
+          <p class="card-text">215 automated tests across contracts, Watchtower and SDK, including fuzzing and stateful
+            invariants (compromised operator, admin and session manager), Slither static analysis with every finding fixed or justified, five internal security reviews,
+            deployed bytecode checked against this repository's build.</p>
         </article>
       </div>
     </div>
@@ -331,7 +331,7 @@ forge build &amp;&amp; python scripts/v2/verify_evidence.py --build</div>
         <article class="crystal hover lic reveal d2"><span class="eyebrow tone-violet">Production</span><div class="price">By agreement</div>
           <ul><li>Protecting real funds needs a commercial license from IBITI Labs</li><li>Pilot first, then a license that fits your volume</li></ul></article>
         <article class="crystal hover lic reveal d3"><span class="eyebrow tone-green">Later</span><div class="price">MIT</div>
-          <ul><li>Each EPK v2 version becomes MIT no later than 2030-11-06</li><li>The SDK code, docs and testnet evidence are MIT already</li></ul></article>
+          <ul><li>The current version becomes MIT on 2030-11-06; every version at the latest four years after its release</li><li>The SDK code, docs and testnet evidence are MIT already</li></ul></article>
       </div>
     </div>
   </section>

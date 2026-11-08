@@ -72,6 +72,8 @@ export const epkErrorHelp: Record<string, { meaning: string; fix: string }> = {
   BadAmount: { meaning: "Zero amount or zero minimum.", fix: "Set amounts and minimums." },
   NativeNotAllowed: { meaning: "Native value on a swap that cannot take it (token-in or V3 swaps).", fix: "Send value 0, or use a native-in V2 function." },
   BadConfig: { meaning: "The guard configuration is invalid.", fix: "See the DexGuard constructor rules." },
+  PriceLimitNotAllowed: { meaning: "A V3 single-pool swap with a price limit: the router could fill only part of it while charging the full maximum.", fix: "Set sqrtPriceLimitX96 to 0." },
+  RecipientNotAllowed: { meaning: "Tokens sent directly to a router or to the wrapped native token (anyone can sweep a router's balance; tokens sent to WBNB/WETH are lost).", fix: "Swap through the router with an approval; never transfer to it." },
   // ---- ThreatFeed V2 / CompositeGuard
   BlockedAddress: { meaning: "An address in the call is on the ThreatFeed blocklist (drainer, exploited token, compromised payee).", fix: "Do not interact with it; unblocking takes a delay and can be vetoed." },
   NotVault: { meaning: "Only the vault itself may call this composite on its own behalf.", fix: "Use the composite as the vault's guard, not directly." },
@@ -85,5 +87,9 @@ export function explainEpkError(data: Hex): string {
   if (name === "Error") return `revert: ${String((e.args as readonly unknown[] | undefined)?.[0] ?? "")}`;
   const help = epkErrorHelp[name];
   const args = e.args && (e.args as readonly unknown[]).length ? `(${(e.args as readonly unknown[]).join(", ")})` : "";
-  return help ? `${name}${args}: ${help.meaning} → ${help.fix}` : `${name}${args}`;
+  const loosening = /timelock|addDestination|raise/i.test(help?.fix ?? "");
+  const caution = loosening
+    ? " (A called token or router can return the same error data: confirm on the vault before loosening anything.)"
+    : "";
+  return help ? `${name}${args}: ${help.meaning} → ${help.fix}${caution}` : `${name}${args}`;
 }

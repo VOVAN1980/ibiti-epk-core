@@ -97,6 +97,7 @@ contract RunV21Demo is Script {
     // ------------------------------------------------------------------ allowed
 
     function allowed() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         _load();
         address supplier = vm.addr(vm.envUint("V21_SUPPLIER_PRIVATE_KEY"));
         address agent = vm.addr(agentPk);
@@ -144,6 +145,7 @@ contract RunV21Demo is Script {
     // ------------------------------------------------------------------ attacks (prepared, not sent)
 
     function prepareAttacks() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         _load();
         string memory r = vm.readFile(RUN);
         uint256 sidG = vm.parseJsonUint(r, ".sessionGuarded");
@@ -208,6 +210,7 @@ contract RunV21Demo is Script {
     // ------------------------------------------------------------------ control: a plain wallet, same trade
 
     function control() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         _load();
         address op = vm.addr(opPk);
         uint256 before = IERC20(busd).balanceOf(op);
@@ -224,6 +227,7 @@ contract RunV21Demo is Script {
     // ------------------------------------------------------------------ threat feed
 
     function blockSupplier() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         string memory j = vm.readFile(DEPLOY);
         ThreatFeedGuard feed = ThreatFeedGuard(vm.parseJsonAddress(j, ".threatFeed"));
         address[] memory a = new address[](1);
@@ -234,6 +238,7 @@ contract RunV21Demo is Script {
     }
 
     function prepareBlocked() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         _load();
         address supplier = vm.addr(vm.envUint("V21_SUPPLIER_PRIVATE_KEY"));
         string memory o = "blocked";

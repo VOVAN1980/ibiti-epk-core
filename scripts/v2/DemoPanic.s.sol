@@ -30,6 +30,7 @@ contract DemoPanic is Script {
     }
 
     function panicAndScheduleUnpause() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         _load();
         vm.broadcast(vm.envUint("V2_GUARDIAN1_PRIVATE_KEY"));
         vault.panic(); // a guardian stops everything instantly
@@ -40,6 +41,7 @@ contract DemoPanic is Script {
     }
 
     function recover() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         _load();
         uint256 agentPk = vm.envUint("V2_AGENT_PRIVATE_KEY");
         address agent = vm.addr(agentPk);

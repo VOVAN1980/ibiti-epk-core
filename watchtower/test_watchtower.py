@@ -112,6 +112,23 @@ class Decisions(unittest.TestCase):
         st["panicked"] = True
         self.assertEqual(kinds(wt.after_failed_cancel(STOLEN_ID, st)), ["alert"])
 
+    def test_guardian_removal_calls_for_another_guardian(self):
+        g = "0x00000000000000000000000000000000000000aa"
+        for data in ("0x" + wt.selector("replaceGuardian(address,address)")[2:] + wt.word(g) + wt.word(ATTACKER),
+                     "0x" + wt.selector("setGuardian(address,bool)")[2:] + wt.word(g) + wt.word(0)):
+            acts = wt.decide(scheduled_log(data, STOLEN_SALT), EXPECTED, fresh_state(), 0, POLICY)
+            self.assertEqual(kinds(acts), ["alert", "alert", "cancel"])
+            self.assertIn("GUARDIAN REMOVAL of " + g, acts[1][2])
+        adding = "0x" + wt.selector("setGuardian(address,bool)")[2:] + wt.word(g) + wt.word(1)
+        self.assertIsNone(wt.removed_guardian(adding))
+
+    def test_unpause_rearms_panic(self):
+        st = fresh_state()
+        st["panicked"] = True
+        unpaused = {"address": VAULT, "topics": [wt.EV["Unpaused"]], "data": "0x"}
+        wt.decide(unpaused, EXPECTED, st, 0, POLICY)
+        self.assertFalse(st["panicked"])
+
     def test_other_events_only_alert(self):
         paused = {"address": VAULT, "topics": [wt.EV["Paused"], "0x" + wt.word(ADMIN)], "data": "0x"}
         self.assertEqual(kinds(wt.decide(paused, EXPECTED, fresh_state(), 0, POLICY)), ["alert"])

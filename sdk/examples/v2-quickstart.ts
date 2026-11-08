@@ -1,7 +1,11 @@
 // EPK SDK v2 quickstart for integrators: your own vault on BSC Testnet in a few minutes, from zero.
 // You need ONE funded testnet key (tBNB from a faucet). Everything else is created here.
 //
-//   ADMIN_PRIVATE_KEY=0x… npx tsx examples/v2-quickstart.ts
+//   cp .env.example .env   # put a SEPARATE testnet key into ADMIN_PRIVATE_KEY (never on the command line:
+//   npx tsx examples/v2-quickstart.ts   # it would end up in your shell history)
+//
+// The guardian and recovery keys it creates are thrown away: nobody can pause or recover this demo vault
+// later. For a real vault, generate them on separate devices and keep them.
 //
 // What it does (all real transactions on BSC Testnet, ~0.005 tBNB):
 //   1. creates YOUR vault through the public EPK factory (you are its admin)
@@ -27,8 +31,13 @@ import {
 } from "../src/v2/index.js";
 
 const rpc = process.env.BSC_TESTNET_RPC ?? "https://bsc-testnet-rpc.publicnode.com";
+try {
+  process.loadEnvFile?.(".env"); // sdk/.env, git-ignored (Node 20.12+)
+} catch {
+  /* no .env: use the environment */
+}
 const adminKey = process.env.ADMIN_PRIVATE_KEY as Hex | undefined;
-if (!adminKey) throw new Error("set ADMIN_PRIVATE_KEY to a funded BSC Testnet key");
+if (!adminKey) throw new Error("put ADMIN_PRIVATE_KEY (a funded BSC Testnet key) into sdk/.env");
 
 const t = () => new Date().toISOString().slice(11, 19);
 const log = (s: string) => console.log(`${t()}  ${s}`);

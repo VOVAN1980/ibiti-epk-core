@@ -5,8 +5,10 @@ trades — for an ordinary trading policy and for autonomous AI-agent sessions �
 PancakeSwap V2 router** and **real Chainlink price feeds** on BSC Testnet (chainId 97).
 
 Status: **done on 2026-11-07**, on a **separate** EPKVault 2.1.0 with its own registry, factory and keys.
-The 2.0.x demo vault (`docs/TESTNET_V2.md`, 9,940 eUSD) is not touched. Testnet only, test funds only, **not audited**. Source code of every contract we deployed is
-verified on [Sourcify](https://sourcify.dev) (chain 97).
+The 2.0.x demo vault (`docs/TESTNET_V2.md`, 9,940 eUSD) is not touched. Testnet only, test funds only, **not audited**. Source code is public in this
+repository and the evidence file pins every contract's code hash (explorer verification on Sourcify / BscScan was
+not found in the 2026-11-08 audit and is to be redone). The demo DexGuard predates the 2026-11-08 guard fixes
+([SECURITY_REVIEW_v2.md §1e](SECURITY_REVIEW_v2.md)).
 
 What this proves: the listed attacks were rejected on-chain in these scenarios, and allowed trades went
 through at fair prices. It is **not** a guarantee that no other attack exists — see

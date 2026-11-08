@@ -25,5 +25,5 @@ We will acknowledge your report and coordinate a fix as quickly as possible.
 
 | Version | Supported | Notes |
 |--------:|:---------:|:------|
-| v2 (EPKVault, Watchtower) | 🚧 | Live on BSC Testnet only. Internally reviewed, **not yet independently audited, not on mainnet** — do not use it to protect real funds. See [docs/SPEC_v2.md](docs/SPEC_v2.md), [docs/SECURITY_REVIEW_v2.md](docs/SECURITY_REVIEW_v2.md) and [docs/TESTNET_V2.md](docs/TESTNET_V2.md) |
+| v2 (EPKVault, guards, Watchtower, SDK) | 🚧 | Live on BSC Testnet only. Internally reviewed, **not yet independently audited, not on mainnet** — do not use it to protect real funds. See [docs/SPEC_v2.md](docs/SPEC_v2.md), [docs/SECURITY_REVIEW_v2.md](docs/SECURITY_REVIEW_v2.md) and [docs/TESTNET_V2.md](docs/TESTNET_V2.md) |
 | older versions | ❌ | Not supported |

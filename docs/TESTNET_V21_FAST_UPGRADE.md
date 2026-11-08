@@ -29,7 +29,7 @@ Log: `deployments/bsc-testnet/v2.1/2026-11-07-sdk-upgrade.log`.
 
 | Step | Time (UTC) | Transaction |
 |---|---|---|
-| Release 2.1.2 proposed ([0x938C220B…](https://testnet.bscscan.com/address/0x938C220B8cec1e6979cbCe53AD51bc9B1E7b3F25)) | 21:14 | [0x9797166f…](https://testnet.bscscan.com/tx/0x9797166f32e80a4a2154ff446e111bfd8e1d4d8bd43be4ae5cf7c8009fad3c84) |
+| Release 2.1.2 (a demo release: only its version number changes) proposed ([0x938C220B…](https://testnet.bscscan.com/address/0x938C220B8cec1e6979cbCe53AD51bc9B1E7b3F25)) | 21:14 | [0x9797166f…](https://testnet.bscscan.com/tx/0x9797166f32e80a4a2154ff446e111bfd8e1d4d8bd43be4ae5cf7c8009fad3c84) |
 | SDK: upgrade scheduled | 21:14:54 | [0xc687738e…](https://testnet.bscscan.com/tx/0xc687738ee95353b44a5d7690ae1c1a360a36bee99f2949d65a17831551e40573) |
 | SDK: upgrade executed — vault now runs 2.1.2, same address | 21:20:02 | [0x7ec2f788…](https://testnet.bscscan.com/tx/0x7ec2f788e709a4f31e4ad82e98d3f2eb9c7ae9cf1e8db2a7d8770fceac421377) |
 

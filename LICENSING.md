@@ -18,13 +18,15 @@ refers to the same rights holder.
 | TypeScript SDK | `sdk/` | **MIT** ([`LICENSE`](LICENSE)); the guard bytecode it bundles is EPK v2 code (BUSL-1.1), see `sdk/LICENSE` |
 | Documentation and the website | `docs/`, `README.md`, other top-level `*.md` | MIT |
 | Testnet evidence (addresses, transactions, traces, reports) | `deployments/` | MIT |
-| **EPK v2** — EPKVault, EPKVaultProxy, EPKVaultFactory, EPKRegistry | `contracts/v2/` | **BUSL-1.1** ([`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)) |
+| **EPK v2** — EPKVault, EPKVaultProxy, EPKVaultFactory, EPKRegistry, EPKChains, guard modules (DexGuard, ThreatFeedGuard, CompositeGuard) | `contracts/v2/` | **BUSL-1.1** ([`LICENSE-BUSL-1.1`](LICENSE-BUSL-1.1)) |
 | EPK v2 tests and mocks | `test/v2/` | **BUSL-1.1** |
 | EPK v2 deployment, demo and verification scripts | `scripts/v2/` | **BUSL-1.1** |
 | EPK Watchtower (automatic guardian) | `watchtower/` | **BUSL-1.1** |
 | Third-party libraries | `lib/` (e.g. OpenZeppelin Contracts) | their own licenses (OpenZeppelin: MIT) — not relicensed |
 
 Each Solidity file, and each Python file of EPK v2, states its license in its `SPDX-License-Identifier` header.
+Two files inside the BUSL folders keep their MIT header: `contracts/v2/IPolicyValidator.sol` (a plain validator
+interface) and `test/v2/MockTarget.sol` (a test helper).
 Everything already published under MIT stays under MIT permanently.
 
 ## EPK v2 under the Business Source License 1.1

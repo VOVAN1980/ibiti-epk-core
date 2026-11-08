@@ -992,4 +992,65 @@ contract EPKVaultTest is Test {
         assertEq(token.balanceOf(attacker), 0);
         assertEq(token.balanceOf(friend), sent);
     }
+
+    // ------------------------------------------------------------------ known issues (internal audit 2026-11-08)
+    // Pinned so that the vault release that fixes them flips these tests (see SECURITY_REVIEW_v2.md §3).
+
+    /// KNOWN ISSUE A: the recovery key can veto every timelocked change, including its own replacement,
+    /// so a stolen recovery key can keep a paused vault paused (a freeze, not a theft).
+    /// Planned fix: shield `setRecovery` from the current recovery key, like guardian removal.
+    function test_knownIssue_recoveryCanVetoItsOwnReplacement() public {
+        vm.prank(guardian);
+        vault.panic();
+        bytes memory replace = abi.encodeCall(EPKVault.setRecovery, (makeAddr("freshRecovery")));
+        bytes memory resume = abi.encodeCall(EPKVault.unpause, ());
+        bytes32 id1 = _schedule(replace);
+        bytes32 id2 = _schedule(resume);
+        vm.startPrank(recoveryKey);
+        vault.cancel(id1);
+        vault.cancel(id2);
+        vm.stopPrank();
+        _warp(DELAY);
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.UnknownOperation.selector);
+        vault.executeScheduled(replace, bytes32(0));
+        assertEq(vault.recovery(), recoveryKey);
+        assertTrue(vault.paused());
+    }
+
+    /// KNOWN ISSUE B: an ERC-721 `approve(destination, 0)` approves token #0 and is not recorded as an
+    /// allowance, so it survives the batch. The spender must be an allowlisted destination.
+    /// Planned fix: record the spender of every approve, so NFT approvals fail closed.
+    function test_knownIssue_nftApprovalOfTokenZeroSurvives() public {
+        AuditNFT nft = new AuditNFT();
+        nft.mint(address(vault), 0);
+        _activate(abi.encodeCall(EPKVault.setCall, (pid, address(nft), IERC20.approve.selector, true)));
+        _exec(address(nft), 0, abi.encodeCall(IERC20.approve, (address(router), 0)));
+        assertEq(nft.getApproved(0), address(router));
+        // a destination router with an arbitrary-pull bug could now move the NFT outside execute()
+        vm.prank(address(router));
+        nft.transferFrom(address(vault), attacker, 0);
+        assertEq(nft.ownerOf(0), attacker);
+    }
+}
+
+/// Minimal ERC-721 (approve / getApproved / transferFrom / ownerOf) for the known-issue test.
+contract AuditNFT {
+    mapping(uint256 => address) public ownerOf;
+    mapping(uint256 => address) public getApproved;
+
+    function mint(address to, uint256 id) external {
+        ownerOf[id] = to;
+    }
+
+    function approve(address to, uint256 id) external {
+        require(msg.sender == ownerOf[id], "not owner");
+        getApproved[id] = to;
+    }
+
+    function transferFrom(address from, address to, uint256 id) external {
+        require(ownerOf[id] == from && (msg.sender == from || msg.sender == getApproved[id]), "not allowed");
+        ownerOf[id] = to;
+        getApproved[id] = address(0);
+    }
 }

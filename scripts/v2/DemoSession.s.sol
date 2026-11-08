@@ -25,6 +25,8 @@ contract DemoSession is Script {
     address internal agent;
 
     function run() external {
+        // EPK is not audited: these scripts refuse to run on any mainnet
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         string memory core = vm.readFile(IN_CORE);
         string memory v = vm.readFile(IN_VAULT);
         vault = EPKVault(payable(vm.parseJsonAddress(v, ".vault")));

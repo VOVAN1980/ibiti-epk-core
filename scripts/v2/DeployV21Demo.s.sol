@@ -91,6 +91,8 @@ contract DeployV21Demo is Script {
     }
 
     function run() external {
+        // EPK is not audited: these scripts refuse to run on any mainnet
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         require(block.chainid == 97, "BSC Testnet only");
         Roles memory r = _roles();
         vm.startBroadcast(vm.envUint("V21_ADMIN_PRIVATE_KEY"));

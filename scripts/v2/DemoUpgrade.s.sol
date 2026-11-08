@@ -26,6 +26,7 @@ contract DemoUpgrade is Script {
     }
 
     function schedule() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         EPKVault vault = _vault();
         vm.broadcast(vm.envUint("PRIVATE_KEY"));
         vault.scheduleUpgrade(_release(), SALT);
@@ -33,6 +34,7 @@ contract DemoUpgrade is Script {
     }
 
     function execute() external {
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         EPKVault vault = _vault();
         address token = vm.parseJsonAddress(vm.readFile(IN_CORE), ".token");
         uint256 before = vault.availableToSpend(token);

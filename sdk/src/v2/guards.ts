@@ -1,4 +1,5 @@
-import { type Address, type Hex, type PublicClient, encodeFunctionData, erc20Abi, parseAbi } from "viem";
+import { type Address, type Hex, encodeFunctionData, erc20Abi, parseAbi } from "viem";
+import type { AnyPublicClient } from "./client.js";
 
 import { dexGuardAbi } from "./abi/dexGuardAbi.js";
 import { threatFeedGuardAbi } from "./abi/threatFeedGuardAbi.js";
@@ -19,7 +20,7 @@ export const v2RouterAbi = parseAbi([
 export class DexGuardClient {
   constructor(
     readonly address: Address,
-    readonly publicClient: PublicClient,
+    readonly publicClient: AnyPublicClient,
   ) {}
 
   private read(functionName: string, args: readonly unknown[] = []) {
@@ -65,7 +66,7 @@ export class DexGuardClient {
 }
 
 /** Is any address in this call on the ThreatFeed V2 blocklist? (the same scan the guard runs) */
-export async function isCallBlocked(publicClient: PublicClient, feed: Address, target: Address, data: Hex) {
+export async function isCallBlocked(publicClient: AnyPublicClient, feed: Address, target: Address, data: Hex) {
   return publicClient.readContract({ address: feed, abi: threatFeedGuardAbi, functionName: "isCallBlocked", args: [target, data] });
 }
 
@@ -153,11 +154,12 @@ export function v2SwapExactTokensForNative(args: {
 /**
  * Plan a guarded exact-input swap: reads the guard's minimum and the router's quote and picks a minimum
  * output that both the pool can deliver and the guard accepts. Throws a readable error when the pool
- * pays less than the guard allows — the trade would be refused on-chain anyway (e.g. a manipulated or
- * stale pool), so a bot can skip it without paying gas.
+ * pays less than the guard allows — the trade would be refused on-chain anyway, so a bot can skip it
+ * without paying gas. The guard's minimum is the floor: a pool that is pushed off the market but still
+ * inside the guard's slippage band is NOT detected here, and the router quote is a spot read.
  */
 export async function planGuardedSwap(args: {
-  publicClient: PublicClient;
+  publicClient: AnyPublicClient;
   guard: Address;
   router: Address;
   vault: Address;
@@ -185,8 +187,11 @@ export async function planGuardedSwap(args: {
       `pool pays ${quote}, guard requires at least ${guardMinimum}: the trade would be refused (PriceTooLow) — pool is off the Chainlink price`,
     );
   }
+  if (args.deadlineIn !== undefined && (args.deadlineIn <= 0n || args.deadlineIn > maxDl)) {
+    throw new Error(`deadlineIn must be between 1 and the guard's maxDeadline (${maxDl} s)`);
+  }
   const block = await args.publicClient.getBlock();
-  const deadline = block.timestamp + (args.deadlineIn ?? maxDl - 30n);
+  const deadline = block.timestamp + (args.deadlineIn ?? (maxDl > 60n ? maxDl - 30n : maxDl / 2n));
   const calls = args.native
     ? v2SwapExactNative({ router: args.router, vault: args.vault, path: args.path, amountIn: args.amountIn, minOut, deadline })
     : v2SwapExactTokens({ router: args.router, vault: args.vault, path: args.path, amountIn: args.amountIn, minOut, deadline });

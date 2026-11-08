@@ -1,7 +1,8 @@
 # Integrating EPK v2 — developer guide (TypeScript SDK)
 
-For teams that run trading bots, AI agents or payment automation and want their funds in a vault that a
-hacked server, a stolen bot key or a misbehaving agent cannot drain. Everything below runs today on **BSC
+For teams that run trading bots, AI agents or payment automation and want their funds in a vault where a
+hacked server, a stolen bot key or a misbehaving agent cannot take more than your limits, nor pay addresses you
+did not approve. Everything below runs today on **BSC
 Testnet** with `@ibiti/epk-sdk/v2` (`sdk/` in this repository). EPK is **not audited and not on mainnet**;
 production use of the contracts needs a commercial license (BUSL-1.1, see [`LICENSING.md`](../LICENSING.md)).
 The SDK itself is MIT.
@@ -26,8 +27,12 @@ key, configures it, lets a bot pay, and shows what a stolen bot key gets back �
 
 ```bash
 cd sdk && npm ci
-ADMIN_PRIVATE_KEY=0x… npx tsx examples/v2-quickstart.ts
+cp .env.example .env          # put a separate, funded testnet key into ADMIN_PRIVATE_KEY
+npx tsx examples/v2-quickstart.ts
 ```
+
+Keep keys out of the command line (shell history). The quickstart throws its guardian and recovery keys away —
+fine for a demo, never for a real vault.
 
 ## 1. The model in one minute
 
@@ -123,7 +128,7 @@ import { deployDexGuard, deployThreatFeed, deployCompositeGuard, planGuardedSwap
 const dex = await deployDexGuard(adminWallet, publicClient, {
   wrappedNative: networks.bscTestnet.dex.wbnb, maxSlippageBps: 100n, maxDeadline: 600n,
   routers: [{ router: networks.bscTestnet.dex.pancakeV2Router, kind: "V2" }],
-  tokens: [{ token: WBNB, feed: networks.bscTestnet.chainlink["BNB/USD"], maxAge: 86_400, maxAmountIn: parseEther("1"), minPrice: 10n ** 8n, maxPrice: 10n ** 13n }, /* … */],
+  tokens: [{ token: WBNB, feed: networks.bscTestnet.chainlink["BNB/USD"], maxAge: 3_600, maxAmountIn: parseEther("1"), minPrice: 10n ** 8n, maxPrice: 10n ** 13n }, /* … */],
 });
 const plan = await planGuardedSwap({ publicClient, guard: dex, router, vault, path: [WBNB, USDT], amountIn, native: true });
 // plan.calls → signBatch / execute as in §4. planGuardedSwap throws if the pool is off the Chainlink price.

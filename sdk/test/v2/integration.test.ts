@@ -68,3 +68,29 @@ test("network presets are valid addresses", () => {
   for (const a of walk(networks.bscTestnet).filter((x) => x.startsWith("0x"))) assert.ok(isAddress(a), a);
   assert.equal(networks.bscTestnet.chainId, 97);
 });
+
+// ---- internal audit 2026-11-08: SDK protections
+
+test("explainEpkError never pushes the owner to loosen rules on an error alone", () => {
+  const data = encodeErrorResult({ abi: epkVaultAbi, errorName: "DestinationNotAllowed", args: ["0x000000000000000000000000000000000000bad1"] });
+  assert.match(explainEpkError(data), /confirm on the vault before loosening/);
+  const guardErr = encodeErrorResult({ abi: dexGuardAbi, errorName: "RecipientNotAllowed", args: ["0x000000000000000000000000000000000000beef"] });
+  assert.match(explainEpkError(guardErr), /never transfer to it/);
+  const limit = encodeErrorResult({ abi: dexGuardAbi, errorName: "PriceLimitNotAllowed" });
+  assert.match(explainEpkError(limit), /sqrtPriceLimitX96 to 0/);
+});
+
+test("signBatch refuses to sign when the signer and the RPC are on different chains", async () => {
+  const { createPublicClient, createWalletClient, custom } = await import("viem");
+  const { privateKeyToAccount } = await import("viem/accounts");
+  const { bsc } = await import("viem/chains");
+  const { EPKVaultClient } = await import("../../src/v2/index.js");
+  const rpc = custom({ request: async ({ method }: { method: string }) => (method === "eth_chainId" ? "0x61" : "0x0") }); // BSC Testnet
+  const publicClient = createPublicClient({ transport: rpc });
+  const signer = createWalletClient({ account: privateKeyToAccount(`0x${"11".repeat(32)}`), chain: bsc, transport: rpc }); // BSC mainnet
+  const vault = new EPKVaultClient({ address: networks.bscTestnet.demo.guardVault, publicClient: publicClient as never });
+  await assert.rejects(
+    vault.signBatch({ policyId: 0n, agent: signer.account.address, calls: [], signer: signer as never, nonce: 0n, deadline: 1n }),
+    /signer is on chain 56 but the public client is on chain 97/,
+  );
+});

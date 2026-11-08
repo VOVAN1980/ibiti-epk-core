@@ -217,6 +217,11 @@ def decide(log, expected, state, now, policy):
         state["unexpected"] = [t for t in state["unexpected"] if now - t < 3600] + [now]
         acts.append(("alert", "critical", f"UNEXPECTED change scheduled by {op['by']}: {what}; would take effect {when} "
                                           f"— cancelling {op['id']}"))
+        removed = removed_guardian(op["data"])
+        if removed:
+            acts.append(("alert", "critical", f"GUARDIAN REMOVAL of {removed}: that guardian cannot veto its own removal "
+                                              f"(and a panic does not stop it) — ANOTHER guardian or the owner must cancel "
+                                              f"{op['id']} before {when}"))
         acts.append(("cancel", op["id"]))
         if len(state["unexpected"]) >= policy.get("panicAfterUnexpectedPerHour", 3) and not state["panicked"]:
             acts.append(("panic", f"{len(state['unexpected'])} unexpected changes within an hour"))
@@ -233,6 +238,7 @@ def decide(log, expected, state, now, policy):
     elif kind == "Paused":
         acts.append(("alert", "warning", f"vault PAUSED by 0x{log['topics'][1][-40:]}"))
     elif kind == "Unpaused":
+        state["panicked"] = False  # the owner resumed the vault: a new attack may need a new panic
         acts.append(("alert", "warning", "vault unpaused"))
     elif kind == "EpochBumped":
         acts.append(("alert", "warning", "all policies, sessions and pending changes revoked (epoch bumped)"))
@@ -241,6 +247,17 @@ def decide(log, expected, state, now, policy):
     elif kind in ("GuardianSet", "DelaySet", "DestinationSet"):
         acts.append(("alert", "warning", f"vault setting changed: {kind}"))
     return acts
+
+
+def removed_guardian(data):
+    """The guardian an operation would remove (setGuardian(g, false) / replaceGuardian(g, _)), else None."""
+    sel, args = data[:10].lower(), data[10:]
+    if len(args) < 128:
+        return None
+    if sel == selector("replaceGuardian(address,address)") or (
+            sel == selector("setGuardian(address,bool)") and int(args[64:128], 16) == 0):
+        return "0x" + args[24:64]
+    return None
 
 
 def after_failed_cancel(op_id, state):
@@ -351,10 +368,17 @@ class Watchtower:
         start = self.state["lastBlock"] + 1 if self.state["lastBlock"] is not None else self.cfg.get("startBlock", latest)
         if start == "latest":
             start = latest
+        step = 5000
         while start <= latest:
-            end = min(start + 4999, latest)
-            logs = rpc(self.url, "eth_getLogs", {"address": self.vault, "fromBlock": hex(start), "toBlock": hex(end),
-                                                 "topics": [list(EV.values())]})
+            end = min(start + step - 1, latest)
+            try:
+                logs = rpc(self.url, "eth_getLogs", {"address": self.vault, "fromBlock": hex(start), "toBlock": hex(end),
+                                                     "topics": [list(EV.values())]})
+            except (OSError, RuntimeError, ValueError):
+                if end == start:
+                    raise
+                step = max(1, (end - start + 1) // 2)  # e.g. a reply too large for the node: ask for less
+                continue
             for lg in sorted(logs, key=lambda x: (int(x["blockNumber"], 16), int(x["logIndex"], 16))):
                 self.act(decide(lg, self.expected, self.state, time.time(), self.policy))
             self.state["lastBlock"] = end
@@ -375,11 +399,19 @@ class Watchtower:
         self.alert("info", f"watching vault {self.vault} on chain {cid}; guardian {guardian or 'none'} "
                            f"({'confirmed by the vault' if is_g else 'NOT a guardian of this vault'}); "
                            f"{len(self.expected)} approved change(s); {'DRY RUN' if self.dry else 'live'}")
+        failures = 0
         while True:
             try:
                 self.poll()
-            except (OSError, RuntimeError) as e:
-                print(f"  (node error, retrying: {e})", flush=True)
+                if failures >= 5:
+                    self.alert("warning", f"reading the chain again after {failures} failed attempts")
+                failures = 0
+            except Exception as e:  # noqa: BLE001 — a watchtower must never stop on a bad node reply
+                failures += 1
+                print(f"  (node error, retrying: {type(e).__name__}: {e})", flush=True)
+                if failures == 5 or failures % 100 == 0:
+                    self.alert("critical", f"cannot read the chain ({failures} failed attempts in a row): "
+                                           f"{type(e).__name__} — the vault is NOT being watched")
             if once:
                 return
             time.sleep(self.cfg.get("pollSeconds", 3))

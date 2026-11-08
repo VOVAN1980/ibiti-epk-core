@@ -19,6 +19,8 @@ contract DeployV2 is Script {
     string internal constant OUT = "deployments/bsc-testnet/epk-v2.json";
 
     function run() external {
+        // EPK is not audited: these scripts refuse to run on any mainnet
+        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
         uint256 pk = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(pk);
 

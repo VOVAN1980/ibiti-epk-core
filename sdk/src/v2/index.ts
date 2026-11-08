@@ -7,6 +7,7 @@ export * from "./admin.js";
 export * from "./deploy.js";
 export * from "./networks.js";
 export * from "./errors.js";
+export type { AnyPublicClient } from "./client.js";
 export { epkVaultAbi } from "./abi/epkVaultAbi.js";
 export { dexGuardAbi } from "./abi/dexGuardAbi.js";
 export { threatFeedGuardAbi } from "./abi/threatFeedGuardAbi.js";

@@ -1,6 +1,6 @@
 # Slither triage — EPK v2
 
-Slither runs on **every push and pull request** (`.github/workflows/security.yml`) and must stay on.
+Slither runs on **every pull request and every push to `master`** (`.github/workflows/security.yml`) and must stay on.
 This page records how each finding on the EPK v2 code (`contracts/v2/`) was handled.
 
 Rules for this codebase:
@@ -21,8 +21,9 @@ Tool: Slither 0.11.6, `slither . --foundry-out-directory out --exclude-dependenc
 | Fixed in code | — | 15 of the 36 (+ 3 of 4 new ones surfaced while refactoring) — §1 |
 | Suppressed with justification (+ proof tests for the highs) | — | 21 of the 36 (+ 1 new) — §2 |
 
-Verified locally on 2026-11-07: `0 result(s) found` for `contracts/v2/`; the full test suite (295 tests,
-including all v2 fuzz and invariant tests) passes after the changes.
+Verified locally on 2026-11-07: `0 result(s) found` for `contracts/v2/`; the full test suite of that day
+(including all v2 fuzz and invariant tests) passed after the changes. Re-run on 2026-11-08 after the fifth review
+(guard fixes): 0 results.
 
 ## 1. Fixed in code
 

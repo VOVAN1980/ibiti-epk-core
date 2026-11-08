@@ -3,12 +3,12 @@ import {
   type Address,
   type Chain,
   type Hex,
-  type PublicClient,
   type Transport,
   type WalletClient,
   encodeFunctionData,
   parseAbi,
 } from "viem";
+import type { AnyPublicClient } from "./client.js";
 
 import { epkRegistryAbi } from "./abi/epkRegistryAbi.js";
 import { epkVaultAbi } from "./abi/epkVaultAbi.js";
@@ -31,7 +31,7 @@ export type Release = { version: number; activeAt: bigint; revoked: boolean; cod
 export class EPKRegistryClient {
   constructor(
     readonly address: Address,
-    readonly publicClient: PublicClient,
+    readonly publicClient: AnyPublicClient,
   ) {}
 
   async release(implementation: Address): Promise<Release | undefined> {
@@ -61,8 +61,12 @@ export class EPKRegistryClient {
 export type UpgradeStatus = {
   operationId: Hex;
   data: Hex;
-  /** "unlisted" | "revoked" | "waiting" | "ready" | "done" — what the owner can do now */
-  state: "unlisted" | "revoked" | "not-scheduled" | "waiting" | "ready" | "done";
+  /**
+   * What the owner can do now: "unlisted" | "revoked" (by the registry) | "not-scheduled" | "cancelled"
+   * (vetoed by a guardian / the recovery key / the admin, or wiped by a panic — schedule again) |
+   * "waiting" | "ready" | "done" (the vault already runs this version or a newer one)
+   */
+  state: "unlisted" | "revoked" | "not-scheduled" | "cancelled" | "waiting" | "ready" | "done";
   release?: Release;
   /** when the vault's own wait ends (from the OperationScheduled event), if scheduled */
   readyAt?: bigint;
@@ -78,7 +82,7 @@ export type UpgradeStatus = {
 export class EPKUpgrader {
   constructor(
     readonly vault: Address,
-    readonly publicClient: PublicClient,
+    readonly publicClient: AnyPublicClient,
     readonly walletClient?: WalletClient<Transport, Chain, Account>,
   ) {}
 
@@ -146,7 +150,18 @@ export class EPKUpgrader {
       toBlock: "latest",
     });
     if (logs.length === 0) return { ...base, state: "not-scheduled" };
-    const readyAt = BigInt((logs[logs.length - 1] as unknown as { args: { readyAt: bigint } }).args.readyAt);
+    const last = logs[logs.length - 1] as unknown as { blockNumber: bigint; logIndex: number; args: { readyAt: bigint } };
+    const readyAt = BigInt(last.args.readyAt);
+    // vetoed (OperationCancelled for this id) or wiped by a panic (EpochBumped) after the latest schedule?
+    const after = (l: { blockNumber: bigint | null; logIndex: number | null }) =>
+      l.blockNumber !== null && (l.blockNumber > last.blockNumber || (l.blockNumber === last.blockNumber && (l.logIndex ?? 0) > last.logIndex));
+    const cancelledEv = epkVaultAbi.find((x) => x.type === "event" && x.name === "OperationCancelled");
+    const epochEv = epkVaultAbi.find((x) => x.type === "event" && x.name === "EpochBumped");
+    const [cancels, epochs] = await Promise.all([
+      this.publicClient.getLogs({ address: this.vault, event: cancelledEv as never, args: { id: operationId } as never, fromBlock: last.blockNumber, toBlock: "latest" }),
+      this.publicClient.getLogs({ address: this.vault, event: epochEv as never, fromBlock: last.blockNumber, toBlock: "latest" }),
+    ]);
+    if ([...cancels, ...epochs].some((l) => after(l as never))) return { ...base, readyAt, state: "cancelled" };
     const executableAt = readyAt > release.activeAt ? readyAt : release.activeAt;
     const now = (await this.publicClient.getBlock()).timestamp;
     return { ...base, readyAt, executableAt, state: now >= executableAt ? "ready" : "waiting" };

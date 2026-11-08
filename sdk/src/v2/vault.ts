@@ -3,7 +3,6 @@ import {
   type Address,
   type Chain,
   type Hex,
-  type PublicClient,
   type Transport,
   type WalletClient,
   decodeErrorResult,
@@ -11,6 +10,7 @@ import {
   hashTypedData,
   keccak256,
 } from "viem";
+import type { AnyPublicClient } from "./client.js";
 
 import { epkVaultAbi } from "./abi/epkVaultAbi.js";
 import { dexGuardAbi } from "./abi/dexGuardAbi.js";
@@ -88,7 +88,7 @@ export function decodeEpkError(data: Hex) {
 
 export type VaultClientOptions = {
   address: Address;
-  publicClient: PublicClient;
+  publicClient: AnyPublicClient;
   walletClient?: WalletClient<Transport, Chain, Account>;
 };
 
@@ -98,7 +98,7 @@ export type VaultClientOptions = {
  */
 export class EPKVaultClient {
   readonly address: Address;
-  readonly publicClient: PublicClient;
+  readonly publicClient: AnyPublicClient;
   readonly walletClient?: WalletClient<Transport, Chain, Account>;
 
   constructor(opts: VaultClientOptions) {
@@ -175,6 +175,8 @@ export class EPKVaultClient {
   /**
    * Sign a batch with the policy / session key held by `signer` (a viem Account or wallet).
    * Reads the current nonce unless given; the deadline defaults to one hour from now.
+   * The signature is bound to the signer's chain; if the public client is on another chain this throws
+   * (a wrong or lying RPC must not make you sign for a different network).
    */
   async signBatch(args: {
     policyId: bigint;
@@ -184,7 +186,12 @@ export class EPKVaultClient {
     nonce?: bigint;
     deadline?: bigint;
   }): Promise<{ signature: Hex; nonce: bigint; deadline: bigint; digest: Hex }> {
-    const chainId = await this.publicClient.getChainId();
+    const rpcChainId = await this.publicClient.getChainId();
+    const signerChainId = args.signer.chain?.id;
+    if (signerChainId !== undefined && signerChainId !== rpcChainId) {
+      throw new Error(`signBatch: the signer is on chain ${signerChainId} but the public client is on chain ${rpcChainId}`);
+    }
+    const chainId = signerChainId ?? rpcChainId;
     const nonce = args.nonce ?? (await this.nonce(args.policyId));
     const deadline = args.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 3600);
     const message: ExecuteMessage = { policyId: args.policyId, agent: args.agent, calls: args.calls, nonce, deadline };
@@ -241,7 +248,7 @@ export class EPKVaultClient {
 
   // ---------------------------------------------------------------- sessions
 
-  /** Open an AI-agent session inside an envelope (session manager or admin). Returns the tx hash. */
+  /** Open an AI-agent session inside an envelope (only the session manager can). Returns the tx hash. */
   async openSession(args: { envelopeId: bigint; signer: Address; agent: Address; validUntil: bigint }): Promise<Hex> {
     const w = this.wallet();
     return w.writeContract({

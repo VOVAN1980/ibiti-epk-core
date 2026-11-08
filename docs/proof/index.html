@@ -98,7 +98,7 @@ proof on a separate demo vault — <a href="guards.html">Protected swaps</a>.</d
 <section id="s-attacks">
   <h2>Rejected attacks</h2>
   <p>What a hacked agent or a stranger would try. Each attempt was really sent to the vault and failed on-chain.
-  <b>STRICT</b> = the reason is read from the execution trace of that exact transaction.
+  <b>STRICT</b> = the reason is read from an execution trace of that exact transaction, saved in the repository.
   <b>REPLAY</b> = the transaction is replayed against the chain state right before its block, and no earlier
   transaction in that block touched the vault or the token (a replay is strong evidence, not a trace).
   <b>Archived</b> = free public nodes no longer keep that old state; the rejection itself is still checked on-chain,
@@ -110,7 +110,7 @@ proof on a separate demo vault — <a href="guards.html">Protected swaps</a>.</d
   <h2>A stolen admin key, stopped by the Watchtower</h2>
   <p>The worst case: an attacker holds the vault's real admin key. Every change that could let money out has to
   wait in the vault's timelock, and any guardian may cancel it while it waits. The EPK Watchtower is a guardian
-  that never sleeps. In steps <b>W1–W3</b> the attacker scheduled "allow payments to my address"; the Watchtower
+  that keeps watching while it runs. In steps <b>W1–W3</b> the attacker scheduled "allow payments to my address"; the Watchtower
   cancelled it 5 blocks later, and the attacker's attempt to push it through anyway was rejected with
   <code>UnknownOperation</code> — the change no longer existed. All three transactions are checked in the tables
   on this page. <a data-tree="watchtower">How the Watchtower works</a>.</p>
@@ -118,7 +118,7 @@ proof on a separate demo vault — <a href="guards.html">Protected swaps</a>.</d
 
 <section id="s-flow">
   <h2>Real transactions on BSC Testnet</h2>
-  <p>The whole lifecycle: deploy, a customer's vault, an AI agent paying on its own, panic, recovery, upgrade.</p>
+  <p>The whole lifecycle: deploy, a customer's vault, an AI agent paying on its own, panic, recovery.</p>
   <div class="scroll"><table id="tbl-tx"><thead><tr><th>Step</th><th>What</th><th>From</th><th>Result</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -253,6 +253,9 @@ function log(kind, text) {
   return kind === "ok";
 }
 const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+// evidence values go into HTML: accept only the shapes they must have
+const hx = (s) => (/^0x[0-9a-fA-F]{1,64}$/.test(String(s)) ? String(s) : "0x");
+const num = (n) => String(Number.parseInt(n, 10) || 0);
 
 let EV;
 function renderClaims(ev) {
@@ -260,11 +263,11 @@ function renderClaims(ev) {
   $("t-attacks").textContent = `${attacks.length}`; $("t-stolen").textContent = "?";
   $("t-contracts").textContent = `${Object.keys(C).length}`;
   $("tbl-attacks").tBodies[0].innerHTML = attacks.map(t => `<tr><td>${esc(t.step)}</td><td>${esc(t.what)}</td>
-    <td class="mono">${esc(t.error.split("(")[0])}</td><td id="a-${t.tx}">${pill("claim", "claimed")}</td>
-    <td><a class="mono" href="${EXPLORER}/tx/${t.tx}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
+    <td class="mono">${esc(t.error.split("(")[0])}</td><td id="a-${hx(t.tx)}">${pill("claim", "claimed")}</td>
+    <td><a class="mono" href="${EXPLORER}/tx/${hx(t.tx)}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
   $("tbl-tx").tBodies[0].innerHTML = ev.transactions.map(t => `<tr><td>${esc(t.step)}</td><td>${esc(t.what)}</td><td>${esc(t.from)}</td>
-    <td id="x-${t.tx}">${pill("claim", t.expect === "success" ? "success (claimed)" : "rejected (claimed)")}</td>
-    <td><a class="mono" href="${EXPLORER}/tx/${t.tx}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
+    <td id="x-${hx(t.tx)}">${pill("claim", t.expect === "success" ? "success (claimed)" : "rejected (claimed)")}</td>
+    <td><a class="mono" href="${EXPLORER}/tx/${hx(t.tx)}" target="_blank" rel="noopener">${short(t.tx)}</a></td></tr>`).join("");
   $("tbl-cp").tBodies[0].innerHTML = ev.checkpoints.map((c, i) => {
     const claims = [];
     if ("paused" in c) claims.push(`paused ${c.paused}`);
@@ -272,11 +275,11 @@ function renderClaims(ev) {
     if ("eUSD" in c) claims.push(`balance ${c.eUSD} eUSD`);
     if ("vaultLimitLeft" in c) claims.push(`vault limit left ${c.vaultLimitLeft}`);
     if (c.sessionBudgetLeft) claims.push(`session budget left ${c.sessionBudgetLeft.value}`);
-    return `<tr><td class="mono"><a href="${EXPLORER}/block/${c.block}" target="_blank" rel="noopener">${c.block}</a></td><td>${esc(c.label)}</td><td>${esc(claims.join(" · "))}</td><td id="c-${i}">${pill("claim", "claimed")}</td></tr>`;
+    return `<tr><td class="mono"><a href="${EXPLORER}/block/${num(c.block)}" target="_blank" rel="noopener">${num(c.block)}</a></td><td>${esc(c.label)}</td><td>${esc(claims.join(" · "))}</td><td id="c-${i}">${pill("claim", "claimed")}</td></tr>`;
   }).join("");
   $("tbl-code").tBodies[0].innerHTML = Object.entries(C).map(([k, c]) => `<tr><td>${esc(c.label)}</td>
-    <td><a class="mono" href="${EXPLORER}/address/${c.address}#code" target="_blank" rel="noopener">${short(c.address)}</a></td>
-    <td class="mono">${c.codeHash ? short(c.codeHash) : "–"}</td><td id="k-${k}">${pill("claim", "claimed")}</td></tr>`).join("");
+    <td><a class="mono" href="${EXPLORER}/address/${hx(c.address)}#code" target="_blank" rel="noopener">${short(c.address)}</a></td>
+    <td class="mono">${c.codeHash ? short(hx(c.codeHash)) : "–"}</td><td id="k-${esc(k)}">${pill("claim", "claimed")}</td></tr>`).join("");
 }
 
 async function verify() {

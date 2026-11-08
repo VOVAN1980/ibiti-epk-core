@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Scope | `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol`, `contracts/v2/EPKRegistry.sol` (upgrade mechanism: second and third rounds, §1b–§1c) |
-| Date | 2026-11-06 |
+| Scope | `contracts/v2/EPKVault.sol`, `contracts/v2/EPKVaultFactory.sol`, `contracts/v2/EPKRegistry.sol` (upgrade mechanism: second and third rounds, §1b–§1c); fifth round (§1e): also the guards, Watchtower, SDK, website and operations |
+| Date | 2026-11-06 (§1e: 2026-11-08) |
 | Method | Internal review by a separate AI agent (code reading + Foundry proof-of-concept tests), fixes by the developer, regression tests for every finding |
 | Status | All high / medium findings fixed. **Not an independent audit.** |
 
@@ -43,7 +43,7 @@ Scope: proxy/UUPS refactor of `EPKVault`, `EPKRegistry`, `EPKVaultFactory`. No c
 | F3 | Low | Registry version not tied to the code's `vaultVersion()` (allowed downgrades) | **Fixed** — the registry reads the version from the implementation | `test_registryRules` |
 | F4 | Low | Factory kept deploying a revoked implementation | **Fixed** — factory requires `registry.isApproved(implementation)` | `test_factoryRefusesRevokedImplementation` |
 | F5 | Low | "2× delay" could be shortened by lowering the delay first | **Fixed** — `UPGRADE_DELAY_FLOOR = 2 days` | `test_upgradeDelayFloorAfterLoweringDelay`, `invariant_upgradeNeverFasterThanTheFloor` |
-| F6 | Low | Upgrade `data` was a general "call as the vault" channel (nested upgrades, recovery change) | **Fixed** — `scheduleUpgrade(impl, bool withMigration, salt)`: payload is empty or `migrate()` only | `test_upgradeOperationDataMatchesHelper` |
+| F6 | Low | Upgrade `data` was a general "call as the vault" channel (nested upgrades, recovery change) | **Fixed** — `scheduleUpgrade(impl, bool withMigration, salt)`: payload is empty or `migrate()` only (superseded by §1c: now `scheduleUpgrade(impl, salt)`, migration always runs) | `test_upgradeOperationDataMatchesHelper` |
 | F7 | Low | Proxy could not receive native coins via 2300-gas `transfer`/`send` in a cold transaction | **Fixed** — `EPKVaultProxy.receive()` | `test_vaultAcceptsStipendTransfers` |
 | F8 | Low | A compromised registry owner could exhaust the version space | **Fixed** — `MAX_VERSION_STEP = 10_000` per release | `test_registryRules` |
 | I1 | Info | Storage snapshot missing; contract size margin small | **Fixed / documented** — `docs/storage-layout/EPKVault-2.0.0.txt`, `extra_output = ["storageLayout"]`; size budget in release rules | — |
@@ -94,6 +94,29 @@ Scope: envelopes, session manager, `openSession`, per-session budgets (commit 05
 | D2, D3 | Design | A compromised manager can open many sessions (bounded only by the vault-wide limit) and is back after an unpause | **Documented** — playbook: remove the manager (instant) + `panic` or switch the envelope off; envelope-wide aggregate budgets are a candidate for a later release | — |
 | D7–D10 | Info | Internal getters (events for operations; SDK hardcodes the EIP-712 name/version), `budgetAvailable` ignores session status, inflows can offset outflows | **Documented** | — |
 
+### 1e. Fifth round (2026-11-08) — adversarial review of everything around the vault
+
+Four separate AI reviewers attacked the vault core, the guard modules, the upgrade path and operations, and
+the SDK / website / documentation; every claimed exploit was replayed as a Foundry or unit test before it was
+counted. None of them found a way past the vault's own limits and destination checks for the calls the vault
+inspects itself.
+
+| ID | Severity | Finding | Status | Test |
+|---|---|---|---|---|
+| A5-1 | High | DexGuard: a V3 single-pool swap with a price limit may stop early and still charge `amountInMaximum`; on 2.1 vaults the after-batch check could be masked by wrapping the vault's own BNB in the same batch (proof: 30,300 USDT paid for 0.05 WBNB) | **Fixed** in DexGuard: price limit must be 0, wraps are booked. The guard deployed for the testnet demo predates the fix | `test_v3PriceLimitPartialFillIsRefused`, `test_wrapCannotHideAShortSwap` |
+| A5-2 | Medium | Tokens transferred to a router (an allowlisted destination) can be swept by anyone | **Fixed** in DexGuard: no transfers to routers or the wrapped native token | `test_transferToRouterIsRefused`, `test_transferFromToRouterIsRefused` |
+| A5-3 | Medium | The recovery key can veto every timelocked change, including its own replacement: a stolen recovery key can keep a paused vault paused (freeze, not theft) | **Open** — needs a vault release: shield `setRecovery` from the current recovery key, like guardian removal | `test_knownIssue_recoveryCanVetoItsOwnReplacement` (pins today's behaviour) |
+| A5-4 | Low | An ERC-721 `approve(destination, 0)` (token #0) is not recorded as an allowance and survives the batch | **Open** — vault release: record the spender of every approve | `test_knownIssue_nftApprovalOfTokenZeroSurvives` (pins today's behaviour) |
+| A5-5 | Low | DexGuard rounded minimum outputs down (a token with few decimals could lose one whole unit) | **Fixed**: rounding in the vault's favour | `test_minimumOutRoundsUp` |
+| A5-6 | Medium (ops) | Watchtower: cannot stop its own removal (shielded by design), panicked only once, could go blind silently on node errors | **Improved**: guardian-removal alarm, panic re-armed after an unpause, alerts on read failures, log-range splitting. Run two Watchtowers on separate hosts | `watchtower/test_watchtower.py` |
+| A5-7 | Low (ops) | Watchtower config still pre-approved the cancelled 2.0.1 upgrade | **Fixed**: nothing pre-approved | — |
+| A5-8 | Low | ThreatFeed: blockers removable at once; packed / nested addresses not scanned; alone as an envelope guard it lifts `GuardRequired` | **Documented** (contract comments, GUARDS_v2 §2) | — |
+| A5-9 | Low | 2.1 vaults call `afterBatch` on every policy validator, so a `validate`-only validator breaks its policy | **Documented**: wrap it in a CompositeGuard with `legacy = true` | — |
+| A5-10 | Low | SDK: `signBatch` took the chain id from the RPC; upgrade `status()` ignored vetoes and panics; `watchVault` swallowed errors; error advice could be spoofed by a called contract; `planGuardedSwap` deadline edge case | **Fixed** in SDK 2.0.0-preview.1 | `sdk/test/v2` |
+| A5-11 | Low | SDK dependency viem → ws had published advisories (memory disclosure, DoS) | **Fixed**: viem ≥ 2.57.16, `npm audit` clean | — |
+| A5-12 | Low (ops) | Registry owner is one hot testnet key; deploy scripts had no network guard | Scripts now refuse anything but test networks; a multisig owner before any mainnet | — |
+| A5-13 | Info | Website and docs said "verified on BscScan / Sourcify"; Sourcify has none of the EPK contracts and BscScan could not be checked automatically | Wording changed to what is proven: `verify_evidence.py --build` checks the deployed bytecode against this repository. Explorer verification to be redone | — |
+
 ## 2. Verified as sound by the review
 
 - No path around `onlyTimelocked`: no delegatecall; `execute`/`setCall` reject the vault as target; `execute` and `executeScheduled` share one reentrancy lock; timelocked functions make no external calls.
@@ -115,6 +138,9 @@ Scope: envelopes, session manager, `openSession`, per-session budgets (commit 05
 8. **After a panic every policy is dead** for good; re-creating policies, agents and calls takes at least one delay.
 9. **An agent can front-run a panic** and spend what is left in the current window.
 10. **One operator key shared across vaults** means one compromise hits all of them (each within its own limit).
+11. **A stolen recovery key can veto every change** (A5-3) until the vault release that fixes it: a paused vault then stays paused.
+12. **`revokeAll` does not stop a compromised session manager**: it can reopen sessions in the new epoch — remove it with `setSessionManager(address(0))` (instant).
+13. **An already-pending loosening can undo an instant tightening** of the same setting once its delay passes: cancel pending operations (or `panic`) when tightening in an incident.
 
 ## 4. Test evidence
 
@@ -128,7 +154,7 @@ FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --match-path "test/v2/*" --
 
 Results on 2026-11-06:
 
-- EPK v2: **120 / 120 tests passing**.
+- EPK v2: **120 / 120 tests passing** (2026-11-06).
 - Agent sessions: 24 unit tests + 3 stateful invariants with a compromised session manager and compromised session keys (`test/v2/EPKVault.sessions.t.sol`).
 - Static analysis: Slither reports **0** results on `contracts/v2/` — every original finding fixed or justified with proof tests, see [SLITHER_TRIAGE.md](SLITHER_TRIAGE.md); reentrancy and native-transfer proofs in `test/v2/EPKVault.reentrancy.t.sol`.
 - v2 unit + fuzz: 55 passing; fuzz tests at 257 runs each, including `testFuzz_compromisedOperatorCannotDrain` (operator signer, agent and co-signer all compromised).
@@ -154,7 +180,8 @@ With via-IR + `--ir-minimum`, Foundry's source maps under-report some branches ;
 
 ## 6. Before mainnet
 
-1. Independent audit by a professional firm (scope: this document's contracts + SDK signing code).
-2. Public testnet deployment and a bug bounty.
-3. Monitoring bot as a guardian (auto-cancel unexpected `OperationScheduled`, auto-`panic` on anomalies).
+1. Independent audit by a professional firm (scope: this document's contracts, the guard modules, the Watchtower and the SDK signing code).
+2. Public testnet deployment (done 2026-11-07) and a bug bounty.
+3. Monitoring bot as a guardian — built (the Watchtower); run at least two, always on, on separate hosts.
+3a. A vault release fixing A5-3 and A5-4 (§1e).
 4. Integration validators for every generic call that will be allowlisted (DEX, lending, bridges).
