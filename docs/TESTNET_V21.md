@@ -8,7 +8,9 @@ Status: **done on 2026-11-07**, on a **separate** EPKVault 2.1.0 with its own re
 The 2.0.x demo vault (`docs/TESTNET_V2.md`, 9,940 eUSD) is not touched. Testnet only, test funds only, **not audited**. Source code is public in this
 repository and the evidence file pins every contract's code hash (explorer verification on Sourcify / BscScan was
 not found in the 2026-11-08 audit and is to be redone). The demo DexGuard predates the 2026-11-08 guard fixes
-([SECURITY_REVIEW_v2.md §1e](SECURITY_REVIEW_v2.md)).
+([SECURITY_REVIEW_v2.md §1e](SECURITY_REVIEW_v2.md)). Vault release 2.2.0 (the fifth review's vault fixes) is
+listed in this demo's registry since 2026-11-08; this registry predates the test-network clocks, so the vault
+can opt in after the production 7-day window, from 2026-11-15 ([`TESTNET_V22.md`](TESTNET_V22.md)).
 
 What this proves: the listed attacks were rejected on-chain in these scenarios, and allowed trades went
 through at fair prices. It is **not** a guarantee that no other attack exists — see

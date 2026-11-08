@@ -28,7 +28,7 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 
 | Component | State |
 |---|---|
-| **EPK v2** — `EPKVault` | 2.1.0 **live on BSC Testnet** since 2026-11-07; 2.2.0 (fixes from the fifth review) built and tested, not yet deployed. Five internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
+| **EPK v2** — `EPKVault` | **Live on BSC Testnet**: 2.1 since 2026-11-07, release 2.2.0 (the fifth review's fixes) since 2026-11-08 — the public factory creates vaults on 2.2.0 and existing demo vaults opt in ([`docs/TESTNET_V22.md`](docs/TESTNET_V22.md)). Five internal security reviews; **not yet independently audited, not on mainnet**. BUSL-1.1. |
 | **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). BUSL-1.1. |
 | **TypeScript SDK** — `@ibiti/epk-sdk` | Preview on npm, testnet only ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). MIT. |
 | **EPK Watchtower** | Automatic guardian, working on BSC Testnet. BUSL-1.1. |
@@ -53,9 +53,10 @@ every step a real transaction:
 | A **stolen admin key** schedules a new withdrawal address | 🛡 the Watchtower cancelled it **5 blocks later**; executing it anyway was rejected (`UnknownOperation`) |
 
 **7 of 7** attack transactions rejected · **0 eUSD** left the vault during the attacks.
-Opt-in upgrades are shown live on EPK 2.1: a vault upgraded at the same address with the same funds in
+Opt-in upgrades are shown live: a vault upgraded at the same address with the same funds in
 5 minutes on BSC Testnet (test networks use minute-scale delays; mainnet keeps 7 days) —
-[`docs/TESTNET_V21_FAST_UPGRADE.md`](docs/TESTNET_V21_FAST_UPGRADE.md).
+[`docs/TESTNET_V21_FAST_UPGRADE.md`](docs/TESTNET_V21_FAST_UPGRADE.md); the same vault took the real
+release 2.2.0 through the SDK on 2026-11-08 ([`docs/TESTNET_V22.md`](docs/TESTNET_V22.md)).
 
 ### Check it yourself
 

@@ -3,17 +3,20 @@ import type { Address } from "viem";
 /**
  * Public EPK deployments and well-known contracts per network.
  *
- * BSC Testnet: an EPK 2.1 factory anyone can use to create their own vault (you become its admin), on the
- * test-network rules (5-minute release window and upgrade wait — the same code runs with production delays on
- * mainnets). Plus the PancakeSwap V2 testnet router, WBNB and Chainlink testnet feeds for DexGuard configs.
+ * BSC Testnet: an EPK factory anyone can use to create their own vault (you become its admin) — new vaults start
+ * on EPKVault 2.2.0 and opt into later releases of the same registry — on the test-network rules (5-minute
+ * release window and upgrade wait — the same code runs with production delays on mainnets). Plus the
+ * PancakeSwap V2 testnet router, WBNB and Chainlink testnet feeds for DexGuard configs.
  * Testnet only — EPK is not audited and not deployed on any mainnet.
  */
 export const networks = {
   bscTestnet: {
     chainId: 97,
     epk: {
-      factory: "0x6f1BAE153931a618878DFe4323e5bE5d9b69B1d6" as Address,
+      factory: "0xA128110b6C89E3A55E1F7815b75D48fcb124EB48" as Address,
       registry: "0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db" as Address,
+      /** EPKVault 2.2.0, the implementation new vaults run (listed in `registry`) */
+      implementation: "0xD5cb4eB76cBABF55769f8c4ebfFb13754b1E5Ffd" as Address,
     },
     dex: {
       pancakeV2Router: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1" as Address,

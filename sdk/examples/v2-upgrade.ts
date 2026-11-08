@@ -1,6 +1,7 @@
 // SDK v2: an opt-in vault upgrade driven entirely from TypeScript — schedule, watch, wait, execute.
 // Runs on BSC Testnet against the fast-upgrade demo vault (test networks: 5-minute delays, same code as
-// mainnet). Needs V21_ADMIN_PRIVATE_KEY in ../.env (the demo vault's admin). SENDS TRANSACTIONS.
+// mainnet): opts it into release 2.2.0 (deployments/bsc-testnet/epk-v2.2.json). Needs V21_ADMIN_PRIVATE_KEY
+// in ../.env (the demo vault's admin). SENDS TRANSACTIONS.
 //   npx tsx examples/v2-upgrade.ts
 import { readFileSync } from "node:fs";
 import { createPublicClient, createWalletClient, http, keccak256, toBytes, type Address, type Hex } from "viem";
@@ -9,10 +10,10 @@ import { bscTestnet } from "viem/chains";
 
 import { EPKUpgrader, watchVault } from "../src/v2/index.js";
 
-const demo = JSON.parse(readFileSync("../deployments/bsc-testnet/epk-v2.1-fast-upgrade.json", "utf8")) as Record<string, string>;
-const vault = demo.vault as Address;
-const release = demo.release_2_1_2 as Address;
-const salt = keccak256(toBytes("EPK SDK v2 upgrade to 2.1.2"));
+const demo = JSON.parse(readFileSync("../deployments/bsc-testnet/epk-v2.2.json", "utf8")) as Record<string, string>;
+const vault = demo.fastVault as Address;
+const release = demo.implementation_2_2_0 as Address;
+const salt = keccak256(toBytes("EPK SDK v2 upgrade to 2.2.0"));
 const rpc = process.env.BSC_TESTNET_RPC ?? "https://bsc-testnet-rpc.publicnode.com";
 
 function envKey(name: string): Hex {

@@ -23,7 +23,7 @@ type-checks a TypeScript file against it and reads BSC Testnet through it.
 
 **Fastest start:** `sdk/examples/v2-quickstart.ts` creates your own vault from zero with one funded testnet
 key, configures it, lets a bot pay, and shows what a stolen bot key gets back — about 40 seconds
-([real run](../deployments/bsc-testnet/v2.1/2026-11-07-sdk-quickstart.log)):
+([real run on 2.2.0](../deployments/bsc-testnet/v2.2/2026-11-08-sdk-quickstart-2.2.0.log)):
 
 ```bash
 cd sdk && npm ci
@@ -145,7 +145,8 @@ What DexGuard blocks and what it does not cover: [`GUARDS_v2.md`](GUARDS_v2.md).
 - `explainEpkError(data)` — every vault and guard error in one sentence plus what to do.
 - `EPKUpgrader` — opt into a newer release: `schedule`, `status`, `execute`. Test networks: ~5 minutes;
   mainnet: 7-day public release window with the vault's own wait running in parallel
-  ([`TESTNET_V21_FAST_UPGRADE.md`](TESTNET_V21_FAST_UPGRADE.md)).
+  ([`TESTNET_V21_FAST_UPGRADE.md`](TESTNET_V21_FAST_UPGRADE.md); the real release 2.2.0 this way:
+  [`TESTNET_V22.md`](TESTNET_V22.md)).
 
 ## 8. Checklist before real money
 
