@@ -1,4 +1,4 @@
-# Full vault upgrade on BSC Testnet in 5 minutes (EPK 2.1)
+# Full vault upgrade on BSC Testnet in 5 minutes (EPK 2.1 → 2.2)
 
 Public test networks use **the same code as mainnet with minute-scale delays** (`contracts/v2/EPKChains.sol`):
 a 5-minute release window and a 5-minute upgrade wait, and both run **in parallel**. Mainnets keep the
@@ -36,9 +36,15 @@ Log: `deployments/bsc-testnet/v2.1/2026-11-07-sdk-upgrade.log`.
 Check it yourself (no keys needed):
 
 ```bash
-cast call 0x9248fb523dE74420b56c733fB9FA14917A054FEb "vaultVersion()(uint64)" --rpc-url https://bsc-testnet-rpc.publicnode.com   # 20102 (after both upgrades)
+cast call 0x9248fb523dE74420b56c733fB9FA14917A054FEb "vaultVersion()(uint64)" --rpc-url https://bsc-testnet-rpc.publicnode.com   # 20200 (after the third upgrade, to 2.2.0)
 cast call 0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db "approvalDelay()(uint256)" --rpc-url https://bsc-testnet-rpc.publicnode.com # 300 on testnet
 ```
+
+### Third upgrade: the real release 2.2.0 (2.1.2 → 2.2.0, 2026-11-08)
+
+The fifth review's vault fixes, opted into by the same vault with the SDK in 5 minutes; since then the SDK's
+public factory creates vaults directly on 2.2.0. Transactions and checks: [`TESTNET_V22.md`](TESTNET_V22.md).
+The EPKVaultFactory above (`0x6f1B…`) still creates vaults on 2.1.0, which can opt into 2.2.0 the same way.
 
 The same protections hold on test networks, only faster: an unlisted implementation is refused, guardians
 can veto a scheduled upgrade, a release revoked during its window never runs (`test/v2/EPKChains.t.sol`).

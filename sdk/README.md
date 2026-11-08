@@ -8,8 +8,8 @@
 > [INTEGRATION_v2.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/master/docs/INTEGRATION_v2.md) ·
 > licence: SDK code MIT; bundled EPK v2 contract bytecode BUSL-1.1 (see `LICENSE`).
 
-TypeScript SDK for **EPK** (IBITI Labs) built on **viem**: EPK vaults (2.0.x and 2.1.x), AI-agent sessions,
-the timelock and the guards (DexGuard, ThreatFeed V2, CompositeGuard). In development, like EPK 2.1 itself.
+TypeScript SDK for **EPK** (IBITI Labs) built on **viem**: EPK vaults (2.0.x, 2.1.x and 2.2.x), AI-agent sessions,
+the timelock and the guards (DexGuard, ThreatFeed V2, CompositeGuard). In development, like EPK v2 itself.
 `@ibiti/epk-sdk` and `@ibiti/epk-sdk/v2` export the same API.
 
 ## Start here
