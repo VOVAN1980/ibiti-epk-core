@@ -1,9 +1,30 @@
 # EPK v2 — Secure On-Chain Vaults for Autonomous AI Agents
 
-[![CI](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml/badge.svg)](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml)
-[![Security](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml/badge.svg)](https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml)
+<p align="center">
+  <img src="docs/img/epk-logo.png" alt="EPK by IBITI Labs" width="180">
+</p>
 
-**Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.**
+<p align="center"><b>Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.</b></p>
+
+<p align="center">
+  <a href="https://vovan1980.github.io/ibiti-epk-core/">
+    <img src="https://img.shields.io/badge/Live-Proof-0ea5e9?style=for-the-badge" alt="Live proof">
+  </a>
+  <a href="https://vovan1980.github.io/IBITILabs">
+    <img src="https://img.shields.io/badge/IBITI-Labs-purple?style=for-the-badge" alt="IBITI Labs">
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.3.0_testnet-informational?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/solidity-0.8.24-363636?style=flat-square&logo=solidity" alt="Solidity">
+  <img src="https://img.shields.io/badge/network-BSC_Testnet-F0B90B?style=flat-square&logo=bnbchain&logoColor=white" alt="Network">
+  <img src="https://img.shields.io/badge/license-IBITI_EPK-orange?style=flat-square" alt="License">
+  <a href="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml"><img src="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml"><img src="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml/badge.svg" alt="Security"></a>
+</p>
+
+---
 
 > **Status: EPK 2.3.0 — testnet release, BSC Testnet only. Not independently audited, not on any mainnet; do not use it
 > with real funds.** TypeScript SDK: [`sdk/`](sdk/) ·
