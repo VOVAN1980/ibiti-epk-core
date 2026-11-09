@@ -7,7 +7,7 @@ licenses. The license file is authoritative; this page explains it in plain word
 
 ## Rights holder
 
-Volodymyr Podkorytov (IBITI Labs).
+Volodymyr Podkorytov (IBITI Labs), and any successor of his rights, such as a company founded for IBITI Labs.
 
 ## What this stage of EPK is for
 
@@ -25,6 +25,8 @@ is no change date. The mainnet release will come with its own commercial license
   excerpts with attribution.
 - **Help develop it**: fork it on GitHub and propose changes (issues, pull requests). Forks are only for
   preparing such contributions.
+- **Judge it**: when IBITI Labs enters EPK into a hackathon or applies for a grant or investment, the
+  judges, organizers, reviewers and investors may run and test it to assess that entry.
 
 ### Only with IBITI Labs' written permission (an e-mail from info@ibiticoin.com is enough)
 

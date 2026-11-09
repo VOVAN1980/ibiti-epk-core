@@ -12,7 +12,8 @@ requires a written license. This license does not turn into an open-source licen
 
 1. Definitions
 
-"Licensor" means Volodymyr Podkorytov (IBITI Labs).
+"Licensor" means Volodymyr Podkorytov (IBITI Labs), and any successor or assignee of his rights in
+the Software, such as a company he founds for IBITI Labs.
 
 "Software" means all files of the repository https://github.com/VOVAN1980/ibiti-epk-core and of
 any copy or fork of it (source code, contract bytecode, the SDK, documentation, the website,
@@ -48,7 +49,10 @@ non-sublicensable, royalty-free license to:
   c) report security vulnerabilities to the Licensor (see SECURITY.md) and discuss the Software
      publicly, quoting short excerpts with attribution;
   d) contribute to the Software: fork it on GitHub and propose changes to the Licensor's
-     repository (issues, pull requests). Forks may be used only to prepare such contributions.
+     repository (issues, pull requests). Forks may be used only to prepare such contributions;
+  e) when the Licensor has entered the Software into a Competition or applied for a grant or
+     investment with it: read, run and test it as a judge, organizer, reviewer or investor, to
+     assess that entry or application.
 
 These free uses are for learning, checking and helping only. They do not include any use with
 Real Value, any Competition, any product or service, or publishing the Software or a Derivative
@@ -75,6 +79,8 @@ case by case. Contact: info@ibiticoin.com.
 
 This license does not convert into any open-source or other license on any date or event. Only
 the Licensor can decide to offer the Software, or a specific version of it, under other terms.
+The Licensor may publish updated versions of this license; each release of the Software is
+governed by the license text included with it.
 
 This license limits only those who receive the Software from the Licensor. It does not limit the
 Licensor in any way: the Licensor may use, deploy, license, sell and commercialize the Software,
