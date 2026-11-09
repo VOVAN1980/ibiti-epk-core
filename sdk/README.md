@@ -7,7 +7,7 @@
 > Not on npm yet (it is published with the finished release): build it from this folder (`npm ci && npm run build`)
 > and install it into your project from the path · developer guide:
 > [INTEGRATION_v2.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/master/docs/INTEGRATION_v2.md) ·
-> licence: SDK code MIT; bundled EPK v2 contract bytecode BUSL-1.1 (see `LICENSE`).
+> licence: IBITI Labs EPK License — free to read, test on test networks and help develop; hackathons, grants, real assets and commercial use need written permission (see `LICENSE`).
 
 TypeScript SDK for **EPK** (IBITI Labs) built on **viem**: EPK vaults (2.0.x to 2.3.x), AI-agent sessions,
 the timelock and the guards (DexGuard, ThreatFeed V2, CompositeGuard). In development, like EPK v2 itself.
@@ -84,5 +84,5 @@ How the guards work and what they do not cover: [`docs/GUARDS_v2.md`](https://gi
 
 The bundled guard bytecode targets the Shanghai EVM (PUSH0): BSC, Ethereum and their test networks.
 
-SDK code: MIT. The bundled guard creation bytecode is EPK v2 contract code under BUSL-1.1 — see `LICENSE`
+The SDK and the guard creation bytecode it bundles are part of EPK, under the IBITI Labs EPK License — see `LICENSE`
 and [LICENSING.md](https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSING.md).

@@ -243,6 +243,8 @@ h3 { font-size: 21px; line-height: 1.25; font-weight: 700; }
 .lic .price { font: 800 28px/1.1 var(--font-display); margin-top: 6px; }
 .lic ul { margin: 16px 0 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
 .lic li { margin: 6px 0; }
+.lic-terms { margin: 18px 0 0; color: var(--dim); font-size: 14px; }
+.lic-terms a { color: var(--primary-soft); }
 
 /* ---------- recognition ---------- */
 .recog { display: flex; align-items: center; gap: 18px; padding: 22px; position: relative; overflow: hidden; }

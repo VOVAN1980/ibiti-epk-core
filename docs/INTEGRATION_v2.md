@@ -4,8 +4,8 @@ For teams that run trading bots, AI agents or payment automation and want their 
 hacked server, a stolen bot key or a misbehaving agent cannot take more than your limits, nor pay addresses you
 did not approve. Everything below runs today on **BSC
 Testnet** with `@ibiti/epk-sdk/v2` (`sdk/` in this repository). EPK is **not audited and not on mainnet**;
-production use of the contracts needs a commercial license (BUSL-1.1, see [`LICENSING.md`](../LICENSING.md)).
-The SDK itself is MIT.
+the SDK and the contracts are under the IBITI Labs EPK License: free to read, test on test networks and help
+develop; hackathons, grants, real assets and commercial use need written permission (see [`LICENSING.md`](../LICENSING.md)).
 
 **Install** (from this repository; the SDK goes to npm with the finished release; testnet only):
 

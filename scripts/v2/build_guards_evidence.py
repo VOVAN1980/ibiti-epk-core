@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: BUSL-1.1
+# SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
 """Write deployments/bsc-testnet/epk-guards-evidence.json — the machine-readable claims of the guard demo on the
 current EPKVault release (BSC Testnet) — from the deployment / run files and the mined receipts.
 

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: BUSL-1.1
+# SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
 """Write deployments/bsc-testnet/epk-v2-evidence.json — the machine-readable claims of the EPK demo on BSC Testnet
 (vault on the current EPKVault release, agent session, attacks, panic and recovery, stolen admin key vs the
 Watchtower, emergency evacuation to the owner's cold wallet) — from

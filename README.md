@@ -5,7 +5,7 @@
 
 **Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.**
 
-> **Status: EPK 2.2 in development — BSC Testnet only. Not independently audited, not on any mainnet; do not use it
+> **Status: EPK 2.3.0 — testnet release, BSC Testnet only. Not independently audited, not on any mainnet; do not use it
 > with real funds.** TypeScript SDK: [`sdk/`](sdk/) ·
 > [developer guide](docs/INTEGRATION_v2.md)
 
@@ -28,10 +28,10 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 
 | Component | State |
 |---|---|
-| **EPK v2** — `EPKVault` | **Live on BSC Testnet**: release 2.3.0 since 2026-11-08 — emergency evacuation to the owner's cold wallet, minute-scale timelocks on test networks; the public factory creates vaults on 2.3.0 and existing vaults opt in ([`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md)). Five internal security reviews; **not yet independently audited, not on mainnet** (the evacuation needs an independent review first). BUSL-1.1. |
-| **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). BUSL-1.1. |
-| **TypeScript SDK** — `@ibiti/epk-sdk` | In this repository, testnet only; on npm with the finished release ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). MIT. |
-| **EPK Watchtower** | Automatic guardian, working on BSC Testnet. BUSL-1.1. |
+| **EPK v2** — `EPKVault` | **Live on BSC Testnet**: release 2.3.0 since 2026-11-08 — emergency evacuation to the owner's cold wallet, minute-scale timelocks on test networks; the public factory creates vaults on 2.3.0 and existing vaults opt in ([`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md)). Five internal security reviews; **not yet independently audited, not on mainnet** (the evacuation needs an independent review first). EPK License (source-available). |
+| **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). EPK License. |
+| **TypeScript SDK** — `@ibiti/epk-sdk` | In this repository, testnet only; on npm with the finished release ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). EPK License. |
+| **EPK Watchtower** | Automatic guardian, working on BSC Testnet. EPK License. |
 
 What comes next, and in which order, is in the [roadmap](docs/ROADMAP.md) — the single source of
 truth for this README, the website and DoraHacks.
@@ -110,13 +110,13 @@ python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json 
 
 | Path | What | License |
 |---|---|---|
-| `contracts/v2/` | `EPKVault`, `EPKVaultFactory` (with the proxy), `EPKRegistry`, interfaces; `guards/`: DexGuard, ThreatFeedGuard, CompositeGuard | BUSL-1.1 |
-| `test/v2/` | v2 tests: unit, sessions, upgrades, reentrancy, fuzz and stateful invariants | BUSL-1.1 |
-| `scripts/v2/` | testnet deployment and demo scripts, evidence verifier, upgrade preflight | BUSL-1.1 |
-| `watchtower/` | automatic guardian and its tests | BUSL-1.1 |
-| `deployments/bsc-testnet/` | evidence: addresses, transactions, saved traces, verification reports | MIT |
-| `docs/` | specifications, security review, roadmap; the website (GitHub Pages) | MIT |
-| `sdk/` | TypeScript SDK `@ibiti/epk-sdk` (bundled guard bytecode: BUSL-1.1) | MIT |
+| `contracts/v2/` | `EPKVault`, `EPKVaultFactory` (with the proxy), `EPKRegistry`, interfaces; `guards/`: DexGuard, ThreatFeedGuard, CompositeGuard | EPK License |
+| `test/v2/` | v2 tests: unit, sessions, upgrades, reentrancy, fuzz and stateful invariants | EPK License |
+| `scripts/v2/` | testnet deployment and demo scripts, evidence verifier, upgrade preflight | EPK License |
+| `watchtower/` | automatic guardian and its tests | EPK License |
+| `deployments/bsc-testnet/` | evidence: addresses, transactions, saved traces, verification reports | EPK License |
+| `docs/` | specifications, security review, roadmap; the website (GitHub Pages) | EPK License |
+| `sdk/` | TypeScript SDK `@ibiti/epk-sdk` | EPK License |
 
 ## Build and test
 
@@ -166,10 +166,14 @@ Configuration lives in `.env` (copy `.env.example`); `.env` is git-ignored — *
 
 ## License
 
-- **EPK v2** — `contracts/v2/`, `test/v2/`, `scripts/v2/`, `watchtower/`: **Business Source License 1.1**
-  ([LICENSE-BUSL-1.1](LICENSE-BUSL-1.1)). Free for study, audits, test networks, hackathons,
-  education and research; production use with real assets requires a commercial license. Each
-  version becomes MIT no later than 2030-11-06.
-- **Everything else** — the SDK code, documentation, the website and the testnet evidence: **MIT** ([LICENSE](LICENSE)).
+The whole repository — contracts, tests, scripts, the Watchtower, the SDK, documentation, the website and
+the testnet evidence — is under the **IBITI Labs EPK License 1.0** ([LICENSE](LICENSE)); third-party
+libraries in `lib/` keep their own licenses. EPK is not open source and does not become open source by itself.
 
-Details and commercial licensing: [LICENSING.md](LICENSING.md) · info@ibiticoin.com
+- **Free:** read, study and audit it; run and test it on local chains and public test networks; report
+  vulnerabilities; help develop it with issues and pull requests.
+- **Only with IBITI Labs (written permission):** hackathons, competitions and grant programmes — nobody
+  takes EPK into a competition without us; joint development; anything with real assets or on a main
+  network; any commercial use.
+
+Details: [LICENSING.md](LICENSING.md) · info@ibiticoin.com
