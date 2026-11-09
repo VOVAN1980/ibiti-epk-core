@@ -5,7 +5,7 @@
 
 **Policy-enforced spending limits, isolated agent sessions, emergency controls and owner-controlled upgrades.**
 
-> **Status: EPK 2.2 in development — BSC Testnet only. Not independently audited, not on any mainnet; do not use it
+> **Status: EPK 2.3.0 — testnet release, BSC Testnet only. Not independently audited, not on any mainnet; do not use it
 > with real funds.** TypeScript SDK: [`sdk/`](sdk/) ·
 > [developer guide](docs/INTEGRATION_v2.md)
 
