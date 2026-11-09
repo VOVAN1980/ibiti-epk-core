@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
-# Copyright (c) 2026 Volodymyr Podkorytov (IBITI Labs). See LICENSE-EPK.
+# Copyright (c) 2026 Volodymyr Podkorytov (IBITI Labs). See LICENSE.
 """Unit tests for the Watchtower's hashing and decisions (no network, no keys).
 
 Run: python -m unittest discover -s watchtower -p "test_*.py" -v

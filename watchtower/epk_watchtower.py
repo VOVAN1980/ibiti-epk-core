@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
-# Copyright (c) 2026 Volodymyr Podkorytov (IBITI Labs). See LICENSE-EPK.
+# Copyright (c) 2026 Volodymyr Podkorytov (IBITI Labs). See LICENSE.
 """EPK Watchtower — an automatic guardian for one EPKVault.
 
 The vault already makes every loosening change (new destination, higher limit, new admin, weaker

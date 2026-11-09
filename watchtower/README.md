@@ -1,7 +1,7 @@
 # EPK Watchtower
 
 An automatic guardian for an EPK v2 vault. Status: **working on BSC Testnet** (live demo
-below); not audited; licensed under the EPK License ([`LICENSE-EPK`](../LICENSE-EPK)) like the rest of EPK v2.
+below); not audited; licensed under the IBITI Labs EPK License ([`LICENSE`](../LICENSE)) like the rest of EPK.
 
 ## Why it exists
 

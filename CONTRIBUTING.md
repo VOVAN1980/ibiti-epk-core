@@ -12,8 +12,7 @@ Thanks for your interest in contributing to EPK.
 - Keep toolchain settings consistent with the repo.
 
 ## Licensing of contributions
-- Contributions to `contracts/v2/`, `test/v2/`, `scripts/v2/` and `watchtower/` are made under the IBITI Labs EPK License (`LICENSE-EPK`); you confirm you have the right to contribute them and that IBITI Labs may also license them commercially (see `LICENSING.md`).
-- Contributions to everything else are made under MIT.
+- Contributions to any part of this repository are made under the IBITI Labs EPK License (`LICENSE`): you confirm you have the right to contribute them and that IBITI Labs may also license them commercially; a contribution gives no further rights to EPK (see `LICENSING.md`).
 
 ## Security
 If you find a vulnerability, do not open a public issue.

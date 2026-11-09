@@ -1,89 +1,62 @@
 # Licensing
 
-This repository contains components under **two licenses**. This page explains which files are
-covered by which license and what that means in practice. The license files themselves are
-authoritative: [`LICENSE`](LICENSE) (MIT) and [`LICENSE-EPK`](LICENSE-EPK) (IBITI Labs EPK License 1.0).
-If anything here conflicts with them, the license files prevail. This page is an explanation, not
-legal advice.
+Everything in this repository — the contracts, tests, scripts, the Watchtower, the SDK, the documentation, the
+website and the testnet evidence — is under one license: the **IBITI Labs EPK License 1.0**
+([`LICENSE`](LICENSE)). Third-party libraries in `lib/` (e.g. OpenZeppelin Contracts, MIT) keep their own
+licenses. The license file is authoritative; this page explains it in plain words and is not legal advice.
 
 ## Rights holder
 
-Volodymyr Podkorytov (IBITI Labs). "IBITI Labs" in the copyright notice of [`LICENSE`](LICENSE)
-refers to the same rights holder.
+Volodymyr Podkorytov (IBITI Labs).
 
-## Which license applies to what
+## What this stage of EPK is for
 
-| Component | Paths | License |
-|---|---|---|
-| **EPK v2** — EPKVault, EPKVaultEmergency, EPKVaultProxy, EPKVaultFactory, EPKRegistry, EPKChains, guard modules (DexGuard, ThreatFeedGuard, CompositeGuard) | `contracts/v2/` | **EPK License** ([`LICENSE-EPK`](LICENSE-EPK)) |
-| EPK v2 tests and mocks | `test/v2/` | **EPK License** |
-| EPK v2 deployment, demo and verification scripts | `scripts/v2/` | **EPK License** |
-| EPK Watchtower (automatic guardian) | `watchtower/` | **EPK License** |
-| TypeScript SDK | `sdk/` | **MIT**; the contract bytecode it bundles (DexGuard, ThreatFeedGuard, CompositeGuard) is EPK v2 code under the EPK License — see `sdk/LICENSE` |
-| Documentation and the website | `docs/`, `README.md`, other top-level `*.md` | MIT |
-| Testnet evidence (addresses, transactions, traces, reports) | `deployments/` | MIT |
-| Third-party libraries | `lib/` (e.g. OpenZeppelin Contracts) | their own licenses (OpenZeppelin: MIT) — not relicensed |
-
-Each Solidity file and each Python file of EPK v2 states its license in its `SPDX-License-Identifier`
-header (`LicenseRef-IBITI-EPK-1.0`). Two files inside these folders are MIT: `contracts/v2/IPolicyValidator.sol`
-(a plain validator interface) and `test/v2/MockTarget.sol` (a test helper).
-
-The EPK License applies from the commit that added [`LICENSE-EPK`](LICENSE-EPK); earlier commits keep the license
-they were published with.
-
-## EPK v2 under the IBITI Labs EPK License
-
-The code is public so that anyone can read and audit it, test it and build on it. Protecting real assets
-with it requires a commercial license. **The license never turns into an open-source license by itself** —
-there is no change date.
+EPK runs on test networks only. It is published so that people can **see it, check it, learn from it and
+help develop it together with IBITI Labs** — and so that IBITI Labs can show it in hackathons, competitions
+and grant programmes. It is **not** open-source software, and it never becomes open source by itself: there
+is no change date. The mainnet release will come with its own commercial license terms.
 
 ### Free, no permission needed
 
-- Read, study and audit the code; independent security reviews and bug bounties are welcome.
-- Copy, modify and run it, and build on it, on local chains and **public test networks**.
-- **Hackathons**, education, academic and independent research, security research.
-- Evaluation inside a company, to decide on a commercial license.
-- Share the code or your changes — only under the same license, with the license text, the copyright notice
-  and a note of what you changed.
-- **Prizes, grants and awards** won with a hackathon, competition or research project built on EPK are
-  allowed; they do not make the use commercial by themselves.
+- Read, study and audit the code; check the evidence with `scripts/v2/verify_evidence.py`.
+- Run, test and modify it privately, on local chains and **public test networks**, to learn how it works, to
+  check its security, or to evaluate working with IBITI Labs.
+- Report vulnerabilities (see [`SECURITY.md`](SECURITY.md)) and discuss EPK publicly, quoting short
+  excerpts with attribution.
+- **Help develop it**: fork it on GitHub and propose changes (issues, pull requests). Forks are only for
+  preparing such contributions.
 
-All free uses are on test networks and local chains only. **Nothing with real value is free** — not even a
-hackathon demo on a main network: if an event requires one, ask the Licensor for written permission.
+### Only with IBITI Labs' written permission (an e-mail from info@ibiticoin.com is enough)
 
-### Requires a commercial license
-
-- **Production use**: any deployment or operation of EPK v2 or a derivative of it that holds, controls,
-  secures, moves or monitors assets of real value — on any main network, in any product or service
-  (customer vaults, treasuries, trading bots, wallets, custody, payment automation).
-- Offering EPK v2, a derivative or a service built on it to others — for a fee, as part of a commercial
-  product, or as a hosted or managed service (including a hosted Watchtower).
-- Distributing it under any other license.
+- **Hackathons, competitions, grant programmes, accelerators, awards, funding applications**: only IBITI
+  Labs — or a team that IBITI Labs joins or authorizes in writing — may enter EPK, a modified version of it,
+  or a project built on or presented as using EPK. Nobody may take EPK into a competition without us.
+- **Joint development** beyond pull requests: products, integrations or research together with IBITI Labs.
+- Anything with **real value**, including any deployment on a main network.
+- Any **commercial use**: offering EPK, a modified version or a service based on it to others — for a fee,
+  in a commercial product, or as a hosted or managed service.
+- Publishing or distributing EPK or a modified version anywhere else than a fork for contributions.
 
 The license limits only those who receive the code. It does not limit IBITI Labs: we use, deploy, license
-and sell EPK, enter it into hackathons and grant programmes, and take prizes, grants and investment for it.
+and sell EPK, enter it into hackathons and grant programmes, take prizes, grants and investment for it, and
+can publish a particular version under other terms when an event requires it.
 
-## Commercial licensing
+The license applies from the commit that introduced it; earlier commits keep the license they were
+published with.
 
-Contact **info@ibiticoin.com** with:
+## Working with IBITI Labs
 
-- your company and project;
-- the intended use (networks, expected volume of assets, number of vaults/users);
-- whether you need support, monitoring (guardian / co-signer services) or custom modules.
+Write to **info@ibiticoin.com** with:
 
-Commercial licenses are granted case by case and in writing by the Licensor.
+- who you are and your project;
+- what you would like to do with EPK (a hackathon together, joint development, a pilot, a commercial
+  license);
+- networks and expected volume, if real assets are involved.
+
+Permissions and licenses are given case by case, in writing.
 
 ## Contributions
 
-Contributions to `contracts/v2/`, `test/v2/`, `scripts/v2/` or `watchtower/` are accepted under the EPK
-License: by submitting one you confirm that you have the right to do so and that the Licensor may use and
-license it under any terms, including commercial licenses (section 6 of [`LICENSE-EPK`](LICENSE-EPK)).
-Contributions elsewhere are under MIT.
-
-## Note for hackathons
-
-Hackathon use on test networks is free, explicitly, and prizes and grants won with it are allowed. A
-deployment on a main network needs the Licensor's written permission. The EPK License is source-available,
-not an OSI-approved open-source license. For an event that requires
-an OSI license, the MIT parts — the SDK, the documentation and your own application code — can be
-submitted as they are; for anything else, contact the Licensor.
+By submitting a contribution you confirm that you have the right to do so and that IBITI Labs may use and
+license it under any terms, including commercial licenses (section 5 of [`LICENSE`](LICENSE)). A contribution
+does not give you further rights to EPK.

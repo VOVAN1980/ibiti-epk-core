@@ -1,35 +1,13 @@
-MIT License
+IBITI Labs EPK License 1.0
+SPDX identifier: LicenseRef-IBITI-EPK-1.0
 
-Copyright (c) 2026 IBITI Labs
+Copyright (c) 2026 Volodymyr Podkorytov (IBITI Labs). All rights reserved, except as granted by the license.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This SDK, including the EPK contract bytecode it bundles, is part of EPK and is licensed under the
+IBITI Labs EPK License 1.0: https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSE
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+In short: free to read, study, audit and test on local chains and public test networks, and to help
+develop it; hackathons, competitions, grant programmes, any use with real assets and any commercial use
+need written permission from IBITI Labs (info@ibiticoin.com). See LICENSING.md in the repository.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
----------------------------------------------------------------------------------------------------
-EPK SDK — license scope
-
-The TypeScript source and compiled JavaScript of this SDK are licensed under the MIT License above.
-
-The compiled EPK v2 contract bytecode shipped in dist/v2/abi/*Bytecode.js (DexGuard, ThreatFeedGuard,
-CompositeGuard) is part of EPK v2 and is licensed under the IBITI Labs EPK License 1.0
-(https://github.com/VOVAN1980/ibiti-epk-core/blob/master/LICENSE-EPK): free for development, public
-test networks, hackathons, education, research, security review and evaluation; using it to hold,
-control, secure, move or monitor assets of real value requires a commercial license from the
-Licensor (info@ibiticoin.com). See LICENSING.md in the repository.
-
-PREVIEW: EPK v2 has not been independently audited. Do not use this SDK or EPK v2 with real funds.
+PREVIEW: EPK has not been independently audited. Do not use this SDK or EPK with real funds.

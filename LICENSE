@@ -1,21 +1,129 @@
-MIT License
+IBITI Labs EPK License 1.0
+SPDX identifier: LicenseRef-IBITI-EPK-1.0
 
-Copyright (c) 2026 IBITI Labs
+Copyright (c) 2026 Volodymyr Podkorytov (IBITI Labs). All rights reserved, except as granted below.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+EPK is published so that people can see it, check it, learn from it and help develop it together
+with IBITI Labs. It is not open-source software. Entering it into hackathons, competitions and
+grant programmes is reserved to IBITI Labs. Any commercial use, and any use with real assets,
+requires a written license. This license does not turn into an open-source license on any date.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+-----------------------------------------------------------------------------------------------
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1. Definitions
+
+"Licensor" means Volodymyr Podkorytov (IBITI Labs).
+
+"Software" means all files of the repository https://github.com/VOVAN1980/ibiti-epk-core and of
+any copy or fork of it (source code, contract bytecode, the SDK, documentation, the website,
+evidence and other content), except third-party components that carry their own license (for
+example the libraries in lib/), together with any compiled form of them and any version of them
+that the Licensor publishes under this license.
+
+"Derivative" means any modified version of the Software, and any work that contains, is based on,
+or is compiled from the Software or a part of it.
+
+"Real Value" means assets of economic value: any asset on a main network (mainnet) of any
+blockchain, and any other asset that can be exchanged for money. Assets on public test networks
+(for example BSC Testnet or Sepolia) and on local development chains are not Real Value.
+
+"Competition" means a hackathon, competition, contest, challenge, grant programme, accelerator,
+incubator, award, prize, or any application for funding or investment. Reporting a security
+vulnerability to the Licensor is not a Competition.
+
+"Written permission" means permission from the Licensor in writing; an e-mail from
+info@ibiticoin.com is sufficient.
+
+"You" means the person or organization exercising rights under this license.
+
+2. What you may do, free of charge
+
+Subject to this license, the Licensor grants you a worldwide, non-exclusive, non-transferable,
+non-sublicensable, royalty-free license to:
+
+  a) read, study, audit and review the Software;
+  b) run, test and modify the Software privately, on local development chains and public test
+     networks, to learn how it works, to check its security, or to evaluate whether to work with
+     the Licensor;
+  c) report security vulnerabilities to the Licensor (see SECURITY.md) and discuss the Software
+     publicly, quoting short excerpts with attribution;
+  d) contribute to the Software: fork it on GitHub and propose changes to the Licensor's
+     repository (issues, pull requests). Forks may be used only to prepare such contributions.
+
+These free uses are for learning, checking and helping only. They do not include any use with
+Real Value, any Competition, any product or service, or publishing the Software or a Derivative
+anywhere except as a fork for contributions.
+
+3. What requires written permission from the Licensor
+
+  a) Competitions: only the Licensor, or a team that the Licensor joins or authorizes with written
+     permission, may enter the Software, a Derivative, or any project based on EPK or presented as
+     using EPK, into a Competition, or use it to apply for grants, prizes, awards or investment;
+  b) joint development: building products, integrations or research projects with the Licensor
+     beyond contributions under section 2 d);
+  c) any use with Real Value, including any deployment on a main network;
+  d) any commercial use: offering the Software, a Derivative, or a product or service based on
+     it to others, for a fee or as part of a commercial product or service, including hosted or
+     managed services;
+  e) publishing, distributing or sublicensing the Software or a Derivative, other than a fork for
+     contributions under section 2 d).
+
+Permissions for Competitions and joint development may be free; commercial licenses are agreed
+case by case. Contact: info@ibiticoin.com.
+
+4. No automatic change of license; the Licensor
+
+This license does not convert into any open-source or other license on any date or event. Only
+the Licensor can decide to offer the Software, or a specific version of it, under other terms.
+
+This license limits only those who receive the Software from the Licensor. It does not limit the
+Licensor in any way: the Licensor may use, deploy, license, sell and commercialize the Software,
+enter it into Competitions, receive prizes, grants and investment for it, publish specific
+versions or parts under other licenses (for example for a particular event), and grant licenses
+on any terms.
+
+5. Contributions
+
+If you submit a contribution to the Software (code, documentation, tests or other material), you
+confirm that you have the right to do so, and you grant the Licensor a perpetual, worldwide,
+irrevocable, royalty-free license to use, modify and license your contribution under any terms,
+including this license and commercial licenses. A contribution does not give you any further
+rights to the Software.
+
+6. Patents
+
+The Licensor grants you a license under any patents the Licensor owns or controls, to the extent
+they are necessarily infringed by the Software, only for the uses that this license permits. If
+you start a legal claim that the Software infringes a patent, all your rights under this license
+end at once.
+
+7. Names and trademarks
+
+This license grants no rights to the names "IBITI", "IBITI Labs" or "EPK" or to any logo of the
+Licensor, except to state truthfully where the Software comes from. Nothing may be presented as a
+product of, or as endorsed by, the Licensor without written permission.
+
+8. Termination
+
+If you break this license, your rights under it end automatically. If it is the first time and
+you stop the violation within 30 days after the Licensor notifies you, your rights are restored.
+Sections 5, 10 and 11 survive termination.
+
+9. Third-party components
+
+Third-party code used by the Software (for example the libraries in lib/) remains under its own
+license. This license does not change those licenses.
+
+10. No warranty, limitation of liability
+
+The Software is provided "as is", without any warranty, express or implied, including fitness for
+a particular purpose and non-infringement. The Software has not been independently audited;
+smart contracts can lose funds. To the maximum extent permitted by applicable law, the Licensor
+is not liable for any damages arising from the Software or its use; this does not limit
+liability that cannot be excluded by law, such as liability for intent or gross negligence.
+
+11. Governing law
+
+This license is governed by the laws of the Federal Republic of Germany, excluding the United
+Nations Convention on Contracts for the International Sale of Goods (CISG). If any provision is
+held invalid, the remaining provisions stay in effect.

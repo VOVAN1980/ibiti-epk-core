@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
 pragma solidity ^0.8.20;
 
 /// @notice Modular validator interface. The vault must not mask reverts.
