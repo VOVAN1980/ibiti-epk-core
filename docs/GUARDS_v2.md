@@ -46,7 +46,7 @@ The vault's own limits still bound everything a guard allows (`test_vaultLimitsS
 `test_session_budgetStillApplies`).
 
 **On a fork of the real BSC Testnet** (real PancakeSwap V2 router, real Chainlink feeds,
-`test/v2/guards/DexGuard.fork.t.sol`, log in `deployments/bsc-testnet/v2.1/`): the live WBNB/BUSD pool
+`test/v2/guards/DexGuard.fork.t.sol`, log: [`2026-11-07-dexguard-fork.txt`](https://github.com/VOVAN1980/ibiti-epk-core/blob/3a561b4ff5b80e3fe68c789521aee93dc9282617/deployments/bsc-testnet/v2.1/2026-11-07-dexguard-fork.txt), kept in git history): the live WBNB/BUSD pool
 paid **38 % less** than the Chainlink price. A bot that trusts the pool's own quote loses that; the
 guarded vault refused the trade, while a fairly priced pool worked in both directions through the same
 router.
