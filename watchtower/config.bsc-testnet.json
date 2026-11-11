@@ -1,7 +1,8 @@
 {
-  "about": "EPK Watchtower for the BSC Testnet demo vault. No secrets here: the guardian key is read from the environment variable or .env entry named in guardianKeyEnv.",
+  "about": "EPK Watchtower for the BSC Testnet demo vault. No secrets here: the guardian key, the Telegram bot token and chat id and the webhook URL and secret are read from the environment variables or .env entries named below.",
   "rpc": "https://bsc-testnet-rpc.publicnode.com",
   "chainId": 97,
+  "explorer": "https://testnet.bscscan.com",
   "vault": "0x1538f0Cee859c883E12046a6aa52c7CA0f4bD4Db",
   "startBlock": "latest",
   "pollSeconds": 3,
@@ -14,7 +15,14 @@
   "alerts": {
     "logFile": "watchtower/alerts.log",
     "telegramTokenEnv": "TELEGRAM_BOT_TOKEN",
-    "telegramChatEnv": "TELEGRAM_CHAT_ID"
+    "telegramChatEnv": "TELEGRAM_CHAT_ID",
+    "telegramMinLevel": "warning",
+    "telegramLanguage": "en+ru",
+    "webhookUrlEnv": "WATCHTOWER_WEBHOOK_URL",
+    "webhookSecretEnv": "WATCHTOWER_WEBHOOK_SECRET",
+    "webhookMinLevel": "info",
+    "webhookLanguage": "en",
+    "heartbeatHours": 24
   },
   "stateFile": "watchtower/state.json"
 }

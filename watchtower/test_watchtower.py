@@ -1,11 +1,17 @@
 # SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
 # Copyright (c) 2026 Volodymyr Podkorytov (IBITI Labs). See LICENSE.
-"""Unit tests for the Watchtower's hashing and decisions (no network, no keys).
+"""Unit tests for the Watchtower's hashing, decisions and alerts (no network, no keys).
 
 Run: python -m unittest discover -s watchtower -p "test_*.py" -v
 """
+import hashlib
+import hmac
+import json
 import os
 import sys
+import tempfile
+import threading
+import time
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -144,6 +150,174 @@ class Decisions(unittest.TestCase):
     def test_other_events_only_alert(self):
         paused = {"address": VAULT, "topics": [wt.EV["Paused"], "0x" + wt.word(ADMIN)], "data": "0x"}
         self.assertEqual(kinds(wt.decide(paused, EXPECTED, fresh_state(), 0, POLICY)), ["alert"])
+
+
+TOKEN = "123456:SECRET-BOT-TOKEN"
+
+
+class Recorder:
+    """A fake HTTP transport: records what would be posted."""
+
+    def __init__(self, fail_times=0, block=None):
+        self.calls, self.fail_times, self.block = [], fail_times, block
+
+    def __call__(self, url, body, headers, timeout=15):
+        if self.block:
+            self.block.wait(5)
+        if self.fail_times:
+            self.fail_times -= 1
+            raise OSError("network down")
+        self.calls.append((url, body, headers))
+        return 200
+
+
+class Alerts(unittest.TestCase):
+    ALERT = wt.make_alert("critical", "UNEXPECTED change scheduled — cancelling 0xabc", VAULT, 97, now=1_800_000_000)
+
+    def test_alert_payload(self):
+        self.assertEqual(self.ALERT, {"source": wt.VERSION, "time": "2027-01-15T08:00:00Z", "level": "critical",
+                                      "event": "message", "vault": VAULT, "chainId": 97,
+                                      "text": "UNEXPECTED change scheduled — cancelling 0xabc",
+                                      "texts": {"en": "UNEXPECTED change scheduled — cancelling 0xabc",
+                                                "ru": "UNEXPECTED change scheduled — cancelling 0xabc"}})
+
+    def test_every_alert_exists_in_every_language(self):
+        for key, texts in wt.MESSAGES.items():
+            self.assertEqual(set(texts), set(wt.LANGS), key)
+        self.assertEqual(set(wt.TIMELOCKED_RU), set(wt.TIMELOCKED))
+
+    def test_unexpected_change_in_russian(self):
+        acts = wt.decide(scheduled_log(STOLEN_DATA, STOLEN_SALT), EXPECTED, fresh_state(), 0, POLICY)
+        msg = acts[0][2]
+        self.assertTrue(msg.startswith("UNEXPECTED change scheduled by"))  # English stays the default text
+        ru = wt.text_in(msg, "ru")
+        self.assertTrue(ru.startswith(f"НЕОЖИДАННОЕ изменение запланировал {ADMIN}: разрешить платежи на новый адрес"))
+        self.assertIn(f"отменяю {STOLEN_ID}", ru)
+        alert = wt.make_alert("critical", msg, VAULT, 97)
+        self.assertEqual(alert["event"], "unexpected_scheduled")
+        self.assertEqual(alert["texts"]["ru"], ru)
+
+    def test_nested_texts_follow_the_language(self):
+        msg = wt.Msg("panic", reason=wt.Msg("reason_burst", n=3), result=wt.Msg("panic_failed"))
+        self.assertEqual(msg, "PANIC (3 unexpected changes within an hour): FAILED — call the owner")
+        self.assertEqual(wt.text_in(msg, "ru"), "ПАНИКА (3 неожиданных изменения(й) за час): НЕ УДАЛАСЬ — звоните владельцу")
+
+    def test_language_choice(self):
+        self.assertEqual(wt.languages("en+ru"), ["en", "ru"])
+        self.assertEqual(wt.languages("RU"), ["ru"])
+        self.assertEqual(wt.languages("de"), ["en"])  # unknown -> English
+        self.assertEqual(wt.languages(None), ["en"])
+
+    def test_telegram_in_two_languages(self):
+        alert = wt.make_alert("critical", wt.Msg("test_alert"), VAULT, 97, now=1_800_000_000)
+        text = wt.telegram_text(alert, language="en+ru")
+        self.assertEqual(text.splitlines()[:3], [
+            "🔴 CRITICAL · КРИТИЧНО · EPK Watchtower",
+            "test alert: if you can read this, the Watchtower can reach you",
+            "пробная тревога: если вы это читаете, Watchtower может до вас достучаться"])
+        self.assertIn(f"Vault / Сейф: {VAULT} (chain / сеть 97)", text)
+        ru_only = wt.telegram_text(alert, language="ru")
+        self.assertTrue(ru_only.startswith("🔴 КРИТИЧНО · EPK Watchtower\nпробная тревога"))
+        self.assertNotIn("test alert", ru_only)
+
+    def test_webhook_text_follows_its_language(self):
+        post = Recorder()
+        alert = wt.make_alert("warning", wt.Msg("unpaused"), VAULT, 97)
+        wt.WebhookChannel("u", post=post, language="ru").deliver(alert)
+        sent = json.loads(post.calls[0][1])
+        self.assertEqual(sent["text"], "пауза сейфа снята")
+        self.assertEqual(sent["texts"], {"en": "vault unpaused", "ru": "пауза сейфа снята"})
+        self.assertEqual(sent["event"], "unpaused")
+
+    def test_telegram_message(self):
+        post = Recorder()
+        wt.TelegramChannel(TOKEN, "-100777", explorer="https://testnet.bscscan.com", post=post).deliver(self.ALERT)
+        (url, body, headers), = post.calls
+        self.assertEqual(url, f"https://api.telegram.org/bot{TOKEN}/sendMessage")
+        msg = json.loads(body)
+        self.assertEqual(msg["chat_id"], "-100777")
+        self.assertTrue(msg["text"].startswith("🔴 CRITICAL · EPK Watchtower\nUNEXPECTED change scheduled"))
+        self.assertIn(f"https://testnet.bscscan.com/address/{VAULT}", msg["text"])
+        self.assertNotIn(TOKEN, json.dumps(headers))
+
+    def test_webhook_is_signed(self):
+        post = Recorder()
+        wt.WebhookChannel("https://example.test/hook", secret="s3cret", post=post).deliver(self.ALERT)
+        (url, body, headers), = post.calls
+        self.assertEqual(json.loads(body), self.ALERT)
+        ts = headers["X-EPK-Timestamp"]
+        want = "sha256=" + hmac.new(b"s3cret", ts.encode() + b"." + body, hashlib.sha256).hexdigest()
+        self.assertEqual(headers["X-EPK-Signature"], want)
+        unsigned = Recorder()
+        wt.WebhookChannel("https://example.test/hook", post=unsigned).deliver(self.ALERT)
+        self.assertNotIn("X-EPK-Signature", unsigned.calls[0][2])
+
+    def test_levels_per_channel(self):
+        tg, hook = Recorder(), Recorder()
+        d = wt.Dispatcher([wt.TelegramChannel(TOKEN, "1", "warning", post=tg), wt.WebhookChannel("u", min_level="info", post=hook)])
+        d.submit(wt.make_alert("info", "expected change scheduled", VAULT, 97))
+        d.submit(wt.make_alert("info", "watching vault", VAULT, 97), force=True)
+        self.assertTrue(d.flush(5))
+        self.assertEqual(len(tg.calls), 1)   # only the forced one (startup / heartbeat)
+        self.assertEqual(len(hook.calls), 2)  # the webhook takes everything
+
+    def test_retries_then_gives_up_without_leaking_the_token(self):
+        errors = []
+        flaky, dead = Recorder(fail_times=2), Recorder(fail_times=99)
+        d = wt.Dispatcher([wt.TelegramChannel(TOKEN, "1", post=flaky), wt.WebhookChannel("u", post=dead)],
+                          on_error=errors.append, sleep=lambda s: None)
+        d.submit(self.ALERT)
+        self.assertTrue(d.flush(5))
+        self.assertEqual(len(flaky.calls), 1)  # delivered on the third try
+        self.assertEqual(errors, ["webhook alert not delivered after 3 tries: OSError"])
+        self.assertNotIn(TOKEN, " ".join(errors))
+
+    def test_channels_from_environment(self):
+        keys = ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "WATCHTOWER_WEBHOOK_URL", "WATCHTOWER_WEBHOOK_SECRET")
+        saved = {k: os.environ.pop(k, None) for k in keys}
+        try:
+            cfg = {"envFile": "does-not-exist.env"}
+            self.assertEqual(wt.build_channels(cfg), [])
+            os.environ.update({"TELEGRAM_BOT_TOKEN": TOKEN, "TELEGRAM_CHAT_ID": "1", "WATCHTOWER_WEBHOOK_URL": "https://example.test"})
+            self.assertEqual([c.name for c in wt.build_channels(cfg)], ["telegram", "webhook"])
+        finally:
+            for k, v in saved.items():
+                os.environ.pop(k, None)
+                if v is not None:
+                    os.environ[k] = v
+
+
+class AlertsNeverDelayACancel(unittest.TestCase):
+    def test_slow_channel_does_not_hold_up_the_cancel(self):
+        tmp = tempfile.mkdtemp()
+        cfg = {"rpc": "http://127.0.0.1:1", "chainId": 97, "vault": VAULT, "guardianKeyEnv": "NO_SUCH_KEY",
+               "envFile": os.path.join(tmp, "none.env"), "stateFile": os.path.join(tmp, "state.json"),
+               "alerts": {"logFile": os.path.join(tmp, "alerts.log")}}
+        tower = wt.Watchtower(cfg)
+        gate = threading.Event()
+        tower.dispatcher = wt.Dispatcher([wt.WebhookChannel("u", post=Recorder(block=gate))])
+        sent = []
+        tower.send = lambda sig, *args: (sent.append((sig, args, time.time())) or ("0xtx", True))
+        start = time.time()
+        tower.act([("alert", "critical", "UNEXPECTED change"), ("cancel", STOLEN_ID)])
+        self.assertEqual(sent[0][:2], ("cancel(bytes32)", (STOLEN_ID,)))
+        self.assertLess(sent[0][2] - start, 0.5)  # the webhook is still stuck; the cancel already went out
+        gate.set()
+        self.assertTrue(tower.dispatcher.flush(10))
+
+    def test_heartbeat(self):
+        tmp = tempfile.mkdtemp()
+        cfg = {"rpc": "http://127.0.0.1:1", "chainId": 97, "vault": VAULT, "guardianKeyEnv": "NO_SUCH_KEY",
+               "envFile": os.path.join(tmp, "none.env"), "stateFile": os.path.join(tmp, "state.json"),
+               "alerts": {"logFile": os.path.join(tmp, "alerts.log"), "heartbeatHours": 24}}
+        tower = wt.Watchtower(cfg)
+        tg = Recorder()
+        tower.dispatcher = wt.Dispatcher([wt.TelegramChannel(TOKEN, "1", "warning", post=tg)])
+        tower.heartbeat(now=tower.last_heartbeat + 3600)
+        tower.heartbeat(now=tower.last_heartbeat + 25 * 3600)
+        self.assertTrue(tower.dispatcher.flush(5))
+        self.assertEqual(len(tg.calls), 1)
+        self.assertIn("still watching", json.loads(tg.calls[0][1])["text"])
 
 
 if __name__ == "__main__":
