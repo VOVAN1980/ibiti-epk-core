@@ -38,7 +38,8 @@ the incident is over.
 ```bash
 python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json            # live
 python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json --dry-run  # decide only, send nothing
-python -m unittest discover -s watchtower -p "test_*.py" -v                                # 16 tests, no network
+python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json --test-alert  # check Telegram / webhook
+python -m unittest discover -s watchtower -p "test_*.py" -v                                # 24 tests, no network
 ```
 
 - Python 3.8+, no packages (its own keccak256). Signing uses Foundry's `cast`.
@@ -48,9 +49,44 @@ python -m unittest discover -s watchtower -p "test_*.py" -v                     
   (`{"upgradeTo": <release>, "salt": "<text>"}`), as `{"data": "0x…", "salt": …}` or as an operation
   `{"id": "0x…"}`. The Watchtower computes ids exactly like `EPKVault.hashOperation`; a unit test
   compares them with the deployed vault and with Foundry.
-- Alerts go to the console and `watchtower/alerts.log`; with `TELEGRAM_BOT_TOKEN` and
-  `TELEGRAM_CHAT_ID` set (environment or `.env`) also to Telegram.
+- Alerts go to the console and `watchtower/alerts.log`, and to Telegram and a webhook when configured
+  (next section).
 - Progress is kept in `watchtower/state.json`, so a restart continues where it stopped.
+
+## Alerts: Telegram and webhook
+
+Alerts are delivered by a background thread with three tries per channel. A slow or unreachable
+channel never delays a `cancel` or a `panic`: the Watchtower acts first, the message follows (a unit
+test holds a channel stuck and checks that the cancel still goes out at once).
+
+| Channel | Gets | Set in `.env` (never in the config or git) |
+|---|---|---|
+| Telegram | `warning` and `critical` (change `telegramMinLevel` to `info` for everything) | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` |
+| Webhook (your own system) | everything from `info` up (`webhookMinLevel`) | `WATCHTOWER_WEBHOOK_URL`, optional `WATCHTOWER_WEBHOOK_SECRET` |
+
+Both channels also get the start message, a "stopped" message and a **daily "still watching"
+heartbeat** (`heartbeatHours`, `0` = off), so a Watchtower that went silent is noticed.
+
+**Telegram in four steps**
+
+1. In Telegram open the official **@BotFather** (blue check mark — not a look-alike from search),
+   send `/newbot` and pick a name. It answers with a token.
+2. Put the token into `.env` as `TELEGRAM_BOT_TOKEN=…` (never paste it into a chat or a commit).
+3. Send any message to your new bot (or add it to a group and write there), then run
+   `python watchtower/epk_watchtower.py --config <config> --telegram-chat-id` and copy the printed
+   `TELEGRAM_CHAT_ID=…` line into `.env`.
+4. `python watchtower/epk_watchtower.py --config <config> --test-alert` — the message must arrive.
+
+**Webhook.** Each alert is a `POST` with this JSON body:
+
+```json
+{"source": "epk-watchtower/1.1", "time": "2026-11-11T08:00:00Z", "level": "critical",
+ "vault": "0x1538…", "chainId": 97, "text": "UNEXPECTED change scheduled by 0x… — cancelling 0x…"}
+```
+
+With a secret set, the request carries `X-EPK-Timestamp` and
+`X-EPK-Signature: sha256=<HMAC-SHA256(secret, timestamp + "." + body)>`. The receiver recomputes it
+over the raw body and rejects a mismatch or an old timestamp.
 
 ## Live demo on BSC Testnet — "the admin key was stolen"
 
@@ -80,6 +116,7 @@ three unexpected changes (each cancelled, then `panic`).
 
 ## Not yet
 
-- Notifications other than Telegram; a hosted, always-on deployment; several vaults per process.
+- A hosted, always-on deployment (in progress); several vaults per process.
+- More alert channels: e-mail, Discord, Slack, then PagerDuty / SMS (they plug in like the two above).
 - Approving changes by a signed message from the owner instead of editing the config.
 - A TypeScript version in SDK v2.

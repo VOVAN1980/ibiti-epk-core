@@ -17,21 +17,34 @@ It only ever calls the guardian's own buttons: `cancel(id)` and `panic()`. A gua
 funds, so a stolen Watchtower key can at worst pause the vault — which the owner undoes through the
 timelock. Run it on a different machine than the admin key.
 
+Alerts go to the console and a log file and, when configured, to Telegram and to a webhook (the
+customer's own system). They are delivered by a background thread: a slow or broken channel never
+delays a cancel or a panic.
+
 Usage:
     python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json [--once] [--dry-run]
+    python watchtower/epk_watchtower.py --config ... --test-alert          # send one test alert, exit
+    python watchtower/epk_watchtower.py --config ... --telegram-chat-id    # show chats that wrote to the bot
 
 Needs Python 3.8+ (no packages) to watch, and Foundry's `cast` to sign the guardian's responses.
-The guardian key is read from an environment variable or the local, git-ignored .env file and is
-never printed or written anywhere.
+The guardian key, the Telegram bot token and the webhook secret are read from environment variables
+or the local, git-ignored .env file and are never printed or written anywhere.
 """
+import hashlib
+import hmac
 import json
 import os
+import queue
 import re
 import subprocess
 import sys
+import threading
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
+
+VERSION = "epk-watchtower/1.1"
 
 # ---------------------------------------------------------------------------------------------
 # Keccak-256 in pure Python (kept in this file so the Watchtower can be copied alone to a server)
@@ -302,6 +315,133 @@ def read_secret(name, env_file):
     return None
 
 
+# ---------------------------------------------------------------------------------------------
+# Alert channels: Telegram and a webhook today; e-mail, Discord, Slack, ... plug in the same way
+# (a class with `name`, `min_level` and `deliver(alert)`)
+# ---------------------------------------------------------------------------------------------
+LEVELS = {"info": 0, "warning": 1, "critical": 2}
+ICONS = {"info": "🔵", "warning": "🟠", "critical": "🔴"}
+
+
+def level_ok(level, minimum):
+    return LEVELS.get(level, 2) >= LEVELS.get(minimum, 1)
+
+
+def make_alert(level, text, vault, chain_id, now=None):
+    """The alert as every channel sees it (and as the webhook receives it, as JSON)."""
+    t = datetime.fromtimestamp(now if now is not None else time.time(), timezone.utc)
+    return {"source": VERSION, "time": t.strftime("%Y-%m-%dT%H:%M:%SZ"), "level": level,
+            "vault": vault, "chainId": chain_id, "text": text}
+
+
+def telegram_text(alert, explorer=None):
+    lines = [f"{ICONS.get(alert['level'], '🔴')} {alert['level'].upper()} · EPK Watchtower", alert["text"], "",
+             f"Vault: {alert['vault']} (chain {alert['chainId']})"]
+    if explorer:
+        lines.append(f"{explorer.rstrip('/')}/address/{alert['vault']}")
+    lines.append(alert["time"].replace("T", " ").replace("Z", " UTC"))
+    return "\n".join(lines)
+
+
+def webhook_signature(secret, timestamp, body):
+    """HMAC-SHA256 over "<timestamp>.<body>", so the receiver can check sender and freshness."""
+    return "sha256=" + hmac.new(secret.encode(), timestamp.encode() + b"." + body, hashlib.sha256).hexdigest()
+
+
+def http_post(url, body, headers, timeout=15):
+    with urllib.request.urlopen(urllib.request.Request(url, body, headers), timeout=timeout) as r:
+        return r.status
+
+
+class TelegramChannel:
+    name = "telegram"
+
+    def __init__(self, token, chat, min_level="warning", explorer=None, post=http_post):
+        self.token, self.chat, self.min_level, self.explorer, self.post = token, chat, min_level, explorer, post
+
+    def deliver(self, alert):
+        body = json.dumps({"chat_id": self.chat, "text": telegram_text(alert, self.explorer),
+                           "disable_web_page_preview": True}).encode()
+        self.post(f"https://api.telegram.org/bot{self.token}/sendMessage", body,
+                  {"Content-Type": "application/json", "User-Agent": VERSION})
+
+
+class WebhookChannel:
+    name = "webhook"
+
+    def __init__(self, url, secret=None, min_level="info", post=http_post):
+        self.url, self.secret, self.min_level, self.post = url, secret, min_level, post
+
+    def deliver(self, alert):
+        body = json.dumps(alert, separators=(",", ":"), ensure_ascii=False).encode()
+        ts = str(int(time.time()))
+        headers = {"Content-Type": "application/json", "User-Agent": VERSION, "X-EPK-Timestamp": ts}
+        if self.secret:
+            headers["X-EPK-Signature"] = webhook_signature(self.secret, ts, body)
+        self.post(self.url, body, headers)
+
+
+def build_channels(cfg, post=http_post):
+    """Channels whose secrets are present (environment or .env); none -> console and log file only."""
+    a, env = cfg.get("alerts", {}), cfg.get("envFile", ".env")
+    out = []
+    token = read_secret(a.get("telegramTokenEnv", "TELEGRAM_BOT_TOKEN"), env)
+    chat = read_secret(a.get("telegramChatEnv", "TELEGRAM_CHAT_ID"), env)
+    if token and chat:
+        out.append(TelegramChannel(token, chat, a.get("telegramMinLevel", "warning"), cfg.get("explorer"), post))
+    url = read_secret(a.get("webhookUrlEnv", "WATCHTOWER_WEBHOOK_URL"), env)
+    if url:
+        out.append(WebhookChannel(url, read_secret(a.get("webhookSecretEnv", "WATCHTOWER_WEBHOOK_SECRET"), env),
+                                  a.get("webhookMinLevel", "info"), post))
+    return out
+
+
+def failure_reason(e):
+    """Why a delivery failed, without the URL (a Telegram URL contains the bot token)."""
+    if isinstance(e, urllib.error.HTTPError):
+        return f"HTTP {e.code}"
+    return type(e).__name__
+
+
+class Dispatcher:
+    """Delivers alerts in a background thread, with retries, so alerts never delay a cancel or a panic."""
+
+    def __init__(self, channels, on_error=None, retries=3, backoff=(1, 3, 9), sleep=time.sleep):
+        self.channels, self.retries, self.backoff, self.sleep = channels, retries, backoff, sleep
+        self.on_error = on_error or (lambda msg: print(f"  ({msg})", flush=True))
+        self.q = queue.Queue()
+        if channels:
+            threading.Thread(target=self._run, name="epk-alerts", daemon=True).start()
+
+    def submit(self, alert, force=False):
+        for ch in self.channels:
+            if force or level_ok(alert["level"], ch.min_level):
+                self.q.put((ch, alert))
+
+    def _run(self):
+        while True:
+            ch, alert = self.q.get()
+            try:
+                for attempt in range(self.retries):
+                    try:
+                        ch.deliver(alert)
+                        break
+                    except Exception as e:  # noqa: BLE001 — a channel must never stop the Watchtower
+                        if attempt == self.retries - 1:
+                            self.on_error(f"{ch.name} alert not delivered after {self.retries} tries: {failure_reason(e)}")
+                        else:
+                            self.sleep(self.backoff[min(attempt, len(self.backoff) - 1)])
+            finally:
+                self.q.task_done()
+
+    def flush(self, timeout=60):
+        """Wait (at most `timeout` seconds) until queued alerts are delivered or given up."""
+        end = time.time() + timeout
+        while self.q.unfinished_tasks and time.time() < end:
+            time.sleep(0.05)
+        return not self.q.unfinished_tasks
+
+
 class Watchtower:
     def __init__(self, cfg, dry_run=False):
         self.cfg, self.dry = cfg, dry_run
@@ -315,24 +455,28 @@ class Watchtower:
             self.state = json.load(open(self.state_file, encoding="utf-8"))
         except (OSError, ValueError):
             self.state = {"lastBlock": None, "unexpected": [], "panicked": False, "seen": {}, "actions": []}
+        self.dispatcher = Dispatcher(build_channels(cfg))
+        self.last_heartbeat = time.time()
 
     # -- alerts ----------------------------------------------------------------------------
-    def alert(self, level, text):
+    def alert(self, level, text, force=False):
+        """Console + log file at once; Telegram / webhook in the background (`force`: every channel)."""
         line = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')} [{level.upper()}] {text}"
         print(line, flush=True)
         os.makedirs(os.path.dirname(self.log_file) or ".", exist_ok=True)
         with open(self.log_file, "a", encoding="utf-8") as f:
             f.write(line + "\n")
-        a = self.cfg.get("alerts", {})
-        token = read_secret(a.get("telegramTokenEnv", "TELEGRAM_BOT_TOKEN"), self.cfg.get("envFile", ".env"))
-        chat = read_secret(a.get("telegramChatEnv", "TELEGRAM_CHAT_ID"), self.cfg.get("envFile", ".env"))
-        if token and chat and level != "info":
-            try:
-                body = json.dumps({"chat_id": chat, "text": f"EPK Watchtower — vault {self.vault}\n{line}"}).encode()
-                urllib.request.urlopen(urllib.request.Request(
-                    f"https://api.telegram.org/bot{token}/sendMessage", body, {"Content-Type": "application/json"}), timeout=15)
-            except OSError as e:
-                print(f"  (telegram alert not sent: {type(e).__name__})", flush=True)
+        self.dispatcher.submit(make_alert(level, text, self.vault, self.cfg.get("chainId")), force=force)
+
+    def heartbeat(self, now=None):
+        """A daily "still watching" message, so a silent Watchtower is noticed (heartbeatHours: 0 = off)."""
+        now = now if now is not None else time.time()
+        hours = self.cfg.get("alerts", {}).get("heartbeatHours", 24)
+        if hours and now - self.last_heartbeat >= hours * 3600:
+            self.last_heartbeat = now
+            cancels = sum(1 for a in self.state["actions"] if a.get("action") == "cancel" and a.get("ok"))
+            self.alert("info", f"still watching; last block {self.state['lastBlock']}; "
+                               f"{cancels} unexpected change(s) cancelled so far", force=True)
 
     # -- guardian responses -------------------------------------------------------------------
     def send(self, sig, *args):
@@ -405,25 +549,66 @@ class Watchtower:
             guardian = out.stdout.strip() or None
         is_g = guardian and int(rpc(self.url, "eth_call", {"to": self.vault, "data": selector("isGuardian(address)") + word(guardian)},
                                     "latest"), 16) == 1
-        self.alert("info", f"watching vault {self.vault} on chain {cid}; guardian {guardian or 'none'} "
-                           f"({'confirmed by the vault' if is_g else 'NOT a guardian of this vault'}); "
-                           f"{len(self.expected)} approved change(s); {'DRY RUN' if self.dry else 'live'}")
+        self.alert("warning" if not is_g else "info",
+                   f"watching vault {self.vault} on chain {cid}; guardian {guardian or 'none'} "
+                   f"({'confirmed by the vault' if is_g else 'NOT a guardian of this vault'}); "
+                   f"{len(self.expected)} approved change(s); {'DRY RUN' if self.dry else 'live'}", force=True)
         failures = 0
-        while True:
-            try:
-                self.poll()
-                if failures >= 5:
-                    self.alert("warning", f"reading the chain again after {failures} failed attempts")
-                failures = 0
-            except Exception as e:  # noqa: BLE001 — a watchtower must never stop on a bad node reply
-                failures += 1
-                print(f"  (node error, retrying: {type(e).__name__}: {e})", flush=True)
-                if failures == 5 or failures % 100 == 0:
-                    self.alert("critical", f"cannot read the chain ({failures} failed attempts in a row): "
-                                           f"{type(e).__name__} — the vault is NOT being watched")
-            if once:
-                return
-            time.sleep(self.cfg.get("pollSeconds", 3))
+        try:
+            while True:
+                try:
+                    self.poll()
+                    if failures >= 5:
+                        self.alert("warning", f"reading the chain again after {failures} failed attempts")
+                    failures = 0
+                except Exception as e:  # noqa: BLE001 — a watchtower must never stop on a bad node reply
+                    failures += 1
+                    print(f"  (node error, retrying: {type(e).__name__}: {e})", flush=True)
+                    if failures == 5 or failures % 100 == 0:
+                        self.alert("critical", f"cannot read the chain ({failures} failed attempts in a row): "
+                                               f"{type(e).__name__} — the vault is NOT being watched")
+                if once:
+                    return
+                self.heartbeat()
+                time.sleep(self.cfg.get("pollSeconds", 3))
+        except KeyboardInterrupt:
+            self.alert("warning", "Watchtower stopped by the operator — the vault is NOT being watched", force=True)
+        finally:
+            self.dispatcher.flush(30)
+
+    def test_alert(self):
+        """Send one alert through every configured channel and report what was used."""
+        names = [c.name for c in self.dispatcher.channels]
+        if not names:
+            print("no alert channel configured: set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID and/or "
+                  "WATCHTOWER_WEBHOOK_URL (environment or .env)")
+            return False
+        self.alert("warning", "test alert: if you can read this, the Watchtower can reach you", force=True)
+        ok = self.dispatcher.flush(60)
+        print(f"test alert handed to: {', '.join(names)}" + ("" if ok else " (still sending after 60 s)"))
+        return ok
+
+
+def telegram_chat_ids(cfg):
+    """Chats that have written to the bot recently (Telegram getUpdates), to fill TELEGRAM_CHAT_ID."""
+    token = read_secret(cfg.get("alerts", {}).get("telegramTokenEnv", "TELEGRAM_BOT_TOKEN"), cfg.get("envFile", ".env"))
+    if not token:
+        sys.exit("TELEGRAM_BOT_TOKEN is not set (environment or .env)")
+    try:
+        with urllib.request.urlopen(f"https://api.telegram.org/bot{token}/getUpdates", timeout=15) as r:
+            updates = json.load(r).get("result", [])
+    except (OSError, ValueError) as e:
+        sys.exit(f"Telegram did not answer: {failure_reason(e)}")
+    chats = {}
+    for u in updates:
+        msg = u.get("message") or u.get("channel_post") or u.get("my_chat_member") or {}
+        c = msg.get("chat") or {}
+        if "id" in c:
+            chats[c["id"]] = c.get("title") or c.get("username") or c.get("first_name") or c.get("type", "")
+    if not chats:
+        print("no chats yet: send any message to your bot (or add it to a group and write there), then run this again")
+    for cid, name in chats.items():
+        print(f"TELEGRAM_CHAT_ID={cid}    # {name}")
 
 
 def main():
@@ -440,7 +625,12 @@ def main():
                 cfg["stateFile"] = val
             else:
                 cfg.setdefault("alerts", {})["logFile"] = val
-    Watchtower(cfg, dry_run="--dry-run" in sys.argv).run(once="--once" in sys.argv)
+    if "--telegram-chat-id" in sys.argv:
+        return telegram_chat_ids(cfg)
+    tower = Watchtower(cfg, dry_run="--dry-run" in sys.argv)
+    if "--test-alert" in sys.argv:
+        sys.exit(0 if tower.test_alert() else 1)
+    tower.run(once="--once" in sys.argv)
 
 
 if __name__ == "__main__":
