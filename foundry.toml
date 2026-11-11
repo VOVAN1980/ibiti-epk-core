@@ -20,8 +20,6 @@ extra_output = ["storageLayout"]
 additional_compiler_profiles = [{ name = "v2-size", via_ir = true, optimizer = true, optimizer_runs = 1 }]
 compilation_restrictions = [
   { paths = "contracts/v2/**", max_optimizer_runs = 1 },
-  # demo vault releases must fit EIP-170 like the vault they extend
-  { paths = "scripts/v2/demo/EPKVaultDemoRelease21*.sol", max_optimizer_runs = 1 },
 ]
 
 [profile.coverage]
