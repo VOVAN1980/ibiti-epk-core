@@ -17,9 +17,11 @@
     "telegramTokenEnv": "TELEGRAM_BOT_TOKEN",
     "telegramChatEnv": "TELEGRAM_CHAT_ID",
     "telegramMinLevel": "warning",
+    "telegramLanguage": "en+ru",
     "webhookUrlEnv": "WATCHTOWER_WEBHOOK_URL",
     "webhookSecretEnv": "WATCHTOWER_WEBHOOK_SECRET",
     "webhookMinLevel": "info",
+    "webhookLanguage": "en",
     "heartbeatHours": 24
   },
   "stateFile": "watchtower/state.json"

@@ -39,7 +39,7 @@ the incident is over.
 python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json            # live
 python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json --dry-run  # decide only, send nothing
 python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json --test-alert  # check Telegram / webhook
-python -m unittest discover -s watchtower -p "test_*.py" -v                                # 24 tests, no network
+python -m unittest discover -s watchtower -p "test_*.py" -v                                # 30 tests, no network
 ```
 
 - Python 3.8+, no packages (its own keccak256). Signing uses Foundry's `cast`.
@@ -67,6 +67,11 @@ test holds a channel stuck and checks that the cancel still goes out at once).
 Both channels also get the start message, a "stopped" message and a **daily "still watching"
 heartbeat** (`heartbeatHours`, `0` = off), so a Watchtower that went silent is noticed.
 
+**Language, per channel:** `telegramLanguage` and `webhookLanguage` take `"en"`, `"ru"` or both
+(`"en+ru"`). Every alert exists in every language (a unit test checks it); a new language is one more
+column in `MESSAGES` and `TIMELOCKED_RU`-style descriptions in `epk_watchtower.py`. The console and
+the log file stay in English.
+
 **Telegram in four steps**
 
 1. In Telegram open the official **@BotFather** (blue check mark — not a look-alike from search),
@@ -81,8 +86,14 @@ heartbeat** (`heartbeatHours`, `0` = off), so a Watchtower that went silent is n
 
 ```json
 {"source": "epk-watchtower/1.1", "time": "2026-11-11T08:00:00Z", "level": "critical",
- "vault": "0x1538…", "chainId": 97, "text": "UNEXPECTED change scheduled by 0x… — cancelling 0x…"}
+ "event": "unexpected_scheduled", "vault": "0x1538…", "chainId": 97,
+ "text": "UNEXPECTED change scheduled by 0x… — cancelling 0x…",
+ "texts": {"en": "UNEXPECTED change scheduled by 0x… — cancelling 0x…",
+           "ru": "НЕОЖИДАННОЕ изменение запланировал 0x… — отменяю 0x…"}}
 ```
+
+`event` names the kind of alert for automation (`unexpected_scheduled`, `cold_wallet_change`,
+`panic`, `heartbeat`, …); `text` is in the channel's language, `texts` carries all of them.
 
 With a secret set, the request carries `X-EPK-Timestamp` and
 `X-EPK-Signature: sha256=<HMAC-SHA256(secret, timestamp + "." + body)>`. The receiver recomputes it

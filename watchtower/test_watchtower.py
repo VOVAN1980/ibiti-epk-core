@@ -176,8 +176,58 @@ class Alerts(unittest.TestCase):
 
     def test_alert_payload(self):
         self.assertEqual(self.ALERT, {"source": wt.VERSION, "time": "2027-01-15T08:00:00Z", "level": "critical",
-                                      "vault": VAULT, "chainId": 97,
-                                      "text": "UNEXPECTED change scheduled — cancelling 0xabc"})
+                                      "event": "message", "vault": VAULT, "chainId": 97,
+                                      "text": "UNEXPECTED change scheduled — cancelling 0xabc",
+                                      "texts": {"en": "UNEXPECTED change scheduled — cancelling 0xabc",
+                                                "ru": "UNEXPECTED change scheduled — cancelling 0xabc"}})
+
+    def test_every_alert_exists_in_every_language(self):
+        for key, texts in wt.MESSAGES.items():
+            self.assertEqual(set(texts), set(wt.LANGS), key)
+        self.assertEqual(set(wt.TIMELOCKED_RU), set(wt.TIMELOCKED))
+
+    def test_unexpected_change_in_russian(self):
+        acts = wt.decide(scheduled_log(STOLEN_DATA, STOLEN_SALT), EXPECTED, fresh_state(), 0, POLICY)
+        msg = acts[0][2]
+        self.assertTrue(msg.startswith("UNEXPECTED change scheduled by"))  # English stays the default text
+        ru = wt.text_in(msg, "ru")
+        self.assertTrue(ru.startswith(f"НЕОЖИДАННОЕ изменение запланировал {ADMIN}: разрешить платежи на новый адрес"))
+        self.assertIn(f"отменяю {STOLEN_ID}", ru)
+        alert = wt.make_alert("critical", msg, VAULT, 97)
+        self.assertEqual(alert["event"], "unexpected_scheduled")
+        self.assertEqual(alert["texts"]["ru"], ru)
+
+    def test_nested_texts_follow_the_language(self):
+        msg = wt.Msg("panic", reason=wt.Msg("reason_burst", n=3), result=wt.Msg("panic_failed"))
+        self.assertEqual(msg, "PANIC (3 unexpected changes within an hour): FAILED — call the owner")
+        self.assertEqual(wt.text_in(msg, "ru"), "ПАНИКА (3 неожиданных изменения(й) за час): НЕ УДАЛАСЬ — звоните владельцу")
+
+    def test_language_choice(self):
+        self.assertEqual(wt.languages("en+ru"), ["en", "ru"])
+        self.assertEqual(wt.languages("RU"), ["ru"])
+        self.assertEqual(wt.languages("de"), ["en"])  # unknown -> English
+        self.assertEqual(wt.languages(None), ["en"])
+
+    def test_telegram_in_two_languages(self):
+        alert = wt.make_alert("critical", wt.Msg("test_alert"), VAULT, 97, now=1_800_000_000)
+        text = wt.telegram_text(alert, language="en+ru")
+        self.assertEqual(text.splitlines()[:3], [
+            "🔴 CRITICAL · КРИТИЧНО · EPK Watchtower",
+            "test alert: if you can read this, the Watchtower can reach you",
+            "пробная тревога: если вы это читаете, Watchtower может до вас достучаться"])
+        self.assertIn(f"Vault / Сейф: {VAULT} (chain / сеть 97)", text)
+        ru_only = wt.telegram_text(alert, language="ru")
+        self.assertTrue(ru_only.startswith("🔴 КРИТИЧНО · EPK Watchtower\nпробная тревога"))
+        self.assertNotIn("test alert", ru_only)
+
+    def test_webhook_text_follows_its_language(self):
+        post = Recorder()
+        alert = wt.make_alert("warning", wt.Msg("unpaused"), VAULT, 97)
+        wt.WebhookChannel("u", post=post, language="ru").deliver(alert)
+        sent = json.loads(post.calls[0][1])
+        self.assertEqual(sent["text"], "пауза сейфа снята")
+        self.assertEqual(sent["texts"], {"en": "vault unpaused", "ru": "пауза сейфа снята"})
+        self.assertEqual(sent["event"], "unpaused")
 
     def test_telegram_message(self):
         post = Recorder()
