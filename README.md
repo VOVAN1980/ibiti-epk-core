@@ -152,7 +152,7 @@ Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
 
 ```bash
 forge build
-forge test                                               # 214 contract tests (3 of them fork BSC Testnet and need an RPC)
+forge test                                               # 215 contract tests (3 of them fork BSC Testnet and need an RPC)
 python -m unittest discover -s watchtower -p "test_*.py" # 30 Watchtower tests, no network
 ```
 

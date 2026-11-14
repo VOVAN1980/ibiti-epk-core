@@ -233,6 +233,8 @@ const NETS = {
   opbnb: {
     name: "opBNB Testnet", key: "opbnb-testnet", doc: "docs/TESTNET_OPBNB.md", explorer: "https://testnet.opbnbscan.com",
     commit: window.EPK && window.EPK.COMMIT_OPBNB,
+    watchtowerTime: "21 blocks (about 5 seconds; opBNB makes a block every 0.25 s)",
+    coldWalletTime: "25 blocks (about 6 seconds)",
     nodes: [  // tested 2026-11-14
       "https://opbnb-testnet-rpc.bnbchain.org",  // BNB Chain's own node: transactions and logs, recent state only
       "https://5611.rpc.thirdweb.com",           // keeps old state (archive); logs only over 1,000 blocks at a time

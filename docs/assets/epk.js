@@ -8,6 +8,7 @@
   EPK.REPO = "VOVAN1980/ibiti-epk-core";
   EPK.COMMIT = "223e56fd1f546b39ca1c9ea3d16bdd60edc7e39d";
   EPK.COMMIT_GUARDS = "223e56fd1f546b39ca1c9ea3d16bdd60edc7e39d"; // evidence of the guard demo (docs/proof/guards.html)
+  EPK.COMMIT_OPBNB = "0b3ca5da03a17b2b29e313135241b6e81fccfa49"; // evidence of the opBNB Testnet demo (docs/proof/?net=opbnb)
   // free public BSC Testnet nodes, asked in this order (the next one only when a node has no answer; see docs/TESTNET_V2.md)
   EPK.NODES = ["https://bsc-testnet.bnbchain.org", "https://97.rpc.thirdweb.com", "https://bsc-testnet-rpc.publicnode.com"];
   EPK.EXPLORER = "https://testnet.bscscan.com";

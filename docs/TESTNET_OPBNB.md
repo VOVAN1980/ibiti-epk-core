@@ -112,7 +112,7 @@ command (Python 3 only — no Foundry, no keys, no packages) checks every one of
 Testnet nodes:
 
 ```bash
-python scripts/v2/verify_evidence.py --network opbnb-testnet      # add --build after `forge build` to compare bytecode with the source
+python scripts/v2/verify_evidence.py --network opbnb-testnet      # add --build after `git checkout 0b3ca5d && forge build` to compare bytecode with the source it was built from
 ```
 
 The checks are the same as for BSC Testnet ([`TESTNET_V2.md`](TESTNET_V2.md#check-it-yourself)) with one
