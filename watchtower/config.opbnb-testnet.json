@@ -1,0 +1,28 @@
+{
+  "about": "EPK Watchtower for the opBNB Testnet demo vault. No secrets here: the guardian key, the Telegram bot token and chat id and the webhook URL and secret are read from the environment variables or .env entries named below.",
+  "rpc": "https://opbnb-testnet-rpc.bnbchain.org",
+  "chainId": 5611,
+  "explorer": "https://testnet.opbnbscan.com",
+  "vault": "0x3CaF011091f0dA6eE432d73678a86957057AFa5b",
+  "startBlock": "latest",
+  "pollSeconds": 2,
+  "guardianKeyEnv": "V2_GUARDIAN2_PRIVATE_KEY",
+  "envFile": ".env",
+  "policy": {
+    "panicAfterUnexpectedPerHour": 3
+  },
+  "expected": [],
+  "alerts": {
+    "logFile": "watchtower/alerts.opbnb-testnet.log",
+    "telegramTokenEnv": "TELEGRAM_BOT_TOKEN",
+    "telegramChatEnv": "TELEGRAM_CHAT_ID",
+    "telegramMinLevel": "warning",
+    "telegramLanguage": "en+ru",
+    "webhookUrlEnv": "WATCHTOWER_WEBHOOK_URL",
+    "webhookSecretEnv": "WATCHTOWER_WEBHOOK_SECRET",
+    "webhookMinLevel": "info",
+    "webhookLanguage": "en",
+    "heartbeatHours": 24
+  },
+  "stateFile": "watchtower/state.opbnb-testnet.json"
+}

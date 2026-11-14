@@ -1,0 +1,236 @@
+EPK v2 evidence check — nodes, asked in this order (the next one only when a node has no answer):
+  1. https://opbnb-testnet-rpc.bnbchain.org
+  2. https://5611.rpc.thirdweb.com
+  3. https://opbnb-testnet.publicnode.com
+
+Network
+  OK   chainId 5611 (expected 5611, opBNB Testnet)
+
+Document vs evidence file
+  OK   docs/TESTNET_OPBNB.md and deployments/opbnb-testnet/epk-v2-evidence.json list the same 23 transactions
+  OK   every contract linked in the document is in the evidence file
+
+Contracts and bytecode
+  OK   0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9  EPKVault 2.3.0 implementation: has code (24,408 bytes)
+  OK   code hash 0xeb9a1b769ef5ef45f00a6904d7e86b5f40debfba9de5c6bbc6e785e32c9b8d9d = recorded 0xeb9a1b769e...
+  OK   registry pins this exact code hash (version 20300, revoked: False)
+         usable by vaults from 2026-11-14 22:10 UTC
+  OK   vaultVersion() = 20300 (claimed 20300)
+  OK   bytecode equals this repository's build (out/EPKVault.sol/EPKVault.json, immutables masked)
+  OK   0xF3939aEB10FDa58216d14Cd86de892Bc538Fa9F6  EPKVaultEmergency — the 2.3.0 release's emergency module, deployed by the implementation: has code (3,726 bytes)
+  OK   code hash 0x01966200e98cb9a63c501a90d72512762d9f3556cffe1e82be8332d79f46d97b = recorded 0x01966200e9...
+  OK   bytecode equals this repository's build (out/EPKVault.sol/EPKVaultEmergency.json, immutables masked)
+  OK   0x81Ac99466291D2324bf459c7345F5506D9b90158  EPKRegistry (5-minute test-network release window): has code (2,197 bytes)
+  OK   code hash 0x7fdfb3b9e7ab119c11636680c5487e9201ab2ddd3f4f684c00e5441ea3b79ac2 = recorded 0x7fdfb3b9e7...
+  OK   0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4  EPKVaultFactory for 2.3.0 — the SDK's public factory: has code (2,331 bytes)
+  OK   code hash 0x03c786129e8b937e620faf3400c05590d4aee10a88efe692cd88dc7d97e312b5 = recorded 0x03c786129e...
+  OK   bytecode equals this repository's build (out/EPKVaultFactory.sol/EPKVaultFactory.json, immutables masked)
+  OK   0xD0F6C69aD004230b4383B72Dc848701e566BeA7C  EPK Demo USD (eUSD) test token: has code (1,776 bytes)
+  OK   code hash 0x19924fc3fb9ecd5e9e95520f540e7f079585c9f0e8587dff14106a80d64aa7ae = recorded 0x19924fc3fb...
+  OK   0x3CaF011091f0dA6eE432d73678a86957057AFa5b  Demo vault (customer proxy): has code (137 bytes)
+  OK   code hash 0x792c0657785a10fe2d37e4ad3bd0d1e5155ef42db51882ad7bccb35ce59b969d = recorded 0x792c065778...
+  OK   EIP-1967 implementation slot -> implementation (0x73a79604bc39b1f6b57cc68159ee3fc041ac7dd9)
+  OK   bytecode equals this repository's build (out/EPKVaultFactory.sol/EPKVaultProxy.json, immutables masked)
+
+Transactions
+  1   0x207f26e92c...  admin creates the demo vault through the public 2.3.0 factory (5-minute timelock, the owner's cold wallet registered)
+         block 223539741, 2026-11-14 22:11:01 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to factory
+  OK   succeeded on-chain
+  OK   event VaultCreated from factory
+  2   0xd1700b2027...  setup finalized: 1,000 eUSD/day vault limit, 100 eUSD/day per agent session, only the treasury allowed
+         block 223539778, 2026-11-14 22:11:11 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event SetupFinalized from vault
+  3a  0x414137ed74...  session manager opens an AI-agent session (3 days)
+         block 223539938, 2026-11-14 22:11:51 UTC
+  OK   sent by sessionManager (0xbb99385fcf813f59d86d53f454755d48d019f862) to vault
+  OK   succeeded on-chain
+  OK   event SessionOpened from vault
+  3b  0xf4434f9e77...  the agent pays 50 eUSD to the treasury on its own
+         block 223539942, 2026-11-14 22:11:52 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Outflow from vault, amounts 50 / 950 eUSD
+  OK   event Transfer from token, amounts 50 eUSD
+  4a  0x556fc537dd...  agent pays 60 eUSD with 50 left in its budget
+         block 223539971, 2026-11-14 22:11:59 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 119,206 of 900,000)
+  OK   REPLAY  against the state before block 223539971: reverts with BudgetExceeded(token, 60 eUSD, 50.0081 eUSD) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223539971 was sent to the vault or the token (this tx is #1 of 3)
+  4b  0x58c98cf5fb...  agent pays to a non-allowlisted address
+         block 223540009, 2026-11-14 22:12:08 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 60,801 of 900,000)
+  OK   REPLAY  against the state before block 223540009: reverts with DestinationNotAllowed(0x000000000000000000000000000000000000dead) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223540009 was sent to the vault or the token (this tx is #1 of 3)
+  4c  0xa0e8426b15...  agent calls approve (not in its envelope)
+         block 223540043, 2026-11-14 22:12:17 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 56,030 of 900,000)
+  OK   REPLAY  against the state before block 223540043: reverts with CallNotAllowed() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223540043 was sent to the vault or the token (this tx is #1 of 3)
+  4d  0x9dcb98acfb...  batch signed by a key that is not the session key
+         block 223540074, 2026-11-14 22:12:25 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 70,400 of 900,000)
+  OK   REPLAY  against the state before block 223540074: reverts with BadSignature() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223540074 was sent to the vault or the token (this tx is #1 of 3)
+  4e  0x9ebdbed58e...  a stranger submits the agent's valid signature
+         block 223540103, 2026-11-14 22:12:32 UTC
+  OK   sent by guardian2 (0xd1e73f683515d4a7a26d06ad6b0c64c62d4c7fa0) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 50,998 of 900,000)
+  OK   REPLAY  against the state before block 223540103: reverts with AgentNotAllowed() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223540103 was sent to the vault or the token (this tx is #1 of 3)
+  5a  0x20494ed45d...  a guardian presses panic: everything stops at once
+         block 223540213, 2026-11-14 22:12:59 UTC
+  OK   sent by guardian1 (0xcd3951cdfab38c628a7396812c78c7f3d7c35f70) to vault
+  OK   succeeded on-chain
+  OK   event Paused from vault
+  OK   event EpochBumped from vault
+  5b  0xd276f1f04f...  admin schedules unpause through the timelock (5 minutes on test networks)
+         block 223540217, 2026-11-14 22:13:00 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event OperationScheduled from vault
+  6a  0xfb24c085d7...  admin executes the timelocked unpause (5 minutes after the panic)
+         block 223541656, 2026-11-14 22:19:00 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event Unpaused from vault
+  OK   event OperationExecuted from vault
+  6b  0xdf8152cb33...  session manager opens a new agent session
+         block 223541660, 2026-11-14 22:19:01 UTC
+  OK   sent by sessionManager (0xbb99385fcf813f59d86d53f454755d48d019f862) to vault
+  OK   succeeded on-chain
+  OK   event SessionOpened from vault
+  6c  0xd5ce333362...  the agent pays 10 eUSD through the new session
+         block 223541667, 2026-11-14 22:19:03 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Outflow from vault, amounts 10 eUSD
+  OK   event Transfer from token, amounts 10 eUSD
+  6f  0x90f60c12bb...  the agent tries to pay through the old (pre-panic) session
+         block 223541702, 2026-11-14 22:19:12 UTC
+  OK   sent by agent (0xcc3b10e3fcbfc15a0b7942b6f06a7c5efb3fde16) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 43,409 of 900,000)
+  OK   REPLAY  against the state before block 223541702: reverts with PolicyInactive() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223541702 was sent to the vault or the token (this tx is #1 of 3)
+  W1  0xc1a95c92f5...  attacker with the stolen admin key schedules addDestination(0xBAD1)
+         block 223541885, 2026-11-14 22:19:57 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event OperationScheduled from vault
+  W2  0x33f8662bf1...  the Watchtower (guardian2 key) cancels it, 21 blocks later
+         block 223541906, 2026-11-14 22:20:03 UTC
+  OK   sent by guardian2 (0xd1e73f683515d4a7a26d06ad6b0c64c62d4c7fa0) to vault
+  OK   succeeded on-chain
+  OK   event OperationCancelled from vault
+  W3  0xf6a58ec4f8...  attacker tries to execute the change anyway
+         block 223542034, 2026-11-14 22:20:35 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 41,747 of 900,000)
+  OK   REPLAY  against the state before block 223542034: reverts with UnknownOperation() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223542034 was sent to the vault or the token (this tx is #1 of 3)
+  E1  0x6bab936170...  attacker with the stolen admin key schedules setColdWallet(0xBAD2) — so that an evacuation would pay them
+         block 223542145, 2026-11-14 22:21:02 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   succeeded on-chain
+  OK   event OperationScheduled from vault
+  E2  0x96b1bdf98c...  the Watchtower (guardian2 key) cancels it, 25 blocks later
+         block 223542170, 2026-11-14 22:21:09 UTC
+  OK   sent by guardian2 (0xd1e73f683515d4a7a26d06ad6b0c64c62d4c7fa0) to vault
+  OK   succeeded on-chain
+  OK   event OperationCancelled from vault
+  E3  0xcea807426a...  attacker tries to execute the cold-wallet change anyway
+         block 223542250, 2026-11-14 22:21:29 UTC
+  OK   sent by admin (0xa2bd166173925e5b8e640f091b0f3becbbbe15f8) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 41,747 of 900,000)
+  OK   REPLAY  against the state before block 223542250: reverts with UnknownOperation() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223542250 was sent to the vault or the token (this tx is #1 of 3)
+  E4  0x17047348d6...  a guardian tries to evacuate — guardians stop, they never move funds
+         block 223542276, 2026-11-14 22:21:35 UTC
+  OK   sent by guardian1 (0xcd3951cdfab38c628a7396812c78c7f3d7c35f70) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 39,772 of 900,000)
+  OK   REPLAY  against the state before block 223542276: reverts with NotEvacuator() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223542276 was sent to the vault or the token (this tx is #1 of 3)
+  E5  0x3b9b7406c3...  the owner's recovery key evacuates everything to the cold wallet registered at setup (and pauses the vault)
+         block 223542393, 2026-11-14 22:22:04 UTC
+  OK   sent by recovery (0x858cd2931f1b4afd83b4ef4f2b2cc6ea964ab41c) to vault
+  OK   succeeded on-chain
+  OK   event Paused from vault
+  OK   event EpochBumped from vault
+  OK   event Evacuated from vault, amounts 9940 eUSD
+  OK   event Transfer from token, amounts 9940 eUSD
+
+Checkpoints — the vault at fixed blocks
+  STATE  = historical state read from a node (most free nodes keep it only for recent blocks)
+  EVENTS = derived from event logs, when no node asked keeps the state
+  block 223539782: setup done, vault funded
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 10,000
+  OK   STATE (5611.rpc.thirdweb.com) vault limit left today (eUSD) = 1,000
+  block 223539942: right after the agent's 50 eUSD payment
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,950
+  OK   STATE (5611.rpc.thirdweb.com) vault limit left today (eUSD) = 950
+  OK   STATE (5611.rpc.thirdweb.com) agent session budget left (eUSD) = 50
+  block 223540103: after all 5 attacks (nothing moved)
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 223540212: one block before the panic
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 223540213: panic block
+  OK   STATE (5611.rpc.thirdweb.com) paused = True
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 223541655: one block before the timelocked unpause
+  OK   STATE (5611.rpc.thirdweb.com) paused = True
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 223541656: unpause block
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,950
+  block 223541667: right after the new session's 10 eUSD payment
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,940
+  OK   STATE (5611.rpc.thirdweb.com) agent session budget left (eUSD) = 90
+  block 223541702: after the old session's attempt (nothing moved)
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,940
+  block 223542034: after the attacker's attempt (nothing moved, still unpaused)
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,940
+  block 223542276: after the guardian's evacuation attempt (nothing moved)
+  OK   STATE (5611.rpc.thirdweb.com) paused = False
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 9,940
+  block 223542393: after the evacuation: everything in the owner's cold wallet, the vault paused
+  OK   STATE (5611.rpc.thirdweb.com) paused = True
+  OK   STATE (5611.rpc.thirdweb.com) implementation = implementation
+  OK   STATE (5611.rpc.thirdweb.com) vault eUSD balance = 0
+
+Attack windows (vault balance before the first and after the last attack)
+  OK   STATE (5611.rpc.thirdweb.com) attacks 4a-4e: blocks 223539942..223540103, 9,950 -> 9,950 eUSD, moved out: 0
+  OK   STATE (5611.rpc.thirdweb.com) old-session attempt 6f: blocks 223541667..223541702, 9,940 -> 9,940 eUSD, moved out: 0
+  OK   STATE (5611.rpc.thirdweb.com) stolen admin key W1-W3: blocks 223541884..223542034, 9,940 -> 9,940 eUSD, moved out: 0
+  OK   STATE (5611.rpc.thirdweb.com) cold-wallet redirect and guardian evacuation E1-E4: blocks 223542144..223542276, 9,940 -> 9,940 eUSD, moved out: 0
+
+Demo vault now
+  implementation implementation (0x73a79604bc39b1f6b57cc68159ee3fc041ac7dd9), vaultVersion 20300
+  paused: True
+  eUSD balance: 0
+
+Rejection reasons proven by execution trace (STRICT): 0, by historical replay (REPLAY): 9
+Answers per node: opbnb-testnet-rpc.bnbchain.org 92, 5611.rpc.thirdweb.com 54, opbnb-testnet.publicnode.com 0
+RESULT: 150 checks OK, 0 mismatches, 0 not checkable, 0 need an archive node (OLD: history no node asked still keeps) — everything checkable matches the evidence

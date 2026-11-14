@@ -1,23 +1,30 @@
 # SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
-"""Write deployments/bsc-testnet/epk-v2-evidence.json — the machine-readable claims of the EPK demo on BSC Testnet
+"""Write deployments/<network>/epk-v2-evidence.json — the machine-readable claims of the EPK demo on a test network
 (vault on the current EPKVault release, agent session, attacks, panic and recovery, stolen admin key vs the
 Watchtower, emergency evacuation to the owner's cold wallet) — from
 the deployment / run files, the mined receipts and the vault's state at fixed blocks.
 
+Usage: python scripts/v2/build_demo_evidence.py [--network bsc-testnet|opbnb-testnet]   (default bsc-testnet)
+
 Every claim is then re-checked against the chain by:
-    python scripts/v2/verify_evidence.py
+    python scripts/v2/verify_evidence.py [--network ...]
 
 Checkpoint values are read from the chain at their blocks and must equal what the demo did (10,000 eUSD funded,
 50 paid, 10 paid, ...): the builder stops if any differs.
 """
 import json
+import os
 import sys
 from decimal import Decimal
 
 sys.path.insert(0, "scripts/v2")
-from verify_evidence import NODES, Chain, keccak, selector, topic0  # noqa: E402  (pure Python, no packages)
+import verify_evidence as ve  # noqa: E402  (pure Python, no packages)
+from verify_evidence import Chain, keccak, selector, topic0  # noqa: E402
 
-D = "deployments/bsc-testnet"
+NETWORK = sys.argv[sys.argv.index("--network") + 1] if "--network" in sys.argv else "bsc-testnet"
+ve.use_network(NETWORK)
+NODES = ve.NODES
+D = f"deployments/{NETWORK}"
 OUT = f"{D}/epk-v2-evidence.json"
 IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
 chain = Chain(NODES)
@@ -25,7 +32,7 @@ E18 = 10 ** 18
 
 
 def broadcast(script, sig="run"):
-    return json.load(open(f"broadcast/{script}/97/{sig}-latest.json"))["transactions"]
+    return json.load(open(f"broadcast/{script}/{ve.NETWORK['chainId']}/{sig}-latest.json"))["transactions"]
 
 
 def pad(v):
@@ -39,7 +46,9 @@ def by_selector(txs, sig):
 
 def main():
     core = json.load(open(f"{D}/epk-v2.json"))
-    rel = json.load(open(f"{D}/epk-release.json"))
+    # BSC Testnet: the release went out to an existing registry (epk-release.json); a new network gets the
+    # whole stack at once (DeployStack.s.sol), so its record holds the release too
+    rel = json.load(open(f"{D}/epk-release.json")) if os.path.exists(f"{D}/epk-release.json") else core
     vtext = f"{rel['version'] // 10000}.{rel['version'] // 100 % 100}.{rel['version'] % 100}"
     v = json.load(open(f"{D}/epk-v2-vault.json"))
     attacks = json.load(open(f"{D}/epk-v2-attacks.json"))
@@ -242,11 +251,11 @@ def main():
         {"label": "cold-wallet redirect and guardian evacuation E1-E4", "fromBlock": by_step["E1"] - 1, "toBlock": by_step["E4"]},
     ]
     ev = {
-        "about": f"Machine-readable claims of the EPK demo on BSC Testnet: a vault on EPKVault {vtext} created through the "
+        "about": f"Machine-readable claims of the EPK demo on {ve.NETWORK['name']}: a vault on EPKVault {vtext} created through the "
                  "public factory, an AI-agent session, rejected attacks, panic and timelocked recovery, a stolen admin key stopped "
                  "by the Watchtower, and an emergency evacuation to the owner's cold wallet. scripts/v2/verify_evidence.py checks every claim against the chain. Amounts are in eUSD "
                  "(18 decimals). Testnet only; not audited.",
-        "chainId": 97,
+        "chainId": ve.NETWORK["chainId"],
         "contracts": contracts,
         "roles": roles,
         "sessions": sessions,

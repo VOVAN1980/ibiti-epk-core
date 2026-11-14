@@ -12,6 +12,7 @@ library EPKChains {
     function isTestChain() internal view returns (bool) {
         uint256 id = block.chainid;
         return id == 97 // BNB Smart Chain Testnet
+            || id == 5611 // opBNB Testnet
             || id == 11155111; // Ethereum Sepolia
     }
 }

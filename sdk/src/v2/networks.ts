@@ -3,9 +3,9 @@ import type { Address } from "viem";
 /**
  * Public EPK deployments and well-known contracts per network.
  *
- * BSC Testnet: an EPK factory anyone can use to create their own vault (you become its admin) — new vaults start
+ * BSC Testnet and opBNB Testnet: an EPK factory anyone can use to create their own vault (you become its admin) — new vaults start
  * on EPKVault 2.3.0 and opt into later releases of the same registry — on the test-network rules (5-minute
- * release window and upgrade wait — the same code runs with production delays on mainnets). Plus the
+ * release window and upgrade wait — the same code runs with production delays on mainnets). On BSC Testnet also the
  * PancakeSwap V2 testnet router, WBNB and Chainlink testnet feeds for DexGuard configs.
  * Testnet only — EPK is not audited and not deployed on any mainnet.
  */
@@ -38,6 +38,15 @@ export const networks = {
       dexGuard: "0x1FC77bbe5947687e4094b0cD8842b6C7d4485C31" as Address,
       threatFeed: "0xC30d44F5c87c91d8a5EF3942546Ee478abD40815" as Address,
       compositeGuard: "0xc46373543fA89c36D6Eca1455A28C3FDbCCc3C0B" as Address,
+    },
+  },
+  opbnbTestnet: {
+    chainId: 5611,
+    epk: {
+      factory: "0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4" as Address,
+      registry: "0x81Ac99466291D2324bf459c7345F5506D9b90158" as Address,
+      /** EPKVault 2.3.0, the implementation new vaults run (the registry's genesis release) */
+      implementation: "0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9" as Address,
     },
   },
 } as const;

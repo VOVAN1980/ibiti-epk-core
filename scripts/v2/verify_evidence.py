@@ -4,12 +4,13 @@
 Usage (from the repo root; Python 3.8+ only — no Foundry, no keys, no packages):
     python scripts/v2/verify_evidence.py [--rpc-url URL[,URL...]] [--build]
     python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-guards-evidence.json --doc docs/TESTNET_GUARDS.md
+    python scripts/v2/verify_evidence.py --network opbnb-testnet     (the same demo on opBNB Testnet)
 
 The claims live in deployments/bsc-testnet/epk-v2-evidence.json (and, for people, in
 docs/TESTNET_V2.md — the script first checks that both list the same transactions and contracts).
-A public BSC Testnet node is then asked:
+A public node of that network (BSC Testnet by default, or the one chosen with --network) is then asked:
 
-  network       chainId must be 97;
+  network       chainId must be the network's (97 BSC Testnet, 5611 opBNB Testnet);
   code          every contract has code; its keccak256 code hash is printed; for vault
                 implementations the hash must equal the one pinned in EPKRegistry, and the
                 demo vault's EIP-1967 slot must point to the claimed implementation;
@@ -51,7 +52,29 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
-# Free public BSC Testnet nodes, asked in this order (tested 2026-11-08; all allow browser requests):
+# Free public nodes of each test network, asked in this order (all allow browser requests). --network picks one;
+# the default is BSC Testnet. Neither network has a free node that traces old transactions.
+NETWORKS = {
+    "bsc-testnet": {  # tested 2026-11-08
+        "name": "BSC Testnet", "chainId": 97, "explorer": "testnet.bscscan.com", "doc": "docs/TESTNET_V2.md",
+        "nodes": [
+            "https://bsc-testnet.bnbchain.org",        # BNB Chain's own node: every transaction, but only the latest state, no logs
+            "https://97.rpc.thirdweb.com",             # keeps old state and event logs (archive); strict rate limit, so asked second
+            "https://bsc-testnet-rpc.publicnode.com",  # state of the last hour or so; drops transactions after about a day
+        ],
+        "trace": "https://data-seed-prebsc-1-s1.binance.org:8545",  # traces recent transactions only
+    },
+    "opbnb-testnet": {  # tested 2026-11-14
+        "name": "opBNB Testnet", "chainId": 5611, "explorer": "testnet.opbnbscan.com", "doc": "docs/TESTNET_OPBNB.md",
+        "nodes": [
+            "https://opbnb-testnet-rpc.bnbchain.org",  # BNB Chain's own node: transactions and logs, recent state only
+            "https://5611.rpc.thirdweb.com",           # keeps old state (archive); logs only over 1,000 blocks at a time
+            "https://opbnb-testnet.publicnode.com",    # recent state and logs
+        ],
+        "trace": None,  # no free opBNB node offers debug_traceTransaction: rejections are proven by REPLAY
+    },
+}
+NETWORK = NETWORKS["bsc-testnet"]
 NODES = [
     "https://bsc-testnet.bnbchain.org",        # BNB Chain's own node: every transaction, but only the latest state, no logs
     "https://97.rpc.thirdweb.com",             # keeps old state and event logs (archive); strict rate limit, so asked second
@@ -62,6 +85,15 @@ TRACES = "deployments/bsc-testnet/traces"
 ARCHIVE_DIR = "deployments/bsc-testnet/verification"
 EVIDENCE = "deployments/bsc-testnet/epk-v2-evidence.json"
 DOC = "docs/TESTNET_V2.md"
+
+
+def use_network(key):
+    """Point the module-level settings (nodes, trace node, files) at one test network."""
+    global NETWORK, NODES, TRACE_RPC, TRACES, ARCHIVE_DIR, EVIDENCE, DOC
+    NETWORK = NETWORKS[key]
+    NODES, TRACE_RPC = list(NETWORK["nodes"]), NETWORK["trace"]
+    TRACES, ARCHIVE_DIR = f"deployments/{key}/traces", f"deployments/{key}/verification"
+    EVIDENCE, DOC = f"deployments/{key}/epk-v2-evidence.json", NETWORK["doc"]
 IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"  # EIP-1967
 
 # ---------------------------------------------------------------------------------------------
@@ -337,6 +369,8 @@ class Report:
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
+    if "--network" in sys.argv:
+        use_network(sys.argv[sys.argv.index("--network") + 1])
     urls = [u.strip() for u in sys.argv[sys.argv.index("--rpc-url") + 1].split(",") if u.strip()] if "--rpc-url" in sys.argv else NODES
     trace_url = sys.argv[sys.argv.index("--trace-rpc") + 1] if "--trace-rpc" in sys.argv else TRACE_RPC
     build, save_traces = "--build" in sys.argv, "--save-traces" in sys.argv
@@ -354,7 +388,8 @@ def main():
     names = {a.lower(): k for k, a in {**C, **roles}.items()}
     archive = sys.argv[sys.argv.index("--archive") + 1] if "--archive" in sys.argv else None
     record = [] if archive else None
-    chain, tracer, rep = Chain(urls, record), Chain([trace_url], record), Report()
+    chain, rep = Chain(urls, record), Report()
+    tracer = Chain([trace_url], record) if trace_url else None  # opBNB: no free trace node
 
     def show_error(sig, data):
         types = [] if sig.endswith("()") else sig[sig.index("(") + 1:-1].split(",")
@@ -384,7 +419,7 @@ def main():
     # ---- network ---------------------------------------------------------------------------
     print("\nNetwork")
     cid = int(chain("eth_chainId"), 16)
-    if not rep.line(cid == ev["chainId"], f"chainId {cid} (expected {ev['chainId']}, BSC Testnet)"):
+    if not rep.line(cid == ev["chainId"], f"chainId {cid} (expected {ev['chainId']}, {NETWORK['name']})"):
         print("\nRESULT: wrong network — stopping.")
         sys.exit(1)
 
@@ -444,7 +479,7 @@ def main():
         head = f"{t['step']:<3} {t['tx'][:12]}...  {t['what']}"
         if not tx or not rc:
             rep.line(None, f"{head}: no node asked still returns this transaction (public nodes drop old ones) — "
-                           f"check it on testnet.bscscan.com or put an archive node first (--rpc-url)", pruned=True)
+                           f"check it on {NETWORK['explorer']} or put an archive node first (--rpc-url)", pruned=True)
             continue
         receipts.append(rc)
         found_on = chain.last
@@ -478,6 +513,8 @@ def main():
             # 1) STRICT: the execution trace of the original transaction
             trace, source, path = None, "", f"{TRACES}/{t['tx'].lower()}.json"
             try:
+                if tracer is None:
+                    raise OSError("no trace node for this network")
                 trace, source = tracer("debug_traceTransaction", t["tx"], {"tracer": "callTracer"}), f"live trace from {trace_url}"
                 if save_traces and not os.path.exists(path):
                     os.makedirs(TRACES, exist_ok=True)
@@ -619,7 +656,7 @@ def main():
              "MISMATCH, see BAD lines" if rep.bad else "incomplete, see SKIP lines"))
     if archive:
         os.makedirs(os.path.dirname(archive) or ".", exist_ok=True)
-        json.dump({"about": "Raw JSON-RPC answers used by verify_evidence.py, kept in case public nodes drop BSC "
+        json.dump({"about": "Raw JSON-RPC answers used by verify_evidence.py, kept in case public nodes drop "
                             "Testnet history. A snapshot for reference, not a substitute for re-checking.",
                    "capturedAt": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
                    "result": {"ok": rep.ok, "bad": rep.bad, "skip": rep.skip, "needArchiveNode": rep.pruned}, "calls": record},

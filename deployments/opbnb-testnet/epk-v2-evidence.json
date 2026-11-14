@@ -1,0 +1,581 @@
+{
+ "about": "Machine-readable claims of the EPK demo on opBNB Testnet: a vault on EPKVault 2.3.0 created through the public factory, an AI-agent session, rejected attacks, panic and timelocked recovery, a stolen admin key stopped by the Watchtower, and an emergency evacuation to the owner's cold wallet. scripts/v2/verify_evidence.py checks every claim against the chain. Amounts are in eUSD (18 decimals). Testnet only; not audited.",
+ "chainId": 5611,
+ "contracts": {
+  "implementation": {
+   "address": "0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9",
+   "label": "EPKVault 2.3.0 implementation",
+   "codeHash": "0xeb9a1b769ef5ef45f00a6904d7e86b5f40debfba9de5c6bbc6e785e32c9b8d9d",
+   "artifact": "out/EPKVault.sol/EPKVault.json",
+   "pinnedInRegistry": true,
+   "vaultVersion": 20300
+  },
+  "emergencyModule": {
+   "address": "0xF3939aEB10FDa58216d14Cd86de892Bc538Fa9F6",
+   "label": "EPKVaultEmergency \u2014 the 2.3.0 release's emergency module, deployed by the implementation",
+   "codeHash": "0x01966200e98cb9a63c501a90d72512762d9f3556cffe1e82be8332d79f46d97b",
+   "artifact": "out/EPKVault.sol/EPKVaultEmergency.json"
+  },
+  "registry": {
+   "address": "0x81Ac99466291D2324bf459c7345F5506D9b90158",
+   "label": "EPKRegistry (5-minute test-network release window)",
+   "codeHash": "0x7fdfb3b9e7ab119c11636680c5487e9201ab2ddd3f4f684c00e5441ea3b79ac2"
+  },
+  "factory": {
+   "address": "0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4",
+   "label": "EPKVaultFactory for 2.3.0 \u2014 the SDK's public factory",
+   "codeHash": "0x03c786129e8b937e620faf3400c05590d4aee10a88efe692cd88dc7d97e312b5",
+   "artifact": "out/EPKVaultFactory.sol/EPKVaultFactory.json"
+  },
+  "token": {
+   "address": "0xD0F6C69aD004230b4383B72Dc848701e566BeA7C",
+   "label": "EPK Demo USD (eUSD) test token",
+   "codeHash": "0x19924fc3fb9ecd5e9e95520f540e7f079585c9f0e8587dff14106a80d64aa7ae"
+  },
+  "vault": {
+   "address": "0x3CaF011091f0dA6eE432d73678a86957057AFa5b",
+   "label": "Demo vault (customer proxy)",
+   "codeHash": "0x792c0657785a10fe2d37e4ad3bd0d1e5155ef42db51882ad7bccb35ce59b969d",
+   "artifact": "out/EPKVaultFactory.sol/EPKVaultProxy.json",
+   "proxyImplementation": "implementation",
+   "createdAtBlock": 223539741
+  }
+ },
+ "roles": {
+  "admin": "0xA2BD166173925E5b8E640f091b0f3bEcBbBE15f8",
+  "guardian1": "0xcD3951cDfaB38c628a7396812c78C7F3d7C35f70",
+  "guardian2": "0xD1e73f683515D4A7a26D06AD6b0c64C62d4C7Fa0",
+  "recovery": "0x858CD2931f1b4aFd83b4ef4f2b2cC6EA964AB41C",
+  "sessionManager": "0xbb99385fcf813F59d86d53F454755D48D019f862",
+  "agent": "0xcC3b10e3FcBFc15a0B7942B6f06A7c5efB3fde16",
+  "coldWallet": "0x85d4f59F0466eD56D0E7567B3e4ed100e61b3289"
+ },
+ "sessions": {
+  "demo": "340282366920938463463374607431768211456",
+  "recovery": "340282366920938463463374607431768211457"
+ },
+ "transactions": [
+  {
+   "step": "1",
+   "what": "admin creates the demo vault through the public 2.3.0 factory (5-minute timelock, the owner's cold wallet registered)",
+   "tx": "0x207f26e92c2c68d989c9de5e10ef52b7d273ae26d768cc1b1cd321bdca3480b3",
+   "from": "admin",
+   "to": "factory",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "factory",
+     "event": "VaultCreated(address,address,uint256,address)",
+     "indexed": [
+      "vault",
+      "admin"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "2",
+   "what": "setup finalized: 1,000 eUSD/day vault limit, 100 eUSD/day per agent session, only the treasury allowed",
+   "tx": "0xd1700b202720b04f6e25890beb45dc0be10f52529fe9bf9a642b560e2a84ef4a",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SetupFinalized()"
+    }
+   ]
+  },
+  {
+   "step": "3a",
+   "what": "session manager opens an AI-agent session (3 days)",
+   "tx": "0x414137ed74cca7704a1616d03f91820cf4fb7116f4bf4b62fd4e63ea1be0c8f6",
+   "from": "sessionManager",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SessionOpened(uint256,uint256,address,address,uint48)",
+     "indexed": [
+      "session:demo",
+      "uint:1",
+      "agent"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "3b",
+   "what": "the agent pays 50 eUSD to the treasury on its own",
+   "tx": "0xf4434f9e77b909dc243872e741af55c9bce1ffac143f03c6a69688922306cb7c",
+   "from": "agent",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Executed(uint256,address,address,uint256,uint256)",
+     "indexed": [
+      "session:demo",
+      "agent",
+      "agent"
+     ]
+    },
+    {
+     "emitter": "vault",
+     "event": "Outflow(address,uint256,uint256)",
+     "indexed": [
+      "token"
+     ],
+     "data": [
+      "50",
+      "950"
+     ]
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "vault",
+      "admin"
+     ],
+     "data": [
+      "50"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "4a",
+   "what": "agent pays 60 eUSD with 50 left in its budget",
+   "tx": "0x556fc537ddd3abe566c3da3e77b1dbe5720c79c4b777c7be776b01e07a88abae",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "BudgetExceeded(address,uint256,uint256)"
+  },
+  {
+   "step": "4b",
+   "what": "agent pays to a non-allowlisted address",
+   "tx": "0x58c98cf5fb733d2ce66163fffd5eac6fb95ec2a7c36aac25abe61fe367fa6ba9",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "DestinationNotAllowed(address)"
+  },
+  {
+   "step": "4c",
+   "what": "agent calls approve (not in its envelope)",
+   "tx": "0xa0e8426b152d7d8c06921f5d768b7c15cc8940a06cd8553619b0e5f0697a9996",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "CallNotAllowed()"
+  },
+  {
+   "step": "4d",
+   "what": "batch signed by a key that is not the session key",
+   "tx": "0x9dcb98acfb195681021f1a7e2e8e263d1ccc7d7a702afab7546dfb6fc99050f2",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "BadSignature()"
+  },
+  {
+   "step": "4e",
+   "what": "a stranger submits the agent's valid signature",
+   "tx": "0x9ebdbed58e973dc4e2f39d14b540bf1ac360fa3d264812be9281a62da34c2fa5",
+   "from": "guardian2",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "AgentNotAllowed()"
+  },
+  {
+   "step": "5a",
+   "what": "a guardian presses panic: everything stops at once",
+   "tx": "0x20494ed45d1d602ca1f87d58aa399fa10c1459ceb3a3e6ec6c1a66f693482017",
+   "from": "guardian1",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Paused(address)",
+     "indexed": [
+      "guardian1"
+     ]
+    },
+    {
+     "emitter": "vault",
+     "event": "EpochBumped(uint64,address)",
+     "indexed": [
+      "guardian1"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "5b",
+   "what": "admin schedules unpause through the timelock (5 minutes on test networks)",
+   "tx": "0xd276f1f04f7aef4450405d70510d58a30db93694d6e46726710311929dbdc8bd",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)"
+    }
+   ]
+  },
+  {
+   "step": "6a",
+   "what": "admin executes the timelocked unpause (5 minutes after the panic)",
+   "tx": "0xfb24c085d76eaedfdf796aa5a9723de14e23c867d97b47d93e4479d8ded8b547",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Unpaused()"
+    },
+    {
+     "emitter": "vault",
+     "event": "OperationExecuted(bytes32)"
+    }
+   ]
+  },
+  {
+   "step": "6b",
+   "what": "session manager opens a new agent session",
+   "tx": "0xdf8152cb33c0240b549e5b3503e4b1fce5b3df5423a1e5e40e9b362ab3a6af61",
+   "from": "sessionManager",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SessionOpened(uint256,uint256,address,address,uint48)",
+     "indexed": [
+      "session:recovery",
+      "uint:1",
+      "agent"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "6c",
+   "what": "the agent pays 10 eUSD through the new session",
+   "tx": "0xd5ce333362cc1d6a99839d9ff51b5d350e1a92af8ca09aa7c66c46672ae63d0d",
+   "from": "agent",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Executed(uint256,address,address,uint256,uint256)",
+     "indexed": [
+      "session:recovery",
+      "agent",
+      "agent"
+     ]
+    },
+    {
+     "emitter": "vault",
+     "event": "Outflow(address,uint256,uint256)",
+     "indexed": [
+      "token"
+     ],
+     "data": [
+      "10"
+     ]
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "vault",
+      "admin"
+     ],
+     "data": [
+      "10"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "6f",
+   "what": "the agent tries to pay through the old (pre-panic) session",
+   "tx": "0x90f60c12bb8017da00ec2f4db1a3dc2e1e9d3b74869a1d77c35192741719c67f",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "PolicyInactive()"
+  },
+  {
+   "step": "W1",
+   "what": "attacker with the stolen admin key schedules addDestination(0xBAD1)",
+   "tx": "0xc1a95c92f5fa7ab9ef405b03d5a57f9713375ece08c63b31ecf8715526a5863d",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)",
+     "indexed": [
+      "0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6",
+      "admin"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "W2",
+   "what": "the Watchtower (guardian2 key) cancels it, 21 blocks later",
+   "tx": "0x33f8662bf10de7e7572254a1a9dfab75e1914fc0401ea6552ea0337e4958d145",
+   "from": "guardian2",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "OperationCancelled(bytes32,address)",
+     "indexed": [
+      "0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6",
+      "guardian2"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "W3",
+   "what": "attacker tries to execute the change anyway",
+   "tx": "0xf6a58ec4f8cbaa7e047c10afe091cff46ce878af534e20f05950d90fa07135dd",
+   "from": "admin",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "UnknownOperation()"
+  },
+  {
+   "step": "E1",
+   "what": "attacker with the stolen admin key schedules setColdWallet(0xBAD2) \u2014 so that an evacuation would pay them",
+   "tx": "0x6bab9361705bff2445550798407614040a74b1eafbf7e6c71aad09a738702c3c",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "OperationScheduled(bytes32,bytes,bytes32,uint64,address)",
+     "indexed": [
+      "0x182843f3c0ff13222a3ff72ec63318009d906acc9019ca63f1aace40062171fe",
+      "admin"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "E2",
+   "what": "the Watchtower (guardian2 key) cancels it, 25 blocks later",
+   "tx": "0x96b1bdf98c31bf7ec6e07d1a84da86589d4c01825fa05186f2fa0fb2af37fb42",
+   "from": "guardian2",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "OperationCancelled(bytes32,address)",
+     "indexed": [
+      "0x182843f3c0ff13222a3ff72ec63318009d906acc9019ca63f1aace40062171fe",
+      "guardian2"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "E3",
+   "what": "attacker tries to execute the cold-wallet change anyway",
+   "tx": "0xcea807426ad738db920636620c96e048c5755bfa3fee08dbab614b3ecb343b5e",
+   "from": "admin",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "UnknownOperation()"
+  },
+  {
+   "step": "E4",
+   "what": "a guardian tries to evacuate \u2014 guardians stop, they never move funds",
+   "tx": "0x17047348d61fb49169633e56b2bec2a50667a64ab2f3ba0403b5ad7a36dc98df",
+   "from": "guardian1",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "NotEvacuator()"
+  },
+  {
+   "step": "E5",
+   "what": "the owner's recovery key evacuates everything to the cold wallet registered at setup (and pauses the vault)",
+   "tx": "0x3b9b7406c3256f02813a769edb649ef9ad4017676b8e0a7da1bbb56097bcffde",
+   "from": "recovery",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Paused(address)",
+     "indexed": [
+      "recovery"
+     ]
+    },
+    {
+     "emitter": "vault",
+     "event": "EpochBumped(uint64,address)",
+     "indexed": [
+      "recovery"
+     ]
+    },
+    {
+     "emitter": "vault",
+     "event": "Evacuated(address,uint256,address,address)",
+     "indexed": [
+      "token",
+      "coldWallet",
+      "recovery"
+     ],
+     "data": [
+      "9940"
+     ]
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "vault",
+      "coldWallet"
+     ],
+     "data": [
+      "9940"
+     ]
+    }
+   ]
+  }
+ ],
+ "checkpoints": [
+  {
+   "label": "setup done, vault funded",
+   "block": 223539782,
+   "paused": false,
+   "implementation": "implementation",
+   "eUSD": "10000",
+   "vaultLimitLeft": "1000"
+  },
+  {
+   "label": "right after the agent's 50 eUSD payment",
+   "block": 223539942,
+   "paused": false,
+   "implementation": "implementation",
+   "eUSD": "9950",
+   "vaultLimitLeft": "950",
+   "sessionBudgetLeft": {
+    "session": "demo",
+    "value": "50"
+   }
+  },
+  {
+   "label": "after all 5 attacks (nothing moved)",
+   "block": 223540103,
+   "paused": false,
+   "implementation": "implementation",
+   "eUSD": "9950"
+  },
+  {
+   "label": "one block before the panic",
+   "block": 223540212,
+   "paused": false,
+   "eUSD": "9950"
+  },
+  {
+   "label": "panic block",
+   "block": 223540213,
+   "paused": true,
+   "implementation": "implementation",
+   "eUSD": "9950"
+  },
+  {
+   "label": "one block before the timelocked unpause",
+   "block": 223541655,
+   "paused": true,
+   "eUSD": "9950"
+  },
+  {
+   "label": "unpause block",
+   "block": 223541656,
+   "paused": false,
+   "implementation": "implementation",
+   "eUSD": "9950"
+  },
+  {
+   "label": "right after the new session's 10 eUSD payment",
+   "block": 223541667,
+   "paused": false,
+   "implementation": "implementation",
+   "eUSD": "9940",
+   "sessionBudgetLeft": {
+    "session": "recovery",
+    "value": "90"
+   }
+  },
+  {
+   "label": "after the old session's attempt (nothing moved)",
+   "block": 223541702,
+   "paused": false,
+   "eUSD": "9940"
+  },
+  {
+   "label": "after the attacker's attempt (nothing moved, still unpaused)",
+   "block": 223542034,
+   "paused": false,
+   "implementation": "implementation",
+   "eUSD": "9940"
+  },
+  {
+   "label": "after the guardian's evacuation attempt (nothing moved)",
+   "block": 223542276,
+   "paused": false,
+   "implementation": "implementation",
+   "eUSD": "9940"
+  },
+  {
+   "label": "after the evacuation: everything in the owner's cold wallet, the vault paused",
+   "block": 223542393,
+   "paused": true,
+   "implementation": "implementation",
+   "eUSD": "0"
+  }
+ ],
+ "attackWindows": [
+  {
+   "label": "attacks 4a-4e",
+   "fromBlock": 223539942,
+   "toBlock": 223540103
+  },
+  {
+   "label": "old-session attempt 6f",
+   "fromBlock": 223541667,
+   "toBlock": 223541702
+  },
+  {
+   "label": "stolen admin key W1-W3",
+   "fromBlock": 223541884,
+   "toBlock": 223542034
+  },
+  {
+   "label": "cold-wallet redirect and guardian evacuation E1-E4",
+   "fromBlock": 223542144,
+   "toBlock": 223542276
+  }
+ ]
+}

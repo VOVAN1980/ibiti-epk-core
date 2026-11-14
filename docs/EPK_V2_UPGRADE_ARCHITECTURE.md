@@ -78,7 +78,7 @@ Tests: `test/v2/EPKVault.upgrade.t.sol`. Storage snapshots: `docs/storage-layout
 6. Address, funds, roles, policies, nonces, limits stay. **Ordinary operations still pending from the old release become stale** and must be scheduled again under the new rules; recovery operations and shielded guardian changes survive.
 
 **Public test networks (from 2.1.0, `contracts/v2/EPKChains.sol`).** The same code uses minute-scale
-delays on BNB Smart Chain Testnet (97) and Ethereum Sepolia (11155111): release window 5 minutes, upgrade
+delays on BNB Smart Chain Testnet (97), opBNB Testnet (5611) and Ethereum Sepolia (11155111): release window 5 minutes, upgrade
 wait 5 minutes (in parallel), so a full release → schedule → upgrade cycle is testable in about 5 minutes.
 Every other chain — every mainnet, unknown chains and local test chains (31337) — gets the production delays
 (7 days, 2-day floor, 1-hour minimum timelock), so the test suite always exercises the real rules. Existing

@@ -37,5 +37,7 @@ media/
 
 # Watchtower runtime files (local alert log and state)
 watchtower/alerts.log
+watchtower/alerts.*.log
 watchtower/state.json
+watchtower/state.*.json
 watchtower/__pycache__/
