@@ -1,0 +1,208 @@
+EPK v2 evidence check — nodes, asked in this order (the next one only when a node has no answer):
+  1. https://opbnb-testnet-rpc.bnbchain.org
+  2. https://5611.rpc.thirdweb.com
+  3. https://opbnb-testnet.publicnode.com
+
+Network
+  OK   chainId 5611 (expected 5611, opBNB Testnet)
+
+Document vs evidence file
+  OK   docs/TESTNET_OPBNB_GUARDS.md and deployments/opbnb-testnet/epk-guards-evidence.json list the same 25 transactions
+  OK   every contract linked in the document is in the evidence file
+
+Contracts and bytecode
+  OK   0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9  EPKVault 2.3.0 implementation (the current public release): has code (24,408 bytes)
+  OK   code hash 0xeb9a1b769ef5ef45f00a6904d7e86b5f40debfba9de5c6bbc6e785e32c9b8d9d = recorded 0xeb9a1b769e...
+  OK   registry pins this exact code hash (version 20300, revoked: False)
+         usable by vaults from 2026-11-14 22:10 UTC
+  OK   vaultVersion() = 20300 (claimed 20300)
+  OK   0x81Ac99466291D2324bf459c7345F5506D9b90158  EPKRegistry of the public stack (5-minute test-network release window): has code (2,197 bytes)
+  OK   code hash 0x7fdfb3b9e7ab119c11636680c5487e9201ab2ddd3f4f684c00e5441ea3b79ac2 = recorded 0x7fdfb3b9e7...
+  OK   0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4  EPKVaultFactory for 2.3.0 — the SDK's public factory: has code (2,331 bytes)
+  OK   code hash 0x03c786129e8b937e620faf3400c05590d4aee10a88efe692cd88dc7d97e312b5 = recorded 0x03c786129e...
+  OK   0x9390c190E3E1d900C7B7EbA197f8c6AF89B9949E  EPKVault 2.3.0 guard demo vault (proxy): has code (137 bytes)
+  OK   code hash 0x792c0657785a10fe2d37e4ad3bd0d1e5155ef42db51882ad7bccb35ce59b969d = recorded 0x792c065778...
+  OK   EIP-1967 implementation slot -> implementation (0x73a79604bc39b1f6b57cc68159ee3fc041ac7dd9)
+  OK   0xaD87B7Aea8F1139327A77EbB2203BC0B9640431C  DexGuard (with the 2026-11-08 fixes): has code (8,694 bytes)
+  OK   code hash 0xc2d2f5b01ae360b189e26eb1d462ffc0157a45835ba8f4e0dcb59cb0609d1c88 = recorded 0xc2d2f5b01a...
+  OK   0xFe700A2445aE2c85Dd656FFA4cD73F5D0A4C4215  ThreatFeed V2 (ThreatFeedGuard): has code (3,253 bytes)
+  OK   code hash 0x87f45e0da8210e753391a3ba986da0eef4cbb884cb19c53eb60ac336a607878d = recorded 0x87f45e0da8...
+  OK   0x327274073da2dCac166F20E68e2e7fD2fA15EDba  CompositeGuard (ThreatFeed V2 + DexGuard): has code (3,155 bytes)
+  OK   code hash 0xec580d16860a86cd22d1fca9775c64d1c40239c209e3e48fd241238d0a9f967b = recorded 0xec580d1686...
+  OK   0xf8008FE1bD26792cCC286e5D41394470e510E239  DexGuard on the official opBNB oracle (Binance Oracle BNB / USD), same rules: has code (8,694 bytes)
+  OK   code hash 0xc2d2f5b01ae360b189e26eb1d462ffc0157a45835ba8f4e0dcb59cb0609d1c88 = recorded 0xc2d2f5b01a...
+  OK   0xE3F4897CB9dC4b7FE980f81eFC997CDB9AE93Fa4  tUSD — the guard demo's test stablecoin (only the demo admin can mint): has code (1,912 bytes)
+  OK   code hash 0x20b2fb33b28d1ea360129475cbeb58c4488a71d8676777a9e4237acd673f8b70 = recorded 0x20b2fb33b2...
+  OK   0x24E861F67180be06A65eF95874404D13FA9631F3  fixed $1 test feed for tUSD: has code (656 bytes)
+  OK   code hash 0x5fa00845e589650bb7923507d7cca1cf5b9d7ad696dcebebcb0b02dcb6fb1c9f = recorded 0x5fa00845e5...
+  OK   reports the fixed price 1.00000000 USD (8 decimals)
+  OK   0x38E841A9d917f8c7488A535Cf89c0F683D177027  fixed BNB / USD test price, $578.49: copied from Chainlink BNB / USD on BSC Testnet (opBNB has no Chainlink feeds): has code (656 bytes)
+  OK   code hash 0x151cbc4e702c2ca18be40b50e9568a540361193df223fd95cee2a29011d8c4a0 = recorded 0x151cbc4e70...
+  OK   reports the fixed price 578.49170663 USD (8 decimals)
+  OK   = the answer of round 36893488147419194612 of Chainlink BNB / USD (0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526, BSC Testnet)
+  OK   0x62FF25CFD64E55673168c3656f4902bD7Aa5F0f4  PancakeSwap V2 router (opBNB Testnet, not ours): has code (21,990 bytes)
+  OK   code hash 0xd865ef7d9b837c8a212bd27a632e3609da1959767100555e3885fa5d6f08fcc1 = recorded 0xd865ef7d9b...
+  OK   0x8756a9cefff678f51e8c06b946a26af2ef52a40d  PancakeSwap tUSD/WBNB pool, created by the demo admin at the test BNB price: has code (11,296 bytes)
+  OK   code hash 0x6c493058c785430443392ae3dbbeb57addfc9c80f223772220c0e3ebbf5f2b86 = recorded 0x6c493058c7...
+  OK   0x73110e8602930f01bb584Bc683C5Aa2Fb4D42419  Binance Oracle BNB / USD feed adapter (opBNB Testnet, not ours): has code (6,914 bytes)
+  OK   code hash 0x943467cdb47fd40f2d221a8ba0aef06fb2311aa466b88ea7aedc7ebb04c69496 = recorded 0x943467cdb4...
+
+Transactions
+  D1  0x09d4892767...  admin creates a tUSD/WBNB pool on PancakeSwap at the test BNB price (0.03 BNB + 17.3547511989 tUSD)
+         block 223578282, 2026-11-15 00:51:37 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to router
+  OK   succeeded on-chain
+  OK   event Transfer from token, amounts 17.3547511989 tUSD
+  D2  0xc4e05fb7b2...  admin creates a new EPKVault 2.3.0 through the PUBLIC 2.3.0 factory (5-minute test-network upgrade clocks)
+         block 223578336, 2026-11-15 00:51:50 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to factory
+  OK   succeeded on-chain
+  OK   event VaultCreated from factory
+  D3  0x83f4a8ab96...  trading policy for the operator key, guarded by ThreatFeed V2 + DexGuard
+         block 223578369, 2026-11-15 00:51:58 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   succeeded on-chain
+  OK   event PolicyUpdated from vault
+  D3b 0x1a4a5955ea...  a second trading policy for the operator key, guarded by the same DEX rules priced by the official opBNB oracle (Binance Oracle BNB / USD)
+         block 223578407, 2026-11-15 00:52:08 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   succeeded on-chain
+  OK   event PolicyUpdated from vault
+  D4  0x1fa5448ac9...  agent-session envelope 1 gets the same guard (envelope 2 stays unguarded on purpose)
+         block 223578479, 2026-11-15 00:52:26 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   succeeded on-chain
+  OK   event EnvelopeGuardSet from vault
+  D5  0x472ed3ef57...  setup finished: from now on every loosening needs the 5-minute timelock
+         block 223578484, 2026-11-15 00:52:27 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   succeeded on-chain
+  OK   event SetupFinalized from vault
+  S1  0xc8e4889b6c...  operator: vault swaps 0.0001 BNB for tUSD on PancakeSwap — at a fair price, output to the vault
+         block 223578726, 2026-11-15 00:53:28 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Outflow from vault, amounts 0.0001 / 0.0019 BNB
+  OK   event Transfer from token, amounts 0.05751331596077293 tUSD
+  S2  0xb02ba8119f...  operator: vault sells 0.05 tUSD for BNB (approve, swap, allowance reset)
+         block 223578736, 2026-11-15 00:53:30 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Transfer from token, amounts 0.05 tUSD
+  S3  0x4ff5c51d17...  operator: vault pays the supplier 1 tUSD (plain payments pass the guards)
+         block 223578740, 2026-11-15 00:53:31 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   succeeded on-chain
+  OK   event Transfer from token, amounts 1 tUSD
+  S4  0xff77185e1b...  session manager opens an AI-agent session in the GUARDED envelope 1
+         block 223578747, 2026-11-15 00:53:33 UTC
+  OK   sent by sessionManager (0x81dc14f9b68a8ad78350815d28b75d78bc81442e) to vault
+  OK   succeeded on-chain
+  OK   event SessionOpened from vault
+  S5  0xecb467699f...  session manager opens an AI-agent session in the UNGUARDED envelope 2
+         block 223578756, 2026-11-15 00:53:35 UTC
+  OK   sent by sessionManager (0x81dc14f9b68a8ad78350815d28b75d78bc81442e) to vault
+  OK   succeeded on-chain
+  OK   event SessionOpened from vault
+  S6  0x8bdb4b56f3...  AI agent, on its own, swaps 0.0001 BNB for tUSD inside the guarded session
+         block 223578761, 2026-11-15 00:53:36 UTC
+  OK   sent by agent (0x602d636dc4ea21ac4a1278cc589e9ab1cfd03201) to vault
+  OK   succeeded on-chain
+  OK   event Executed from vault
+  OK   event Transfer from token, amounts 0.057462722825353936 tUSD
+  A1  0x70eeb90b5d...  operator key signs a swap whose output goes to the attacker
+         block 223578868, 2026-11-15 00:54:03 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 122,347 of 900,000)
+  OK   REPLAY  against the state before block 223578868: reverts with RecipientNotVault(attacker) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223578868 was sent to the vault or the token (this tx is #1 of 3)
+  A2  0x1558d52c52...  operator key signs a swap that accepts any price (minimum out = 1)
+         block 223578898, 2026-11-15 00:54:11 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 141,955 of 900,000)
+  OK   REPLAY  against the state before block 223578898: reverts with PriceTooLow(1, 0.0573 tUSD) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223578898 was sent to the vault or the token (this tx is #1 of 3)
+  A4  0x9c634a29fc...  operator key uses an unsupported router function (fee-on-transfer variant)
+         block 223578931, 2026-11-15 00:54:19 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 116,331 of 900,000)
+  OK   REPLAY  against the state before block 223578931: reverts with UnsupportedCall(router, 0xb6f9de95) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223578931 was sent to the vault or the token (this tx is #1 of 3)
+  A5  0x820db8c991...  operator key signs a swap valid for 2 days (to run later at a worse price)
+         block 223578959, 2026-11-15 00:54:26 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 122,492 of 900,000)
+  OK   REPLAY  against the state before block 223578959: reverts with BadDeadline(1794876826) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223578959 was sent to the vault or the token (this tx is #1 of 3)
+  A6  0x16e3b5f7e4...  operator key approves a non-router (the supplier) to pull tUSD
+         block 223578990, 2026-11-15 00:54:34 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 104,974 of 900,000)
+  OK   REPLAY  against the state before block 223578990: reverts with ApproveToNonRouter(supplier) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223578990 was sent to the vault or the token (this tx is #1 of 3)
+  A7  0x76e194cc9c...  operator key swaps into a token that is not on the guard's list (PancakeSwap's MOCK Token A)
+         block 223579019, 2026-11-15 00:54:41 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 121,869 of 900,000)
+  OK   REPLAY  against the state before block 223579019: reverts with TokenNotAllowed(0x394d64ed40a6af892d8562ee816d5e71d8999e52) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223579019 was sent to the vault or the token (this tx is #1 of 3)
+  A8  0x09b0086f0e...  AI agent (guarded session) sends a swap's output to the attacker
+         block 223579049, 2026-11-15 00:54:48 UTC
+  OK   sent by agent (0x602d636dc4ea21ac4a1278cc589e9ab1cfd03201) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 127,539 of 900,000)
+  OK   REPLAY  against the state before block 223579049: reverts with RecipientNotVault(attacker) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223579049 was sent to the vault or the token (this tx is #1 of 3)
+  A9  0x137d273ff7...  AI agent uses the UNGUARDED session to call the router — the other path
+         block 223579083, 2026-11-15 00:54:57 UTC
+  OK   sent by agent (0x602d636dc4ea21ac4a1278cc589e9ab1cfd03201) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 53,778 of 900,000)
+  OK   REPLAY  against the state before block 223579083: reverts with GuardRequired() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223579083 was sent to the vault or the token (this tx is #1 of 3)
+  A10 0x988111bbbe...  admin key tries to remove the session guard without the timelock
+         block 223579109, 2026-11-15 00:55:03 UTC
+  OK   sent by admin (0x8502c5cfdaf6dbad23995a68735534d813672a71) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 29,036 of 900,000)
+  OK   REPLAY  against the state before block 223579109: reverts with NotTimelocked() (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223579109 was sent to the vault or the token (this tx is #1 of 3)
+  A11 0x0b2982cb18...  operator key parks 1 tUSD at the router, where anyone could sweep it
+         block 223579139, 2026-11-15 00:55:11 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 104,127 of 900,000)
+  OK   REPLAY  against the state before block 223579139: reverts with RecipientNotAllowed(router) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223579139 was sent to the vault or the token (this tx is #1 of 3)
+  A14 0xaf69d9b369...  operator key, second policy: a fair swap priced by the official opBNB oracle (Binance Oracle BNB / USD), whose feed last updated on 2026-10-22
+         block 223579172, 2026-11-15 00:55:19 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 158,515 of 900,000)
+  OK   REPLAY  against the state before block 223579172: reverts with StalePrice(0x4200000000000000000000000000000000000006) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223579172 was sent to the vault or the token (this tx is #1 of 3)
+  A12 0x57b273c348...  ThreatFeed V2: a responder blocks the supplier (reported as a drainer) — instantly
+         block 223579281, 2026-11-15 00:55:46 UTC
+  OK   sent by responder (0x303fdc8733f7ca4223d2bed55d02d3e22cdf10f3) to threatFeed
+  OK   succeeded on-chain
+  OK   event Blocked from threatFeed
+  A13 0xb9b9336656...  after the block: operator key tries to pay the supplier again
+         block 223579368, 2026-11-15 00:56:08 UTC
+  OK   sent by operator (0x80ddc9c233ff9fef6e14eb1518af0d42010798ef) to vault
+  OK   rejected on-chain by revert, not out of gas (gas used 89,747 of 900,000)
+  OK   REPLAY  against the state before block 223579368: reverts with BlockedAddress(supplier) (state from 5611.rpc.thirdweb.com)
+  OK   REPLAY  no earlier tx in block 223579368 was sent to the vault or the token (this tx is #1 of 3)
+
+Checkpoints — the vault at fixed blocks
+  STATE  = historical state read from a node (most free nodes keep it only for recent blocks)
+  EVENTS = derived from event logs, when no node asked keeps the state
+
+Attack windows (vault balance before the first and after the last attack)
+  OK   STATE (5611.rpc.thirdweb.com) attacks A1-A14 (no tUSD may leave the vault): blocks 223578867..223579368, 49.065 -> 49.065 tUSD, moved out: 0
+
+Demo vault now
+  implementation implementation (0x73a79604bc39b1f6b57cc68159ee3fc041ac7dd9), vaultVersion 20300
+  paused: False
+  tUSD balance: 49.065
+
+Rejection reasons proven by execution trace (STRICT): 0, by historical replay (REPLAY): 12
+Answers per node: opbnb-testnet-rpc.bnbchain.org 111, 5611.rpc.thirdweb.com 14, opbnb-testnet.publicnode.com 0
+RESULT: 129 checks OK, 0 mismatches, 0 not checkable, 0 need an archive node (OLD: history no node asked still keeps) — everything checkable matches the evidence
+raw node answers archived: deployments/opbnb-testnet/verification/2026-11-15T0107Z-guards-rpc-snapshot.json (140 calls)

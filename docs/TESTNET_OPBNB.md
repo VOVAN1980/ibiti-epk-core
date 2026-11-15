@@ -138,6 +138,8 @@ The same checks run in any browser, with no installation: [`docs/proof/index.htm
 ("EPK Proof of Security", switch to opBNB Testnet) loads the evidence file **from a fixed Git commit** and checks it
 live against the chain.
 
-Not part of the opBNB demo: the guard modules (protected swaps with PancakeSwap and Chainlink), shown on BSC
-Testnet ([`TESTNET_GUARDS.md`](TESTNET_GUARDS.md)), and the opt-in upgrade of an existing vault
-([`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)); the code is the same on both networks.
+The guard demo (protected swaps on the real PancakeSwap V2 router, ThreatFeed V2, agent sessions with and
+without a guard) also ran on opBNB Testnet, on its own vault: [`TESTNET_OPBNB_GUARDS.md`](TESTNET_OPBNB_GUARDS.md).
+Not shown on opBNB: the opt-in upgrade of an existing vault ([`TESTNET_RELEASE.md`](TESTNET_RELEASE.md), BSC
+Testnet). A vault can only move to a newer release, and opBNB Testnet started on the latest one, 2.3.0; the upgrade
+will run on both networks with the next release. The code is the same on both networks.

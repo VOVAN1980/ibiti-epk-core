@@ -397,6 +397,7 @@ def main():
         for i, ty in enumerate(types):
             word = data[10 + 64 * i:74 + 64 * i] or "0"
             args.append(who("0x" + word[-40:]) if ty == "address" else
+                        "0x" + word[:2 * int(ty[5:])] if ty.startswith("bytes") and ty[5:].isdigit() else
                         (f"{eusd(int(word, 16))} {sym}" if int(word, 16) >= 10 ** 15 else str(int(word, 16))))
         return sig.split("(")[0] + f"({', '.join(args)})"
 
@@ -457,6 +458,19 @@ def main():
             impl = "0x" + chain("eth_getStorageAt", c["address"], IMPL_SLOT, "latest")[-40:]
             want = C[c["proxyImplementation"]]
             rep.line(impl.lower() == want.lower(), f"EIP-1967 implementation slot -> {who(impl)} ({impl})")
+        if c.get("fixedPrice"):  # a fixed test price (opBNB has no Chainlink feeds), and where it was copied from
+            fp = c["fixedPrice"]
+            ans = int(chain.call(c["address"], selector("latestRoundData()"))[66:130], 16)
+            rep.line(ans == fp["answer"], f"reports the fixed price {fp['answer'] / 1e8:,.8f} USD (8 decimals)")
+            src = fp.get("source")
+            if src:
+                other = next(n for n in NETWORKS.values() if n["chainId"] == src["chainId"])
+                try:
+                    r = Chain(other["nodes"], record).call(src["feed"], selector("getRoundData(uint80)") + w(int(src["round"])))
+                    rep.line(int(r[66:130], 16) == fp["answer"],
+                             f"= the answer of round {src['round']} of {src['label']} ({src['feed']}, {other['name']})")
+                except RpcError as e:
+                    rep.line(None, f"could not ask {other['name']} for round {src['round']} of {src['feed']}: {e}")
         if build and c.get("artifact"):
             try:
                 art = json.load(open(c["artifact"], encoding="utf-8"))["deployedBytecode"]

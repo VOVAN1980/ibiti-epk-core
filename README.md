@@ -86,7 +86,10 @@ mainnet keeps 7 days + 2 days) — [`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELE
 ([`0x3CaF0110…7AFa5b`](https://testnet.opbnbscan.com/address/0x3CaF011091f0dA6eE432d73678a86957057AFa5b)) — 9 of 9 attacks
 rejected, 0 eUSD moved by them; the Watchtower cancelled the stolen key's change 21 blocks (about 5 seconds) later
 and the cold-wallet redirect 25 blocks (about 6 seconds) later; the evacuation moved all 9,940 eUSD to the cold
-wallet — [`docs/TESTNET_OPBNB.md`](docs/TESTNET_OPBNB.md).
+wallet — [`docs/TESTNET_OPBNB.md`](docs/TESTNET_OPBNB.md). The guard demo ran there too (2026-11-15): on the real
+PancakeSwap V2 router of opBNB, 12 of 12 attacks rejected, 0 tUSD moved by them; opBNB has no Chainlink feeds and its
+official oracle (Binance Oracle) stopped updating on 2026-10-22, and a guard reading that frozen feed refused to
+trade (`StalePrice`) — [`docs/TESTNET_OPBNB_GUARDS.md`](docs/TESTNET_OPBNB_GUARDS.md).
 
 ### Check it yourself
 
@@ -167,7 +170,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
 - [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_GUARDS.md) · [release 2.3.0](docs/TESTNET_RELEASE.md)
-- [opBNB Testnet demo and evidence](docs/TESTNET_OPBNB.md)
+- [opBNB Testnet demo and evidence](docs/TESTNET_OPBNB.md) · [guard demo on opBNB](docs/TESTNET_OPBNB_GUARDS.md)
 - [Guard modules](docs/GUARDS_v2.md)
 - [Roadmap](docs/ROADMAP.md)
 

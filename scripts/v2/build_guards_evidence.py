@@ -1,9 +1,13 @@
 # SPDX-License-Identifier: LicenseRef-IBITI-EPK-1.0
-"""Write deployments/bsc-testnet/epk-guards-evidence.json — the machine-readable claims of the guard demo on the
-current EPKVault release (BSC Testnet) — from the deployment / run files and the mined receipts.
+"""Write deployments/<network>/epk-guards-evidence.json — the machine-readable claims of the guard demo on the
+current EPKVault release — from the deployment / run files and the mined receipts.
+
+    python scripts/v2/build_guards_evidence.py                           # BSC Testnet
+    python scripts/v2/build_guards_evidence.py --network opbnb-testnet   # opBNB Testnet
 
 Every claim is then re-checked against the chain by:
     python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-guards-evidence.json --doc docs/TESTNET_GUARDS.md
+    python scripts/v2/verify_evidence.py --network opbnb-testnet --evidence deployments/opbnb-testnet/epk-guards-evidence.json --doc docs/TESTNET_OPBNB_GUARDS.md
 
 Amounts are read from the
 receipts (exact, 18 decimals); the expected revert reason of every attack is the one the vault returned
@@ -11,15 +15,22 @@ when it was sent, and the verifier proves it from the execution trace (STRICT) o
 """
 import json
 import sys
+from datetime import datetime, timezone
 from decimal import Decimal
 
 sys.path.insert(0, "scripts/v2")
-from verify_evidence import NODES, Chain, keccak, selector, topic0  # noqa: E402  (pure Python, no packages)
+import verify_evidence as ve  # noqa: E402  (pure Python, no packages)
+from verify_evidence import Chain, keccak, selector, topic0  # noqa: E402
 
-D = "deployments/bsc-testnet"
+KEY = sys.argv[sys.argv.index("--network") + 1] if "--network" in sys.argv else "bsc-testnet"
+ve.use_network(KEY)
+NET = ve.NETWORK
+D = f"deployments/{KEY}"
 OUT = f"{D}/epk-guards-evidence.json"
 NATIVE = "0x" + "00" * 20
-chain = Chain(NODES)
+chain = Chain(ve.NODES)
+OPBNB = NET["chainId"] == 5611
+BSC_PANCAKE_FACTORY = "0x6725F303b657a9451d8BA641348b6761A6CC7a17"
 
 
 def amount(word_hex):
@@ -33,26 +44,40 @@ def pad(addr):
     return "0x" + addr.lower()[2:].rjust(64, "0")
 
 
+def stale_day():
+    """the day the opBNB Binance Oracle feed last updated, as recorded in the attack results"""
+    dep = json.load(open(f"{D}/epk-guards.json"))
+    r = chain.call(dep["oracleFeed"], selector("latestRoundData()"))
+    return datetime.fromtimestamp(int(r[194:258], 16), timezone.utc).strftime("%Y-%m-%d")
+
+
+def att_last():
+    return "A14" if OPBNB else "A13"
+
+
 def main():
     dep = json.load(open(f"{D}/epk-guards.json"))
     ver = f"{dep['version'] // 10000}.{dep['version'] // 100 % 100}.{dep['version'] % 100}"
     delay = f"{dep['delay'] // 60}-minute" if dep["delay"] < 3600 else f"{dep['delay'] // 3600}-hour"
     run = json.load(open(f"{D}/epk-guards-run.json"))
-    deploy_txs = json.load(open("broadcast/DeployGuardDemo.s.sol/97/run-latest.json"))["transactions"]
-    allowed_txs = json.load(open("broadcast/RunGuardDemo.s.sol/97/allowed-latest.json"))["transactions"]
-    control_tx = json.load(open("broadcast/RunGuardDemo.s.sol/97/control-latest.json"))["transactions"][0]
-    block_tx = json.load(open("broadcast/RunGuardDemo.s.sol/97/blockSupplier-latest.json"))["transactions"][0]
+    cid = NET["chainId"]
+    deploy_txs = json.load(open(f"broadcast/DeployGuardDemo.s.sol/{cid}/run-latest.json"))["transactions"]
+    allowed_txs = json.load(open(f"broadcast/RunGuardDemo.s.sol/{cid}/allowed-latest.json"))["transactions"]
+    control_tx = None if OPBNB else json.load(open(f"broadcast/RunGuardDemo.s.sol/{cid}/control-latest.json"))["transactions"][0]
+    block_tx = json.load(open(f"broadcast/RunGuardDemo.s.sol/{cid}/blockSupplier-latest.json"))["transactions"][0]
     attacks = json.load(open(f"{D}/epk-guards-attacks-results.json"))["results"] + \
         json.load(open(f"{D}/epk-guards-blocked-results.json"))["results"]
 
-    pancake_factory = "0x6725F303b657a9451d8BA641348b6761A6CC7a17"
+    pancake_factory = dep.get("pancakeFactory", BSC_PANCAKE_FACTORY)
+    net = NET["name"]
+    price_word = "test BNB price" if OPBNB else "Chainlink price"
 
     def pair(a, b):
         r = chain.call(pancake_factory, selector("getPair(address,address)") + pad(a)[2:] + pad(b)[2:])
         return "0x" + r[-40:]
 
     tusd_pool = pair(dep["wbnb"], dep["tusd"])
-    busd_pool = pair(dep["wbnb"], dep["busd"])
+    busd_pool = None if OPBNB else pair(dep["wbnb"], dep["busd"])
 
     contracts_spec = [
         ("implementation", dep["implementation"], f"EPKVault {ver} implementation (the current public release)", "out/EPKVault.sol/EPKVault.json"),
@@ -62,15 +87,33 @@ def main():
         ("dexGuard", dep["dexGuard"], "DexGuard (with the 2026-11-08 fixes)", "out/DexGuard.sol/DexGuard.json"),
         ("threatFeed", dep["threatFeed"], "ThreatFeed V2 (ThreatFeedGuard)", "out/ThreatFeedGuard.sol/ThreatFeedGuard.json"),
         ("compositeGuard", dep["compositeGuard"], "CompositeGuard (ThreatFeed V2 + DexGuard)", "out/CompositeGuard.sol/CompositeGuard.json"),
-        ("token", dep["tusd"], "tUSD — the guard demo's test stablecoin", None),
-        ("tusdFeed", dep["tusdFeed"], "fixed $1 test feed for tUSD", None),
-        ("router", dep["router"], "PancakeSwap V2 router (BSC Testnet, not ours)", None),
-        ("tusdPool", tusd_pool, "PancakeSwap tUSD/WBNB pool, kept at the Chainlink price by the demo admin", None),
-        ("busd", dep["busd"], "BUSD (BSC Testnet, not ours)", None),
-        ("busdPool", busd_pool, "PancakeSwap WBNB/BUSD pool (BSC Testnet, not ours)", None),
-        ("bnbUsdFeed", dep["bnbUsdFeed"], "Chainlink BNB / USD (BSC Testnet)", None),
-        ("busdUsdFeed", dep["busdUsdFeed"], "Chainlink BUSD / USD (BSC Testnet)", None),
     ]
+    if OPBNB:
+        usd = int(dep["bnbUsdAnswer"]) / 1e8
+        contracts_spec += [
+            ("oracleGuard", dep["oracleGuard"], "DexGuard on the official opBNB oracle (Binance Oracle BNB / USD), same rules",
+             "out/DexGuard.sol/DexGuard.json"),
+            ("token", dep["tusd"], "tUSD — the guard demo's test stablecoin (only the demo admin can mint)",
+             "out/EPKTestUSD.sol/EPKTestUSD.v2-size.json"),
+            ("tusdFeed", dep["tusdFeed"], "fixed $1 test feed for tUSD", "out/EPKFixedPriceFeed.sol/EPKFixedPriceFeed.v2-size.json"),
+            ("bnbUsdFeed", dep["bnbUsdFeed"],
+             f"fixed BNB / USD test price, ${usd:,.2f}: copied from Chainlink BNB / USD on BSC Testnet (opBNB has no Chainlink feeds)",
+             "out/EPKFixedPriceFeed.sol/EPKFixedPriceFeed.v2-size.json"),
+            ("router", dep["router"], "PancakeSwap V2 router (opBNB Testnet, not ours)", None),
+            ("tusdPool", tusd_pool, "PancakeSwap tUSD/WBNB pool, created by the demo admin at the test BNB price", None),
+            ("oracleFeed", dep["oracleFeed"], "Binance Oracle BNB / USD feed adapter (opBNB Testnet, not ours)", None),
+        ]
+    else:
+        contracts_spec += [
+            ("token", dep["tusd"], "tUSD — the guard demo's test stablecoin", None),
+            ("tusdFeed", dep["tusdFeed"], "fixed $1 test feed for tUSD", None),
+            ("router", dep["router"], "PancakeSwap V2 router (BSC Testnet, not ours)", None),
+            ("tusdPool", tusd_pool, "PancakeSwap tUSD/WBNB pool, kept at the Chainlink price by the demo admin", None),
+            ("busd", dep["busd"], "BUSD (BSC Testnet, not ours)", None),
+            ("busdPool", busd_pool, "PancakeSwap WBNB/BUSD pool (BSC Testnet, not ours)", None),
+            ("bnbUsdFeed", dep["bnbUsdFeed"], "Chainlink BNB / USD (BSC Testnet)", None),
+            ("busdUsdFeed", dep["busdUsdFeed"], "Chainlink BUSD / USD (BSC Testnet)", None),
+        ]
     contracts = {}
     for key, addr, label, artifact in contracts_spec:
         code = chain("eth_getCode", addr, "latest")
@@ -80,6 +123,12 @@ def main():
         contracts[key] = c
     contracts["implementation"].update({"pinnedInRegistry": True, "vaultVersion": dep["version"]})
     contracts["vault"].update({"proxyImplementation": "implementation", "createdAtBlock": dep["createdAtBlock"]})
+    if OPBNB:
+        contracts["tusdFeed"]["fixedPrice"] = {"answer": 10 ** 8}
+        contracts["bnbUsdFeed"]["fixedPrice"] = {
+            "answer": int(dep["bnbUsdAnswer"]),
+            "source": {"chainId": int(dep["bnbUsdSourceChainId"]), "feed": dep["bnbUsdSource"],
+                       "round": str(dep["bnbUsdSourceRound"]), "label": "Chainlink BNB / USD"}}  # a string: too big for JSON readers
 
     roles = {k: dep[k] for k in ("admin", "guardian1", "guardian2", "recovery", "sessionManager", "operator", "agent",
                                  "responder", "supplier", "attacker")}
@@ -116,13 +165,20 @@ def main():
     def alignment(t, step, when):
         rc = receipt(t["hash"])
         sold = words(log_data(rc, dep["tusd"], TRANSFER, [dep["admin"], tusd_pool]), 1)
-        add(step, f"{when}: admin puts the demo pool at the Chainlink BNB price (sells {sold[0]} freshly minted tUSD into it)",
+        add(step, f"{when}: admin puts the demo pool at the {price_word} (sells {sold[0]} freshly minted tUSD into it)",
             t["hash"], "admin", "router", [{"emitter": "token", "event": TRANSFER, "indexed": ["admin", "tusdPool"], "data": sold}])
 
     # ---- setup (selected transactions) ------------------------------------------------------------
     swap_t4e = "swapExactTokensForETH(uint256,uint256,address[],address,uint256)"
     for t in by_selector(deploy_txs, swap_t4e):
         alignment(t, "D1", "setup")
+    for t in by_selector(deploy_txs, "addLiquidityETH(address,uint256,uint256,uint256,address,uint256)"):
+        rc = receipt(t["hash"])
+        seeded = words(log_data(rc, dep["tusd"], TRANSFER, [dep["admin"], tusd_pool]), 1)
+        bnb = amount(format(int(dep["poolBnb"]), "x"))
+        add("D1", f"admin creates a tUSD/WBNB pool on PancakeSwap at the test BNB price ({bnb} BNB + {seeded[0]} tUSD)",
+            t["hash"], "admin", "router",
+            [{"emitter": "token", "event": TRANSFER, "indexed": ["admin", "tusdPool"], "data": seeded}])
     h = by_selector(deploy_txs, "createVault(address[],uint256,address,bytes32)")[0]["hash"]
     add("D2", f"admin creates a new EPKVault {ver} through the PUBLIC {ver} factory (5-minute test-network upgrade clocks)",
         h, "admin", "factory",
@@ -130,6 +186,12 @@ def main():
     h = by_selector(deploy_txs, "createPolicy(address,uint48,uint128,address)")[0]["hash"]
     add("D3", "trading policy for the operator key, guarded by ThreatFeed V2 + DexGuard", h, "admin", "vault",
         [{"emitter": "vault", "event": "PolicyUpdated(uint256,address,uint48,uint128,address)", "indexed": ["uint:0", "operator"]}])
+    if OPBNB:
+        h = by_selector(deploy_txs, "createPolicy(address,uint48,uint128,address)")[1]["hash"]
+        add("D3b", "a second trading policy for the operator key, guarded by the same DEX rules priced by the official opBNB "
+            "oracle (Binance Oracle BNB / USD)", h, "admin", "vault",
+            [{"emitter": "vault", "event": "PolicyUpdated(uint256,address,uint48,uint128,address)",
+              "indexed": [f"uint:{int(dep['oraclePolicy'])}", "operator"]}])
     h = by_selector(deploy_txs, "setEnvelopeGuard(uint256,address)")[0]["hash"]
     add("D4", "agent-session envelope 1 gets the same guard (envelope 2 stays unguarded on purpose)", h, "admin", "vault",
         [{"emitter": "vault", "event": "EnvelopeGuardSet(uint256,address)", "indexed": ["uint:1", "compositeGuard"]}])
@@ -178,23 +240,28 @@ def main():
         "d_feeOnTransferFunction": ("A4", "operator key uses an unsupported router function (fee-on-transfer variant)"),
         "e_farDeadline": ("A5", "operator key signs a swap valid for 2 days (to run later at a worse price)"),
         "f_approveNonRouter": ("A6", "operator key approves a non-router (the supplier) to pull tUSD"),
-        "g_unlistedToken": ("A7", "operator key swaps into a token that is not on the guard's list (CAKE)"),
+        "g_unlistedToken": ("A7", "operator key swaps into a token that is not on the guard's list ("
+                                  + ("PancakeSwap's MOCK Token A" if OPBNB else "CAKE") + ")"),
         "h_sessionToAttacker": ("A8", "AI agent (guarded session) sends a swap's output to the attacker"),
         "i_unguardedSessionSwap": ("A9", "AI agent uses the UNGUARDED session to call the router — the other path"),
         "j_removeGuardWithoutTimelock": ("A10", "admin key tries to remove the session guard without the timelock"),
         "l_transferToRouter": ("A11", "operator key parks 1 tUSD at the router, where anyone could sweep it"),
         "k_payBlockedSupplier": ("A13", "after the block: operator key tries to pay the supplier again"),
     }
+    if OPBNB:
+        words_for["m_frozenOracle"] = ("A14", "operator key, second policy: a fair swap priced by the official opBNB oracle "
+                                              f"(Binance Oracle BNB / USD), whose feed last updated on {stale_day()}")
     sender = {"operator": "operator", "guardAgent": "agent", "guardAdmin": "admin"}
     for r in attacks:
         step, what = words_for[r["attack"]]
         add(step, what, r["tx"], sender[r["from"]], "vault", expect="reverted", error=r["error"])
 
     # ---- the plain-wallet control trade and the threat-feed block --------------------------------------
-    rc = receipt(control_tx["hash"])
-    got_busd = words(log_data(rc, dep["busd"], TRANSFER, [busd_pool, dep["operator"]]), 1)
-    add("C1", "control: a PLAIN wallet (no EPK) makes the same 0.0001 BNB -> BUSD trade on the real pool", control_tx["hash"],
-        "operator", "router", [{"emitter": "busd", "event": TRANSFER, "indexed": ["busdPool", "operator"], "data": got_busd, "unit": "BUSD"}])
+    if control_tx:
+        rc = receipt(control_tx["hash"])
+        got_busd = words(log_data(rc, dep["busd"], TRANSFER, [busd_pool, dep["operator"]]), 1)
+        add("C1", "control: a PLAIN wallet (no EPK) makes the same 0.0001 BNB -> BUSD trade on the real pool", control_tx["hash"],
+            "operator", "router", [{"emitter": "busd", "event": TRANSFER, "indexed": ["busdPool", "operator"], "data": got_busd, "unit": "BUSD"}])
     add("A12", "ThreatFeed V2: a responder blocks the supplier (reported as a drainer) — instantly", block_tx["hash"],
         "responder", "threatFeed",
         [{"emitter": "threatFeed", "event": "Blocked(address,address,bytes32)", "indexed": ["supplier", "responder"]}])
@@ -206,17 +273,21 @@ def main():
         t["_block"] = block_of(t)
     txs.sort(key=lambda t: (t["_block"], t["step"]))
     att = [t for t in txs if t["expect"] == "reverted"]
-    window = {"label": "attacks A1-A13 (no tUSD may leave the vault)", "fromBlock": att[0]["_block"] - 1,
+    window = {"label": f"attacks A1-{att_last()} (no tUSD may leave the vault)", "fromBlock": att[0]["_block"] - 1,
               "toBlock": att[-1]["_block"]}
     for t in txs:
         del t["_block"]
 
+    prices = ("a fixed BNB / USD test price copied from Chainlink on BSC Testnet (opBNB has no Chainlink feeds), and a "
+              "second DexGuard on the official opBNB oracle (Binance Oracle)") if OPBNB else "real Chainlink feeds"
+    doc_name = "docs/TESTNET_OPBNB_GUARDS.md" if OPBNB else "docs/TESTNET_GUARDS.md"
+    net_opt = f" --network {KEY}" if OPBNB else ""
     ev = {
-        "about": f"Machine-readable claims of the guard demo on EPKVault {ver} on BSC Testnet: a vault created through the "
+        "about": f"Machine-readable claims of the guard demo on EPKVault {ver} on {net}: a vault created through the "
                  f"public {ver} factory (5-minute test-network upgrade clocks), with DexGuard, ThreatFeed V2 and CompositeGuard on the "
-                 "real PancakeSwap V2 testnet router and real Chainlink feeds. scripts/v2/verify_evidence.py --evidence <this "
-                 "file> --doc docs/TESTNET_GUARDS.md checks every claim. Amounts have 18 decimals. Testnet only; not audited.",
-        "chainId": 97,
+                 f"real PancakeSwap V2 testnet router and {prices}. scripts/v2/verify_evidence.py{net_opt} --evidence <this "
+                 f"file> --doc {doc_name} checks every claim. Amounts have 18 decimals. Testnet only; not audited.",
+        "chainId": cid,
         "tokenSymbol": "tUSD",
         "contracts": contracts,
         "roles": roles,
