@@ -106,7 +106,7 @@ python scripts/v2/verify_evidence.py --network opbnb-testnet --evidence deployme
 ```
 
 Python 3 only — no Foundry, no keys. It checks the chain id, every contract's code hash (and, with `--build` after
-`git checkout <the commit that added this file> && forge build` — the source these contracts were built from —, that the vault
+`git checkout debb154 && forge build` — the source these contracts were built from —, that the vault
 implementation, the factory, the vault proxy, the four guards, tUSD and the two fixed feeds equal this repository's
 build), that the implementation is pinned in the registry and that the vault proxy points to it, the fixed test
 prices (and, from a BSC Testnet node, the Chainlink round the BNB price was copied from), every transaction's sender
