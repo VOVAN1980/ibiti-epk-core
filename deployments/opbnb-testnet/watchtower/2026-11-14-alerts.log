@@ -1,0 +1,10 @@
+2026-11-14 22:19:31 UTC [INFO] watching vault 0x3caf011091f0da6ee432d73678a86957057afa5b on chain 5611; guardian 0xD1e73f683515D4A7a26D06AD6b0c64C62d4C7Fa0 (confirmed by the vault); 0 approved change(s); live
+2026-11-14 22:19:59 UTC [CRITICAL] UNEXPECTED change scheduled by 0xa2bd166173925e5b8e640f091b0f3becbbbe15f8: allow payments to a new address: addDestination(0x000000000000000000000000000000000000bad1); would take effect 2026-11-14 22:24 UTC — cancelling 0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6
+2026-11-14 22:20:02 UTC [CRITICAL] STOPPED: unexpected change 0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6 cancelled — tx 0x33f8662bf10de7e7572254a1a9dfab75e1914fc0401ea6552ea0337e4958d145
+2026-11-14 22:20:06 UTC [INFO] change 0x39dc2dd509b510b2d7c2899dc9d3e94cf3fd323df6aa0588200bb667bbe1d6f6 cancelled by 0xd1e73f683515d4a7a26d06ad6b0c64c62d4c7fa0
+2026-11-14 22:21:05 UTC [CRITICAL] UNEXPECTED change scheduled by 0xa2bd166173925e5b8e640f091b0f3becbbbe15f8: CHANGE THE COLD WALLET evacuation sends all funds to: setColdWallet(0x000000000000000000000000000000000000bad2); would take effect 2026-11-14 22:36 UTC — cancelling 0x182843f3c0ff13222a3ff72ec63318009d906acc9019ca63f1aace40062171fe
+2026-11-14 22:21:05 UTC [CRITICAL] COLD WALLET CHANGE: if it went through, an evacuation would send every tracked asset to the new address — a guardian or the owner must make sure 0x182843f3c0ff13222a3ff72ec63318009d906acc9019ca63f1aace40062171fe is cancelled before 2026-11-14 22:36 UTC
+2026-11-14 22:21:08 UTC [CRITICAL] STOPPED: unexpected change 0x182843f3c0ff13222a3ff72ec63318009d906acc9019ca63f1aace40062171fe cancelled — tx 0x96b1bdf98c31bf7ec6e07d1a84da86589d4c01825fa05186f2fa0fb2af37fb42
+2026-11-14 22:21:12 UTC [INFO] change 0x182843f3c0ff13222a3ff72ec63318009d906acc9019ca63f1aace40062171fe cancelled by 0xd1e73f683515d4a7a26d06ad6b0c64c62d4c7fa0
+2026-11-14 22:22:07 UTC [WARNING] vault PAUSED by 0x858cd2931f1b4afd83b4ef4f2b2cc6ea964ab41c
+2026-11-14 22:22:07 UTC [WARNING] all policies, sessions and pending changes revoked (epoch bumped)

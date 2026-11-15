@@ -1,0 +1,523 @@
+{
+ "about": "Machine-readable claims of the guard demo on EPKVault 2.3.0 on opBNB Testnet: a vault created through the public 2.3.0 factory (5-minute test-network upgrade clocks), with DexGuard, ThreatFeed V2 and CompositeGuard on the real PancakeSwap V2 testnet router and a fixed BNB / USD test price copied from Chainlink on BSC Testnet (opBNB has no Chainlink feeds), and a second DexGuard on the official opBNB oracle (Binance Oracle). scripts/v2/verify_evidence.py --network opbnb-testnet --evidence <this file> --doc docs/TESTNET_OPBNB_GUARDS.md checks every claim. Amounts have 18 decimals. Testnet only; not audited.",
+ "chainId": 5611,
+ "tokenSymbol": "tUSD",
+ "contracts": {
+  "implementation": {
+   "address": "0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9",
+   "label": "EPKVault 2.3.0 implementation (the current public release)",
+   "codeHash": "0xeb9a1b769ef5ef45f00a6904d7e86b5f40debfba9de5c6bbc6e785e32c9b8d9d",
+   "artifact": "out/EPKVault.sol/EPKVault.json",
+   "pinnedInRegistry": true,
+   "vaultVersion": 20300
+  },
+  "registry": {
+   "address": "0x81Ac99466291D2324bf459c7345F5506D9b90158",
+   "label": "EPKRegistry of the public stack (5-minute test-network release window)",
+   "codeHash": "0x7fdfb3b9e7ab119c11636680c5487e9201ab2ddd3f4f684c00e5441ea3b79ac2"
+  },
+  "factory": {
+   "address": "0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4",
+   "label": "EPKVaultFactory for 2.3.0 \u2014 the SDK's public factory",
+   "codeHash": "0x03c786129e8b937e620faf3400c05590d4aee10a88efe692cd88dc7d97e312b5",
+   "artifact": "out/EPKVaultFactory.sol/EPKVaultFactory.json"
+  },
+  "vault": {
+   "address": "0x9390c190E3E1d900C7B7EbA197f8c6AF89B9949E",
+   "label": "EPKVault 2.3.0 guard demo vault (proxy)",
+   "codeHash": "0x792c0657785a10fe2d37e4ad3bd0d1e5155ef42db51882ad7bccb35ce59b969d",
+   "artifact": "out/EPKVaultFactory.sol/EPKVaultProxy.json",
+   "proxyImplementation": "implementation",
+   "createdAtBlock": 223578146
+  },
+  "dexGuard": {
+   "address": "0xaD87B7Aea8F1139327A77EbB2203BC0B9640431C",
+   "label": "DexGuard (with the 2026-11-08 fixes)",
+   "codeHash": "0xc2d2f5b01ae360b189e26eb1d462ffc0157a45835ba8f4e0dcb59cb0609d1c88",
+   "artifact": "out/DexGuard.sol/DexGuard.json"
+  },
+  "threatFeed": {
+   "address": "0xFe700A2445aE2c85Dd656FFA4cD73F5D0A4C4215",
+   "label": "ThreatFeed V2 (ThreatFeedGuard)",
+   "codeHash": "0x87f45e0da8210e753391a3ba986da0eef4cbb884cb19c53eb60ac336a607878d",
+   "artifact": "out/ThreatFeedGuard.sol/ThreatFeedGuard.json"
+  },
+  "compositeGuard": {
+   "address": "0x327274073da2dCac166F20E68e2e7fD2fA15EDba",
+   "label": "CompositeGuard (ThreatFeed V2 + DexGuard)",
+   "codeHash": "0xec580d16860a86cd22d1fca9775c64d1c40239c209e3e48fd241238d0a9f967b",
+   "artifact": "out/CompositeGuard.sol/CompositeGuard.json"
+  },
+  "oracleGuard": {
+   "address": "0xf8008FE1bD26792cCC286e5D41394470e510E239",
+   "label": "DexGuard on the official opBNB oracle (Binance Oracle BNB / USD), same rules",
+   "codeHash": "0xc2d2f5b01ae360b189e26eb1d462ffc0157a45835ba8f4e0dcb59cb0609d1c88",
+   "artifact": "out/DexGuard.sol/DexGuard.json"
+  },
+  "token": {
+   "address": "0xE3F4897CB9dC4b7FE980f81eFC997CDB9AE93Fa4",
+   "label": "tUSD \u2014 the guard demo's test stablecoin (only the demo admin can mint)",
+   "codeHash": "0x20b2fb33b28d1ea360129475cbeb58c4488a71d8676777a9e4237acd673f8b70",
+   "artifact": "out/EPKTestUSD.sol/EPKTestUSD.v2-size.json"
+  },
+  "tusdFeed": {
+   "address": "0x24E861F67180be06A65eF95874404D13FA9631F3",
+   "label": "fixed $1 test feed for tUSD",
+   "codeHash": "0x5fa00845e589650bb7923507d7cca1cf5b9d7ad696dcebebcb0b02dcb6fb1c9f",
+   "artifact": "out/EPKFixedPriceFeed.sol/EPKFixedPriceFeed.v2-size.json",
+   "fixedPrice": {
+    "answer": 100000000
+   }
+  },
+  "bnbUsdFeed": {
+   "address": "0x38E841A9d917f8c7488A535Cf89c0F683D177027",
+   "label": "fixed BNB / USD test price, $578.49: copied from Chainlink BNB / USD on BSC Testnet (opBNB has no Chainlink feeds)",
+   "codeHash": "0x151cbc4e702c2ca18be40b50e9568a540361193df223fd95cee2a29011d8c4a0",
+   "artifact": "out/EPKFixedPriceFeed.sol/EPKFixedPriceFeed.v2-size.json",
+   "fixedPrice": {
+    "answer": 57849170663,
+    "source": {
+     "chainId": 97,
+     "feed": "0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526",
+     "round": "36893488147419194612",
+     "label": "Chainlink BNB / USD"
+    }
+   }
+  },
+  "router": {
+   "address": "0x62FF25CFD64E55673168c3656f4902bD7Aa5F0f4",
+   "label": "PancakeSwap V2 router (opBNB Testnet, not ours)",
+   "codeHash": "0xd865ef7d9b837c8a212bd27a632e3609da1959767100555e3885fa5d6f08fcc1"
+  },
+  "tusdPool": {
+   "address": "0x8756a9cefff678f51e8c06b946a26af2ef52a40d",
+   "label": "PancakeSwap tUSD/WBNB pool, created by the demo admin at the test BNB price",
+   "codeHash": "0x6c493058c785430443392ae3dbbeb57addfc9c80f223772220c0e3ebbf5f2b86"
+  },
+  "oracleFeed": {
+   "address": "0x73110e8602930f01bb584Bc683C5Aa2Fb4D42419",
+   "label": "Binance Oracle BNB / USD feed adapter (opBNB Testnet, not ours)",
+   "codeHash": "0x943467cdb47fd40f2d221a8ba0aef06fb2311aa466b88ea7aedc7ebb04c69496"
+  }
+ },
+ "roles": {
+  "admin": "0x8502C5cFdaF6Dbad23995a68735534d813672A71",
+  "guardian1": "0xdc5550eBF607F3893759e986a875881d0050712b",
+  "guardian2": "0x19BF2DB88690fB915D1bB8274F5c29C75B741173",
+  "recovery": "0xE31dcda0eEf6fccE4E36899877B14AdC4DbE041a",
+  "sessionManager": "0x81DC14f9B68A8Ad78350815D28B75D78bc81442e",
+  "operator": "0x80ddc9C233ff9fef6e14EB1518AF0d42010798ef",
+  "agent": "0x602D636dC4eA21Ac4a1278CC589E9Ab1CfD03201",
+  "responder": "0x303fDc8733f7Ca4223d2bed55D02D3e22CDf10F3",
+  "supplier": "0xc93eC67f65530E5997e0a54826d1dE1243E204dD",
+  "attacker": "0x2dC3fb90a9211A2e824B438C8E60137C2EdE8Ed8"
+ },
+ "sessions": {
+  "guarded": "340282366920938463463374607431768211456",
+  "unguarded": "340282366920938463463374607431768211457"
+ },
+ "transactions": [
+  {
+   "step": "D1",
+   "what": "admin creates a tUSD/WBNB pool on PancakeSwap at the test BNB price (0.03 BNB + 17.3547511989 tUSD)",
+   "tx": "0x09d489276742e25236040e12d9b492e602f5eacdafc57a50ad8595b0b5d89ee9",
+   "from": "admin",
+   "to": "router",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "admin",
+      "tusdPool"
+     ],
+     "data": [
+      "17.3547511989"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "D2",
+   "what": "admin creates a new EPKVault 2.3.0 through the PUBLIC 2.3.0 factory (5-minute test-network upgrade clocks)",
+   "tx": "0xc4e05fb7b24854953ce4b4f13bfbef51b9660990ce4b5e2fa99c4d43b3417bb2",
+   "from": "admin",
+   "to": "factory",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "factory",
+     "event": "VaultCreated(address,address,uint256,address)",
+     "indexed": [
+      "vault",
+      "admin"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "D3",
+   "what": "trading policy for the operator key, guarded by ThreatFeed V2 + DexGuard",
+   "tx": "0x83f4a8ab9604db14edb4944e968e84bd5d013dcf6b15dd4e869b7376be71eb56",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "PolicyUpdated(uint256,address,uint48,uint128,address)",
+     "indexed": [
+      "uint:0",
+      "operator"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "D3b",
+   "what": "a second trading policy for the operator key, guarded by the same DEX rules priced by the official opBNB oracle (Binance Oracle BNB / USD)",
+   "tx": "0x1a4a5955ea10bc28710af0d0ea5b63cd0d3f9ff763414e3f2dc2ec590ac64c90",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "PolicyUpdated(uint256,address,uint48,uint128,address)",
+     "indexed": [
+      "uint:1",
+      "operator"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "D4",
+   "what": "agent-session envelope 1 gets the same guard (envelope 2 stays unguarded on purpose)",
+   "tx": "0x1fa5448ac9097cdbeb4f51f66feada561158b26a340f87c3002e930aa7970b44",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "EnvelopeGuardSet(uint256,address)",
+     "indexed": [
+      "uint:1",
+      "compositeGuard"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "D5",
+   "what": "setup finished: from now on every loosening needs the 5-minute timelock",
+   "tx": "0x472ed3ef57ebd933fd1f04c3d0a97be789378f6b54d53d6b739a9b7fb8750c79",
+   "from": "admin",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SetupFinalized()"
+    }
+   ]
+  },
+  {
+   "step": "S1",
+   "what": "operator: vault swaps 0.0001 BNB for tUSD on PancakeSwap \u2014 at a fair price, output to the vault",
+   "tx": "0xc8e4889b6cb89d2657c13851cb94404accf18309de8d924df83dbf51ea88fb3f",
+   "from": "operator",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Executed(uint256,address,address,uint256,uint256)",
+     "indexed": [
+      "uint:0",
+      "operator",
+      "operator"
+     ]
+    },
+    {
+     "emitter": "vault",
+     "event": "Outflow(address,uint256,uint256)",
+     "indexed": [
+      "0x0000000000000000000000000000000000000000"
+     ],
+     "data": [
+      "0.0001",
+      "0.0019"
+     ],
+     "unit": "BNB"
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "tusdPool",
+      "vault"
+     ],
+     "data": [
+      "0.05751331596077293"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S2",
+   "what": "operator: vault sells 0.05 tUSD for BNB (approve, swap, allowance reset)",
+   "tx": "0xb02ba8119f537d24234b76b901b7abf0d5cd3e09546858850fea46d829b4c4de",
+   "from": "operator",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Executed(uint256,address,address,uint256,uint256)",
+     "indexed": [
+      "uint:0",
+      "operator",
+      "operator"
+     ]
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "vault",
+      "tusdPool"
+     ],
+     "data": [
+      "0.05"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S3",
+   "what": "operator: vault pays the supplier 1 tUSD (plain payments pass the guards)",
+   "tx": "0x4ff5c51d174e70a607c4598fbca50628bb72ad3a314966fc7c0ff539b4011a47",
+   "from": "operator",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "vault",
+      "supplier"
+     ],
+     "data": [
+      "1"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S4",
+   "what": "session manager opens an AI-agent session in the GUARDED envelope 1",
+   "tx": "0xff77185e1b3126f2cadc72cb1fd73f7bdc1ff0cb5a7637e4530b477311499d02",
+   "from": "sessionManager",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SessionOpened(uint256,uint256,address,address,uint48)",
+     "indexed": [
+      "session:guarded",
+      "uint:1",
+      "agent"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S5",
+   "what": "session manager opens an AI-agent session in the UNGUARDED envelope 2",
+   "tx": "0xecb467699f202b8a9865eb316d5a7f09cb7f5edbdc066877a6f7e0347da83470",
+   "from": "sessionManager",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "SessionOpened(uint256,uint256,address,address,uint48)",
+     "indexed": [
+      "session:unguarded",
+      "uint:2",
+      "agent"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "S6",
+   "what": "AI agent, on its own, swaps 0.0001 BNB for tUSD inside the guarded session",
+   "tx": "0x8bdb4b56f3388530e805af6adb9b9891220fa54336b2f9efaa4768620a0011f8",
+   "from": "agent",
+   "to": "vault",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "vault",
+     "event": "Executed(uint256,address,address,uint256,uint256)",
+     "indexed": [
+      "session:guarded",
+      "agent",
+      "agent"
+     ]
+    },
+    {
+     "emitter": "token",
+     "event": "Transfer(address,address,uint256)",
+     "indexed": [
+      "tusdPool",
+      "vault"
+     ],
+     "data": [
+      "0.057462722825353936"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "A1",
+   "what": "operator key signs a swap whose output goes to the attacker",
+   "tx": "0x70eeb90b5d165c27bc5cbbe3ccddc4a89e265b780a7ea6f3145cd2b899159244",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "RecipientNotVault(address)"
+  },
+  {
+   "step": "A2",
+   "what": "operator key signs a swap that accepts any price (minimum out = 1)",
+   "tx": "0x1558d52c520a837acbcb3c710e13b403f1722d2a31890349b579af8283f613ae",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "PriceTooLow(uint256,uint256)"
+  },
+  {
+   "step": "A4",
+   "what": "operator key uses an unsupported router function (fee-on-transfer variant)",
+   "tx": "0x9c634a29fca1e304cb938bdb4636539edb7b1f1e9a6b5068f184cae4695596a0",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "UnsupportedCall(address,bytes4)"
+  },
+  {
+   "step": "A5",
+   "what": "operator key signs a swap valid for 2 days (to run later at a worse price)",
+   "tx": "0x820db8c9917014dc164af49f64f5a589fc12cd5b94521c6287360f10bf822c08",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "BadDeadline(uint256)"
+  },
+  {
+   "step": "A6",
+   "what": "operator key approves a non-router (the supplier) to pull tUSD",
+   "tx": "0x16e3b5f7e44aa8bb95ab9bafe07b8e289bafbc2d4083ca45126b18647326dbed",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "ApproveToNonRouter(address)"
+  },
+  {
+   "step": "A7",
+   "what": "operator key swaps into a token that is not on the guard's list (PancakeSwap's MOCK Token A)",
+   "tx": "0x76e194cc9cb88e82d34a24b3f1220783e06c4869cf9ecf6f52fe60bb44024fc3",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "TokenNotAllowed(address)"
+  },
+  {
+   "step": "A8",
+   "what": "AI agent (guarded session) sends a swap's output to the attacker",
+   "tx": "0x09b0086f0eac57c9e3c653a1f28843eff2a9195ba5508381678c7916ef72af89",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "RecipientNotVault(address)"
+  },
+  {
+   "step": "A9",
+   "what": "AI agent uses the UNGUARDED session to call the router \u2014 the other path",
+   "tx": "0x137d273ff770be95908e66bed4411d4dd8d4ba1e840e4d937db8797938516f7c",
+   "from": "agent",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "GuardRequired()"
+  },
+  {
+   "step": "A10",
+   "what": "admin key tries to remove the session guard without the timelock",
+   "tx": "0x988111bbbe325589464c8822d749d23ee2d83e8e47166d97556e53c49db3e8e3",
+   "from": "admin",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "NotTimelocked()"
+  },
+  {
+   "step": "A11",
+   "what": "operator key parks 1 tUSD at the router, where anyone could sweep it",
+   "tx": "0x0b2982cb1852309abfdd6789a5b46e9c6a36425b658c7d0072b6d8c6a8727c86",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "RecipientNotAllowed(address)"
+  },
+  {
+   "step": "A14",
+   "what": "operator key, second policy: a fair swap priced by the official opBNB oracle (Binance Oracle BNB / USD), whose feed last updated on 2026-10-22",
+   "tx": "0xaf69d9b369dfd81a9df47e2bf901e012a6913b560dcf4588a2fec1ebca744dc6",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "StalePrice(address)"
+  },
+  {
+   "step": "A12",
+   "what": "ThreatFeed V2: a responder blocks the supplier (reported as a drainer) \u2014 instantly",
+   "tx": "0x57b273c3486787d6dcd9e9c350cb304847b6583f2a4281a62db8295f31c4ac39",
+   "from": "responder",
+   "to": "threatFeed",
+   "expect": "success",
+   "events": [
+    {
+     "emitter": "threatFeed",
+     "event": "Blocked(address,address,bytes32)",
+     "indexed": [
+      "supplier",
+      "responder"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "A13",
+   "what": "after the block: operator key tries to pay the supplier again",
+   "tx": "0xb9b9336656d7c82a68decc5cf7b1f3a2c26a74dd047b22aa0044a488e969278e",
+   "from": "operator",
+   "to": "vault",
+   "expect": "reverted",
+   "error": "BlockedAddress(address)"
+  }
+ ],
+ "checkpoints": [],
+ "attackWindows": [
+  {
+   "label": "attacks A1-A14 (no tUSD may leave the vault)",
+   "fromBlock": 223578867,
+   "toBlock": 223579368
+  }
+ ]
+}

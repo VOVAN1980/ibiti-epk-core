@@ -10,7 +10,7 @@
 <meta property="og:image" content="https://vovan1980.github.io/ibiti-epk-core/img/epk-og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="EPK by IBITI Labs: on-chain vaults for AI agents that pay and trade. Live on BSC Testnet, not audited yet.">
+<meta property="og:image:alt" content="EPK by IBITI Labs: on-chain vaults for AI agents that pay and trade. Live on BSC Testnet and opBNB Testnet, not audited yet.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://vovan1980.github.io/ibiti-epk-core/img/epk-og.jpg">
 <meta name="theme-color" content="#020204">
@@ -74,7 +74,7 @@
       </div>
       <div class="road r4">
         <div class="crystal st reveal d1"><div class="when">step 1</div><h3>Map</h3><p>What may your agents do, how much, where to? We turn it into limits, allowed addresses, session envelopes and guardians.</p></div>
-        <div class="crystal st reveal d2"><div class="when">step 2</div><h3>Deploy</h3><p>Your own EPK v2 vault and Watchtower on BSC Testnet, with your roles and keys.</p></div>
+        <div class="crystal st reveal d2"><div class="when">step 2</div><h3>Deploy</h3><p>Your own EPK v2 vault and Watchtower on BSC Testnet or opBNB Testnet, with your roles and keys.</p></div>
         <div class="crystal st now reveal d3"><div class="when">step 3</div><h3>Attack</h3><p>We send your worst cases on-chain: a hacked agent, a stolen key, a bad change — and record every rejection.</p></div>
         <div class="crystal st reveal d4"><div class="when">step 4</div><h3>Prove &amp; plan</h3><p>An evidence pack anyone can re-check, an integration plan and production license terms.</p></div>
       </div>
@@ -141,9 +141,9 @@
       <div class="crystal pad reveal d1">
         <ul class="bullets" style="margin-top:0">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>BNB Chain × DoraHacks OpenClaw (2026): announced among the 10 winners on the official livestream (listed ninth), later excluded from the final list after an eligibility review</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>EPK v2: live on BSC Testnet with a public, re-checkable demo</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>EPK v2: live on BSC Testnet and opBNB Testnet, each with a public, re-checkable demo</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Watchtower: cancelled a stolen admin key’s change 9 blocks (about 4 seconds) later</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>211 contract tests pass (3 fork tests skipped), plus 30 Watchtower and 16 SDK tests; source code public, commercial license for production</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>212 contract tests pass (3 fork tests skipped), plus 30 Watchtower and 16 SDK tests; source code public, commercial license for production</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>TypeScript SDK and emergency evacuation shipped; next: an independent audit, the 24/7 Watchtower service, then mainnet</li>
         </ul>
         <div class="cta" style="justify-content:flex-start;margin-top:24px">
@@ -157,15 +157,15 @@
     <div class="wrap">
       <div class="section-head reveal"><p class="eyebrow">Straight answers</p><h2>Questions we get.</h2></div>
       <div class="grid g2">
-        <article class="crystal pad reveal d1"><h3>Is EPK v2 audited?</h3><p class="card-text">Not yet. EPK has 211 passing contract tests (3 fork tests skipped) plus 30 Watchtower and 16 SDK tests,
+        <article class="crystal pad reveal d1"><h3>Is EPK v2 audited?</h3><p class="card-text">Not yet. EPK has 212 passing contract tests (3 fork tests skipped) plus 30 Watchtower and 16 SDK tests,
           static analysis and five internal security reviews, and an independent audit comes before mainnet. Until then: testnet only.</p></article>
         <article class="crystal pad reveal d2"><h3>Can IBITI Labs touch my vault?</h3><p class="card-text">No. You own your vault.
           Nobody — including us — can upgrade it, change its rules or move its funds for you. New versions are opt-in through your own timelock.</p></article>
         <article class="crystal pad reveal d1"><h3>What if the Watchtower's key is stolen?</h3><p class="card-text">A guardian can only
           cancel pending changes or press panic. It can never move funds. The worst it can do is pause or panic the vault (panic also
           revokes policies, sessions and pending changes) and veto your changes until you replace it through the timelock.</p></article>
-        <article class="crystal pad reveal d2"><h3>Which chains?</h3><p class="card-text">BSC Testnet today. The vault is a standard
-          EVM contract; more networks are on the roadmap after the audit.</p></article>
+        <article class="crystal pad reveal d2"><h3>Which chains?</h3><p class="card-text">BSC Testnet and opBNB Testnet today, with the same code. The vault is a
+          standard EVM contract; more networks are on the roadmap after the audit.</p></article>
       </div>
     </div>
   </section>

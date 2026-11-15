@@ -6,17 +6,24 @@ import "forge-std/console2.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EPKVault} from "../../contracts/v2/EPKVault.sol";
+import {EPKDemoNetwork} from "./demo/EPKDemoNetwork.sol";
 
 /// @title Step 3 — an AI agent works inside its session (BSC testnet)
 /// @notice The session manager opens a 3-day session for the agent; the agent (its own key signs and
 ///         submits) pays 50 eUSD to the owner's treasury. Then the script PREPARES — without sending —
-///         five attack transactions and writes them to deployments/bsc-testnet/epk-v2-attacks.json;
+///         five attack transactions and writes them to deployments/<network>/epk-v2-attacks.json;
 ///         scripts/v2/demo_attacks.py sends them so each one is rejected on-chain.
-/// forge script scripts/v2/DemoSession.s.sol:DemoSession --rpc-url $BSC_RPC_URL --broadcast
+/// forge script scripts/v2/DemoSession.s.sol:DemoSession --rpc-url $RPC --broadcast
 contract DemoSession is Script {
-    string internal constant IN_CORE = "deployments/bsc-testnet/epk-v2.json";
-    string internal constant IN_VAULT = "deployments/bsc-testnet/epk-v2-vault.json";
-    string internal constant OUT = "deployments/bsc-testnet/epk-v2-attacks.json";
+    function IN_CORE() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2.json");
+    }
+    function IN_VAULT() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2-vault.json");
+    }
+    function OUT() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2-attacks.json");
+    }
 
     EPKVault internal vault;
     address internal token;
@@ -26,9 +33,9 @@ contract DemoSession is Script {
 
     function run() external {
         // EPK is not audited: these scripts refuse to run on any mainnet
-        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
-        string memory core = vm.readFile(IN_CORE);
-        string memory v = vm.readFile(IN_VAULT);
+        EPKDemoNetwork.dir(); // EPK is not audited: test networks only (reverts elsewhere)
+        string memory core = vm.readFile(IN_CORE());
+        string memory v = vm.readFile(IN_VAULT());
         vault = EPKVault(payable(vm.parseJsonAddress(v, ".vault")));
         token = vm.parseJsonAddress(core, ".token");
         treasury = vm.parseJsonAddress(v, ".admin");
@@ -84,8 +91,8 @@ contract DemoSession is Script {
             o, "e_notTheAgent", _exec(sid, c, deadline, _sign(agentPk, sid, agent, c, nonce, deadline))
         );
         json = vm.serializeString(o, "e_notTheAgent_from", "guardian2");
-        vm.writeJson(json, OUT);
-        console2.log("Prepared 5 attack transactions:", OUT);
+        vm.writeJson(json, OUT());
+        console2.log("Prepared 5 attack transactions:", OUT());
     }
 
     function _store(string memory o, string memory key, bytes memory data, string memory from) internal {

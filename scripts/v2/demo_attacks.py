@@ -2,13 +2,16 @@
 """Send prepared EPK v2 attack transactions so that each one is rejected ON-CHAIN (evidence).
 
 Usage (from the repo root):
-    python scripts/v2/demo_attacks.py deployments/bsc-testnet/epk-v2-attacks.json [--rpc-url URL]
+    python scripts/v2/demo_attacks.py deployments/<network>/epk-v2-attacks.json [--rpc-url URL]
+
+<network> is bsc-testnet or opbnb-testnet; the node comes from --rpc-url, else from .env (BSC_RPC_URL /
+OPBNB_RPC_URL), else the network's official public node.
 
 For every entry `<name>` / `<name>_from` in the JSON it:
   1. simulates the call (eth_call) from that sender and decodes the EPKVault custom error;
   2. sends it anyway with a fixed gas limit (no gas estimation), so the rejection is mined;
   3. right after a rejection, stores the tx's execution trace (debug_traceTransaction, callTracer) in
-     deployments/bsc-testnet/traces/ — strict proof of the revert reason (public nodes keep it briefly);
+     deployments/<network>/traces/ — strict proof of the revert reason (public nodes keep it briefly);
   4. records tx hash, status and error in `<input>-results.json`.
 Private keys are read from .env and passed to the local `cast` process (--private-key);
 they are never printed or written anywhere.
@@ -28,7 +31,10 @@ KEY_FOR = {"agent": "V2_AGENT_PRIVATE_KEY", "guardian1": "V2_GUARDIAN1_PRIVATE_K
 ERROR_SOURCES = ["contracts/v2/EPKVault.sol:EPKVault", "contracts/v2/guards/DexGuard.sol:DexGuard",
                  "contracts/v2/guards/ThreatFeedGuard.sol:ThreatFeedGuard",
                  "contracts/v2/guards/CompositeGuard.sol:CompositeGuard"]
-TRACES = "deployments/bsc-testnet/traces"
+TRACES = "deployments/bsc-testnet/traces"  # set per network in main()
+# the node of each network: the .env entry, else the official public node
+NODES = {"bsc-testnet": ("BSC_RPC_URL", "https://bsc-testnet-rpc.publicnode.com"),
+         "opbnb-testnet": ("OPBNB_RPC_URL", "https://opbnb-testnet-rpc.bnbchain.org")}
 
 
 def load_env(path=".env"):
@@ -83,9 +89,16 @@ def main():
     path = sys.argv[1]
     rpc = sys.argv[sys.argv.index("--rpc-url") + 1] if "--rpc-url" in sys.argv else None
     env = load_env()
-    rpc = rpc or env["BSC_RPC_URL"]
+    folder = os.path.dirname(os.path.abspath(path))
+    network = os.path.basename(folder)
+    if network not in NODES:
+        sys.exit(f"unknown network folder {network}: expected one of {', '.join(NODES)}")
+    global TRACES
+    TRACES = os.path.join(folder, "traces")
+    env_key, public_node = NODES[network]
+    rpc = rpc or env.get(env_key) or public_node
     attacks = json.load(open(path))
-    vault = attacks.get("vault") or json.load(open("deployments/bsc-testnet/epk-v2-vault.json"))["vault"]
+    vault = attacks.get("vault") or json.load(open(os.path.join(folder, "epk-v2-vault.json")))["vault"]
     errors = error_table()
     results = []
 

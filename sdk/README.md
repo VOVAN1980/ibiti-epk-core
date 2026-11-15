@@ -26,7 +26,7 @@ npm run example:v2-quickstart              # your own vault on BSC Testnet from 
 
 New in the SDK for integrators: `EPKFactoryClient` (create / predict your vault), `VaultAdmin` + `vaultActions`
 (configure during setup, the timelock afterwards), `deployDexGuard` / `deployThreatFeed` / `deployCompositeGuard`,
-`networks` (public BSC Testnet addresses, PancakeSwap, Chainlink feeds), `explainEpkError` (every error in one
+`networks` (public BSC Testnet and opBNB Testnet addresses; on BSC Testnet also PancakeSwap and Chainlink feeds), `explainEpkError` (every error in one
 sentence plus what to do).
 
 ## SDK v2 in five calls

@@ -8,21 +8,26 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EPKVault, IEPKVaultEmergency} from "../../contracts/v2/EPKVault.sol";
 import {EPKVaultFactory} from "../../contracts/v2/EPKVaultFactory.sol";
 import {EPKDemoToken} from "./demo/EPKDemoToken.sol";
+import {EPKDemoNetwork} from "./demo/EPKDemoNetwork.sol";
 
-/// @title Step 2 — create and configure the demo vault (BSC testnet)
+/// @title Step 2 — create and configure the demo vault (a public test network)
 /// @notice Admin = deployer. Guardians, recovery and session manager come from .env (V2_*).
 ///         Vault-wide limit 1000 eUSD/day; each agent session gets 100 eUSD/day; only the owner's
 ///         treasury (the admin address) is an allowed destination. Funds the vault with demo tokens
-///         and gives the role keys a little tBNB for gas.
-/// forge script scripts/v2/SetupDemoVault.s.sol:SetupDemoVault --rpc-url $BSC_RPC_URL --broadcast
+///         and gives the role keys a little gas money (tBNB).
+/// forge script scripts/v2/SetupDemoVault.s.sol:SetupDemoVault --rpc-url $RPC --broadcast
 contract SetupDemoVault is Script {
-    string internal constant IN = "deployments/bsc-testnet/epk-v2.json";
-    string internal constant OUT = "deployments/bsc-testnet/epk-v2-vault.json";
+    function IN() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2.json");
+    }
+    function OUT() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2-vault.json");
+    }
     uint256 internal constant ENVELOPE = 1;
 
     function run() external {
         // EPK is not audited: these scripts refuse to run on any mainnet
-        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
+        EPKDemoNetwork.dir(); // EPK is not audited: test networks only (reverts elsewhere)
         uint256 adminPk = vm.envUint("PRIVATE_KEY");
         address admin = vm.addr(adminPk);
         address g1 = vm.addr(vm.envUint("V2_GUARDIAN1_PRIVATE_KEY"));
@@ -35,7 +40,7 @@ contract SetupDemoVault is Script {
         // test networks allow a 5-minute timelock (vault 2.3.0+), so panic -> unpause takes minutes
         uint256 delay = vm.envOr("V2_DELAY", uint256(5 minutes));
 
-        string memory json = vm.readFile(IN);
+        string memory json = vm.readFile(IN());
         EPKVaultFactory factory = EPKVaultFactory(vm.parseJsonAddress(json, ".factory"));
         EPKDemoToken token = EPKDemoToken(vm.parseJsonAddress(json, ".token"));
 
@@ -64,6 +69,7 @@ contract SetupDemoVault is Script {
         payable(g2).transfer(0.002 ether);
         payable(manager).transfer(0.003 ether);
         payable(recovery).transfer(0.002 ether);
+        if (agent.balance < 0.001 ether) payable(agent).transfer(0.002 ether); // the agent submits its own batches
         vm.stopBroadcast();
 
         string memory o = "vault";
@@ -77,7 +83,7 @@ contract SetupDemoVault is Script {
         vm.serializeAddress(o, "coldWallet", cold);
         vm.serializeUint(o, "delay", delay);
         string memory out = vm.serializeUint(o, "envelope", ENVELOPE);
-        vm.writeJson(out, OUT);
+        vm.writeJson(out, OUT());
 
         console2.log("Demo vault:", address(vault));
         console2.log("Vault eUSD balance:", token.balanceOf(address(vault)) / 1e18);

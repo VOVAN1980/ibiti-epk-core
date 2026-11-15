@@ -5,26 +5,31 @@ import "forge-std/Script.sol";
 import "forge-std/console2.sol";
 
 import {EPKVault, IEPKVaultEmergency} from "../../contracts/v2/EPKVault.sol";
+import {EPKDemoNetwork} from "./demo/EPKDemoNetwork.sol";
 
 /// @title Emergency evacuation on the demo vault (BSC Testnet, vault 2.3.0+) — docs/EVACUATION_v2.md
-/// @notice With the Watchtower running (watchtower/config.bsc-testnet.json):
+/// @notice With the Watchtower running (watchtower/config.<network>.json):
 ///   1. `redirect()`: an attacker with the stolen admin key schedules "cold wallet = mine" (the Watchtower cancels
 ///      it within seconds); also PREPARES, without sending, the attacker's attempt to execute it anyway and a
-///      guardian's attempt to evacuate (deployments/bsc-testnet/epk-v2-evacuation.json) — send them with
+///      guardian's attempt to evacuate (deployments/<network>/epk-v2-evacuation.json) — send them with
 ///      scripts/v2/demo_attacks.py, so each rejection is recorded on-chain;
 ///   2. `evacuate()`: the owner's recovery key evacuates every tracked asset to the cold wallet registered at setup.
-///   forge script scripts/v2/DemoEvacuation.s.sol:DemoEvacuation --sig "redirect()" --rpc-url $BSC_RPC_URL --broadcast
-///   python scripts/v2/demo_attacks.py deployments/bsc-testnet/epk-v2-evacuation.json
-///   forge script scripts/v2/DemoEvacuation.s.sol:DemoEvacuation --sig "evacuate()" --rpc-url $BSC_RPC_URL --broadcast
+///   forge script scripts/v2/DemoEvacuation.s.sol:DemoEvacuation --sig "redirect()" --rpc-url $RPC --broadcast
+///   python scripts/v2/demo_attacks.py deployments/<network>/epk-v2-evacuation.json
+///   forge script scripts/v2/DemoEvacuation.s.sol:DemoEvacuation --sig "evacuate()" --rpc-url $RPC --broadcast
 contract DemoEvacuation is Script {
-    string internal constant IN_VAULT = "deployments/bsc-testnet/epk-v2-vault.json";
-    string internal constant OUT = "deployments/bsc-testnet/epk-v2-evacuation.json";
+    function IN_VAULT() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2-vault.json");
+    }
+    function OUT() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2-evacuation.json");
+    }
     address internal constant ATTACKER = address(0xBAD2);
     bytes32 internal constant SALT = keccak256("EPK demo: stolen admin key redirects the cold wallet");
 
     function _vault() internal view returns (EPKVault) {
-        require(block.chainid == 97, "BSC Testnet only");
-        return EPKVault(payable(vm.parseJsonAddress(vm.readFile(IN_VAULT), ".vault")));
+        EPKDemoNetwork.dir(); // EPK is not audited: test networks only (reverts elsewhere)
+        return EPKVault(payable(vm.parseJsonAddress(vm.readFile(IN_VAULT()), ".vault")));
     }
 
     function redirect() external {
@@ -44,7 +49,7 @@ contract DemoEvacuation is Script {
         string memory json = vm.serializeBytes(
             o, "i_guardianEvacuates", abi.encodeCall(IEPKVaultEmergency.evacuate, (new address[](0)))
         );
-        vm.writeJson(json, OUT);
+        vm.writeJson(json, OUT());
     }
 
     function evacuate() external {

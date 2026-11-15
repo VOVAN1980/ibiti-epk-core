@@ -1,0 +1,11 @@
+{
+  "chainId": 5611,
+  "codehash": "0xeb9a1b769ef5ef45f00a6904d7e86b5f40debfba9de5c6bbc6e785e32c9b8d9d",
+  "deployer": "0xA2BD166173925E5b8E640f091b0f3bEcBbBE15f8",
+  "emergencyModule": "0xF3939aEB10FDa58216d14Cd86de892Bc538Fa9F6",
+  "factory": "0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4",
+  "implementation": "0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9",
+  "registry": "0x81Ac99466291D2324bf459c7345F5506D9b90158",
+  "token": "0xD0F6C69aD004230b4383B72Dc848701e566BeA7C",
+  "version": 20300
+}

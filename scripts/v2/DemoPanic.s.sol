@@ -6,17 +6,26 @@ import "forge-std/console2.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EPKVault} from "../../contracts/v2/EPKVault.sol";
+import {EPKDemoNetwork} from "./demo/EPKDemoNetwork.sol";
 
 /// @title Step 4 — panic and recovery (BSC testnet)
-/// Phase 1 (now):        forge script scripts/v2/DemoPanic.s.sol:DemoPanic --sig "panicAndScheduleUnpause()" --rpc-url $BSC_RPC_URL --broadcast
-/// Phase 2 (after delay): forge script scripts/v2/DemoPanic.s.sol:DemoPanic --sig "recover()" --rpc-url $BSC_RPC_URL --broadcast
-/// Phase 2 also prepares deployments/bsc-testnet/epk-v2-after-panic.json: the old session trying to pay
+/// Phase 1 (now):        forge script scripts/v2/DemoPanic.s.sol:DemoPanic --sig "panicAndScheduleUnpause()" --rpc-url $RPC --broadcast
+/// Phase 2 (after delay): forge script scripts/v2/DemoPanic.s.sol:DemoPanic --sig "recover()" --rpc-url $RPC --broadcast
+/// Phase 2 also prepares deployments/<network>/epk-v2-after-panic.json: the old session trying to pay
 /// again (must be rejected: panic ended it for good) — send it with scripts/v2/demo_attacks.py.
 contract DemoPanic is Script {
-    string internal constant IN_CORE = "deployments/bsc-testnet/epk-v2.json";
-    string internal constant IN_VAULT = "deployments/bsc-testnet/epk-v2-vault.json";
-    string internal constant IN_ATTACKS = "deployments/bsc-testnet/epk-v2-attacks.json";
-    string internal constant OUT = "deployments/bsc-testnet/epk-v2-after-panic.json";
+    function IN_CORE() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2.json");
+    }
+    function IN_VAULT() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2-vault.json");
+    }
+    function IN_ATTACKS() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2-attacks.json");
+    }
+    function OUT() internal view returns (string memory) {
+        return EPKDemoNetwork.file("epk-v2-after-panic.json");
+    }
     bytes32 internal constant SALT = keccak256("EPK demo: unpause after panic");
 
     EPKVault internal vault;
@@ -24,13 +33,13 @@ contract DemoPanic is Script {
     address internal treasury;
 
     function _load() internal {
-        vault = EPKVault(payable(vm.parseJsonAddress(vm.readFile(IN_VAULT), ".vault")));
-        token = vm.parseJsonAddress(vm.readFile(IN_CORE), ".token");
-        treasury = vm.parseJsonAddress(vm.readFile(IN_VAULT), ".admin");
+        vault = EPKVault(payable(vm.parseJsonAddress(vm.readFile(IN_VAULT()), ".vault")));
+        token = vm.parseJsonAddress(vm.readFile(IN_CORE()), ".token");
+        treasury = vm.parseJsonAddress(vm.readFile(IN_VAULT()), ".admin");
     }
 
     function panicAndScheduleUnpause() external {
-        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
+        EPKDemoNetwork.dir(); // EPK is not audited: test networks only (reverts elsewhere)
         _load();
         vm.broadcast(vm.envUint("V2_GUARDIAN1_PRIVATE_KEY"));
         vault.panic(); // a guardian stops everything instantly
@@ -41,11 +50,11 @@ contract DemoPanic is Script {
     }
 
     function recover() external {
-        require(block.chainid == 97 || block.chainid == 11155111 || block.chainid == 31337, "EPK: test networks only");
+        EPKDemoNetwork.dir(); // EPK is not audited: test networks only (reverts elsewhere)
         _load();
         uint256 agentPk = vm.envUint("V2_AGENT_PRIVATE_KEY");
         address agent = vm.addr(agentPk);
-        uint256 oldSid = vm.parseJsonUint(vm.readFile(IN_ATTACKS), ".sessionId");
+        uint256 oldSid = vm.parseJsonUint(vm.readFile(IN_ATTACKS()), ".sessionId");
 
         vm.broadcast(vm.envUint("PRIVATE_KEY"));
         vault.executeScheduled(abi.encodeCall(EPKVault.unpause, ()), SALT);
@@ -66,7 +75,7 @@ contract DemoPanic is Script {
         vm.serializeUint(o, "newSessionId", sid);
         vm.serializeBytes(o, "f_oldSessionAfterPanic", abi.encodeCall(EPKVault.execute, (oldSid, pay, deadline, oldSig, "")));
         string memory json = vm.serializeString(o, "f_oldSessionAfterPanic_from", "agent");
-        vm.writeJson(json, OUT);
+        vm.writeJson(json, OUT());
     }
 
     function _transfer(address to, uint256 amount) internal view returns (EPKVault.Call[] memory c) {

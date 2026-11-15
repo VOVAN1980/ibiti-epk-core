@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EPK Guards — live proof</title>
-<meta name="description" content="EPK guards on EPKVault 2.3.0 by IBITI Labs: protected swaps for trading bots and AI agents, every claim checked live against BSC Testnet in your browser.">
+<meta name="description" content="EPK guards on EPKVault 2.3.0 by IBITI Labs: protected swaps for trading bots and AI agents, every claim checked live against BSC Testnet or opBNB Testnet in your browser.">
 <meta property="og:title" content="EPK Guards — live proof">
-<meta property="og:description" content="Protected swaps for trading bots and AI agents: 12 attacks rejected on-chain, every claim re-checked live against BSC Testnet.">
+<meta property="og:description" content="Protected swaps for trading bots and AI agents: every attack rejected on-chain, every claim re-checked live against BSC Testnet or opBNB Testnet.">
 <meta property="og:image" content="https://vovan1980.github.io/ibiti-epk-core/img/epk-og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="EPK by IBITI Labs: on-chain vaults for AI agents that pay and trade. Live on BSC Testnet, not audited yet.">
+<meta property="og:image:alt" content="EPK by IBITI Labs: on-chain vaults for AI agents that pay and trade. Live on BSC Testnet and opBNB Testnet, not audited yet.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://vovan1980.github.io/ibiti-epk-core/img/epk-og.jpg">
@@ -82,17 +82,18 @@
 <main class="proof">
 <div class="wrap">
 <div class="page-head">
-  <span class="badge"><span class="dot"></span>Live check · BSC Testnet · EPKVault 2.3.0 (in development)</span>
+  <span class="badge"><span class="dot"></span>Live check · <span class="net-name">BSC Testnet</span> · EPKVault 2.3.0 (in development)</span>
   <h1>Protected <span class="grad">swaps</span></h1>
+  <p class="net-switch">The same guard demo on two networks: <a href="?net=bsc" data-net="bsc">BSC Testnet</a> · <a href="?net=opbnb" data-net="opbnb">opBNB Testnet</a></p>
 </div>
 <p class="lead">DexGuard, ThreatFeed V2 and CompositeGuard on a new EPKVault 2.3.0 — created through the public
-2.3.0 factory like any integrator's vault — trading through the real PancakeSwap V2 testnet router with real
-Chainlink price feeds. A compromised operator key and an AI agent tried to
+2.3.0 factory like any integrator's vault — trading through the real PancakeSwap V2 testnet router <span id="lead-prices">with real
+Chainlink price feeds</span>. A compromised operator key and an AI agent tried to
 steal or waste the vault's money; every attempt was sent on-chain and rejected, while fair trades went through.
-Press the button and your browser checks every claim below directly against BSC Testnet.</p>
+Press the button and your browser checks every claim below directly against <span class="net-name">BSC Testnet</span>.</p>
 
-<div class="note"><b>What this is and is not.</b> Verified test scenarios on BSC Testnet, with test funds, on a
-separate demo vault (the EPK v2 demo vault on the <a href="./">main proof page</a> is not involved). They prove that
+<div class="note"><b>What this is and is not.</b> Verified test scenarios on <span class="net-name">BSC Testnet</span>, with test funds, on a
+separate demo vault (the EPK v2 demo vault on the <a href="./" id="main-link">main proof page</a> is not involved). They prove that
 the listed protections worked in these scenarios — not that no other attack exists; what the guards do not cover is
 listed in <a data-blob="docs/GUARDS_v2.md">GUARDS_v2.md</a>. EPK is in development and not yet independently
 audited; nothing goes to mainnet before an audit.</div>
@@ -119,7 +120,7 @@ audited; nothing goes to mainnet before an audit.</div>
   <div class="scroll"><table id="tbl-attacks"><thead><tr><th>Step</th><th>Attempt</th><th>Vault's answer</th><th>Proof</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
 </section>
 
-<section id="s-pool">
+<section id="s-pool" data-net="bsc">
   <h2>A real pool 38 % below the market (2026-11-08)</h2>
   <p>The real WBNB/BUSD pool on BSC Testnet pays far less than the Chainlink BNB price. In step <b>C1</b> a plain
   wallet with no EPK makes a 0.0001 BNB trade there and receives about 0.043 BUSD instead of about 0.070 — it loses
@@ -127,6 +128,18 @@ audited; nothing goes to mainnet before an audit.</div>
   quote; DexGuard compares it with Chainlink and the vault refuses with <code>PriceTooLow</code>. Fair trades on a
   pool at the Chainlink price (steps S1, S2, S6) go through. Both transactions are checked in the tables on this
   page.</p>
+</section>
+
+<section id="s-oracle" data-net="opbnb" hidden>
+  <h2>The official opBNB oracle is frozen (2026-11-15)</h2>
+  <p>opBNB has no Chainlink price feeds, so on opBNB the guard reads a fixed BNB test price ($578.49), copied from
+  Chainlink BNB / USD on BSC Testnet when the demo was deployed; this page asks a BSC Testnet node for that round and
+  compares. The official opBNB oracle, Binance Oracle, last updated its BNB / USD testnet feed on 2026-10-22, at
+  $732.37 — 27 % above that price. In step <b>A14</b> the operator key asks for a fair trade through a second policy
+  whose DexGuard reads that frozen feed, and the vault refuses with <code>StalePrice</code>: a guard stops trading
+  on a dead oracle instead of trading at a price 27 % off. Fair trades at the test price (steps S1, S2, S6) go
+  through. opBNB Testnet has no official stablecoin on PancakeSwap, so the BSC steps A3 and C1 (a real pool far
+  below the market) have no counterpart here.</p>
 </section>
 
 <section id="s-fix">
@@ -138,9 +151,9 @@ audited; nothing goes to mainnet before an audit.</div>
 </section>
 
 <section id="s-flow">
-  <h2>Real transactions on BSC Testnet</h2>
-  <p>Setup, allowed trades (operator policy and AI-agent session), the plain-wallet control trade, the ThreatFeed
-  block, and every rejected attack.</p>
+  <h2>Real transactions on <span class="net-name">BSC Testnet</span></h2>
+  <p>Setup, allowed trades (operator policy and AI-agent session), the ThreatFeed block, every rejected attack and,
+  on BSC Testnet, the plain-wallet control trade.</p>
   <div class="scroll"><table id="tbl-tx"><thead><tr><th>Step</th><th>What</th><th>From</th><th>Result</th><th>Tx</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -148,9 +161,9 @@ audited; nothing goes to mainnet before an audit.</div>
   <h2>Contracts</h2>
   <p>Each contract's bytecode hash is checked; the vault's 2.3.0 implementation must be the one pinned in the
   registry of the public stack (5-minute release window on test networks), and the vault proxy must point to
-  it. On the command line, <code>--build</code> shows that the implementation, the factory, the vault proxy and the
+  it. <span id="code-note">On the command line, <code>--build</code> shows that the implementation, the factory, the vault proxy and the
   three guards equal this repository's build byte for byte. tUSD and its fixed $1 feed are the demo's own test
-  contracts; PancakeSwap, BUSD and the Chainlink feeds are third-party contracts on BSC Testnet.</p>
+  contracts; PancakeSwap, BUSD and the Chainlink feeds are third-party contracts on BSC Testnet.</span></p>
   <div class="scroll"><table id="tbl-code"><thead><tr><th>Contract</th><th>Address</th><th>Code hash</th><th>Result</th></tr></thead><tbody></tbody></table></div>
 </section>
 
@@ -166,7 +179,7 @@ audited; nothing goes to mainnet before an audit.</div>
   keeps is reported as <i>archived</i> instead of being checked, never as passed.</p>
   <div class="cmd" id="cmds"></div>
   <p>Evidence file: <a data-blob="deployments/bsc-testnet/epk-guards-evidence.json">epk-guards-evidence.json</a> · Runbook and tables:
-  <a data-blob="docs/TESTNET_GUARDS.md">docs/TESTNET_GUARDS.md</a> ·
+  <a data-blob="docs/TESTNET_GUARDS.md" id="doc-link">docs/TESTNET_GUARDS.md</a> ·
   Source: <a data-tree="contracts/v2/guards">contracts/v2/guards</a></p>
   <details id="nodes-box"><summary>Choose the RPC nodes</summary>
     <p>Free public nodes forget old history, each in its own way, so this page asks several of them, in the order
@@ -176,7 +189,7 @@ audited; nothing goes to mainnet before an audit.</div>
     can answer is shown as <i>archived</i>, never as passed. Put your own node first, or keep a single line to use
     only that node.</p>
     <p><textarea id="rpc" rows="3" spellcheck="false" aria-label="RPC nodes, one per line, asked in this order"></textarea></p>
-    <p>The defaults, tested 2026-11-08: <code>bsc-testnet.bnbchain.org</code> — BNB Chain's own node: every
+    <p id="nodes-note">The defaults, tested 2026-11-08: <code>bsc-testnet.bnbchain.org</code> — BNB Chain's own node: every
     transaction, but only the latest state; <code>97.rpc.thirdweb.com</code> — keeps old state and event logs, with a
     strict rate limit, so it is asked second; <code>bsc-testnet-rpc.publicnode.com</code> — state of about the last
     hour, transactions of about the last day.</p>
@@ -203,13 +216,46 @@ audited; nothing goes to mainnet before an audit.</div>
 "use strict";
 // ---------- where the evidence lives: one fixed, public Git commit (cannot change afterwards) ----------
 const REPO = "VOVAN1980/ibiti-epk-core";
-const EVIDENCE_COMMIT = (window.EPK && window.EPK.COMMIT_GUARDS) || "223e56fd1f546b39ca1c9ea3d16bdd60edc7e39d";
+// Free public nodes of each network, asked in this order (all allow browser requests): every request goes to the
+// first node; the next one is asked only when a node has no answer — a transaction it no longer returns, state it
+// has pruned, a request it refuses, or no response. A revert is an answer, never retried.
+const NETS = {
+  bsc: {
+    id: "bsc", name: "BSC Testnet", key: "bsc-testnet", chainId: 97, doc: "docs/TESTNET_GUARDS.md", explorer: "https://testnet.bscscan.com",
+    commit: (window.EPK && window.EPK.COMMIT_GUARDS) || "223e56fd1f546b39ca1c9ea3d16bdd60edc7e39d",
+    nodes: [  // tested 2026-11-08
+      "https://bsc-testnet.bnbchain.org",        // BNB Chain's own node: every transaction, but only the latest state, no logs
+      "https://97.rpc.thirdweb.com",             // keeps old state and event logs (archive); strict rate limit, so asked second
+      "https://bsc-testnet-rpc.publicnode.com",  // state of the last hour or so; drops transactions after about a day
+    ],
+  },
+  opbnb: {
+    id: "opbnb", name: "opBNB Testnet", key: "opbnb-testnet", chainId: 5611, doc: "docs/TESTNET_OPBNB_GUARDS.md", explorer: "https://testnet.opbnbscan.com",
+    commit: window.EPK && window.EPK.COMMIT_GUARDS_OPBNB,
+    nodes: [  // tested 2026-11-14
+      "https://opbnb-testnet-rpc.bnbchain.org",  // BNB Chain's own node: transactions and logs, recent state only
+      "https://5611.rpc.thirdweb.com",           // keeps old state (archive); logs only over 1,000 blocks at a time
+      "https://opbnb-testnet.publicnode.com",    // recent state and logs
+    ],
+    leadPrices: "with a fixed BNB test price copied from Chainlink on BSC Testnet (opBNB has no Chainlink feeds)",
+    codeNote: "On the command line, <code>--build</code> shows that the implementation, the factory, the vault proxy, the "
+      + "four guards, tUSD and the two fixed price feeds equal this repository's build byte for byte. tUSD and the two "
+      + "fixed feeds are the demo's own test contracts; PancakeSwap and Binance Oracle are third-party contracts on opBNB Testnet.",
+    nodesNote: "The defaults, tested 2026-11-14: <code>opbnb-testnet-rpc.bnbchain.org</code> — BNB Chain's own node: "
+      + "transactions and event logs, but only recent state; <code>5611.rpc.thirdweb.com</code> — keeps old state, event logs "
+      + "1,000 blocks at a time; <code>opbnb-testnet.publicnode.com</code> — recent state and logs. No free opBNB node offers "
+      + "execution traces, so every rejection reason here is proven by <b>REPLAY</b>. The Chainlink round of the BNB test "
+      + "price is read from the BSC Testnet nodes.",
+  },
+};
+const NET = NETS[new URLSearchParams(location.search).get("net") === "opbnb" ? "opbnb" : "bsc"];
+const EVIDENCE_COMMIT = NET.commit || "";
 const REPO_RAW = `https://raw.githubusercontent.com/${REPO}/${EVIDENCE_COMMIT}/`;
 const REPO_BLOB = `https://github.com/${REPO}/blob/${EVIDENCE_COMMIT}/`;
-const EV_PATH = "deployments/bsc-testnet/epk-guards-evidence.json";
-const DOC_PATH = "docs/TESTNET_GUARDS.md";
-const TRACE_DIR = "deployments/bsc-testnet/traces/";
-const EXPLORER = "https://testnet.bscscan.com";
+const EV_PATH = `deployments/${NET.key}/epk-guards-evidence.json`;
+const DOC_PATH = NET.doc;
+const TRACE_DIR = `deployments/${NET.key}/traces/`;
+const EXPLORER = NET.explorer;
 const IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
 // ---------- keccak256 (pure JS, BigInt) ----------
@@ -252,14 +298,8 @@ const eusd = v => { v = BigInt(v); const i = v / 10n**18n, f = (v % 10n**18n).to
 const short = h => h.slice(0, 10) + "…" + h.slice(-4);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pill = (cls, text) => `<span class="pill ${cls}">${esc(text)}</span>`;
-// ---------- nodes: free public BSC Testnet nodes, asked in this order (tested 2026-11-08; all allow browser requests) ----------
-// Every request goes to the first node; the next one is asked only when a node has no answer: a transaction it no
-// longer returns, state it has pruned, a request it refuses, or no response. A revert is an answer, never retried.
-const NODES = [
-  "https://bsc-testnet.bnbchain.org",        // BNB Chain's own node: every transaction, but only the latest state, no logs
-  "https://97.rpc.thirdweb.com",             // keeps old state and event logs (archive); strict rate limit, so asked second
-  "https://bsc-testnet-rpc.publicnode.com",  // state of the last hour or so; drops transactions after about a day
-];
+// ---------- nodes: the chosen network's free public nodes (see NETS) ----------
+const NODES = NET.nodes;
 const LOOKUPS = ["eth_getTransactionByHash", "eth_getTransactionReceipt", "eth_getBlockByNumber"];
 let nodes = NODES, used = {}, silent = {}, lastNode = "";
 const host = u => { try { return new URL(u).host; } catch (e) { return u; } };
@@ -367,13 +407,14 @@ async function verify() {
   const showError = (sig, data) => {
     const types = sig.endsWith("()") ? [] : sig.slice(sig.indexOf("(") + 1, -1).split(",");
     const args = types.map((ty, i) => { const w = data.slice(10 + 64*i, 74 + 64*i) || "0"; const v = BigInt("0x" + w);
-      return ty === "address" ? who("0x" + w.slice(-40)) : (v >= 10n**15n ? eusd(v) + " " + sym : v.toString()); });
+      return ty === "address" ? who("0x" + w.slice(-40)) : /^bytes\d+$/.test(ty) ? "0x" + w.slice(0, 2 * Number(ty.slice(5)))
+        : (v >= 10n**15n ? eusd(v) + " " + sym : v.toString()); });
     return sig.split("(")[0] + "(" + args.join(", ") + ")";
   };
 
   log("info", `nodes, asked in this order: ${nodes.map(host).join(" → ")}`);
   const cid = parseInt(await rpc("eth_chainId"), 16);
-  if (!log(cid === ev.chainId ? "ok" : "bad", `chainId ${cid} (expected ${ev.chainId}, BSC Testnet)`)) return;
+  if (!log(cid === ev.chainId ? "ok" : "bad", `chainId ${cid} (expected ${ev.chainId}, ${NET.name})`)) return;
 
   // the human document and the evidence file (same commit) say the same thing
   const doc = await getFile(DOC_PATH, false);
@@ -405,6 +446,18 @@ async function verify() {
     if (c.proxyImplementation) {
       const impl = "0x" + (await rpc("eth_getStorageAt", c.address, IMPL_SLOT, "latest")).slice(-40);
       good = log(impl.toLowerCase() === C[c.proxyImplementation].toLowerCase() ? "ok" : "bad", `  vault runs ${who(impl)}`) && good;
+    }
+    if (h && c.fixedPrice) { // a fixed test price (opBNB has no Chainlink feeds), and where it was copied from
+      const fp = c.fixedPrice, want = BigInt(fp.answer), usd = v => `${v / 10n**8n}.${(v % 10n**8n).toString().padStart(8, "0")}`;
+      const ans = BigInt("0x" + (await call(c.address, selector("latestRoundData()"))).slice(66, 130));
+      good = log(ans === want ? "ok" : "bad", `  reports the fixed price ${usd(ans)} USD (8 decimals)`) && good;
+      const src = fp.source, other = src && Object.values(NETS).find(n => n.chainId === src.chainId);
+      if (other) {
+        try {
+          const r = await rpcOn(other.nodes, "eth_call", {to: src.feed, data: selector("getRoundData(uint80)") + word(src.round)}, "latest");
+          good = log(BigInt("0x" + r.slice(66, 130)) === want ? "ok" : "bad", `  = the answer of round ${src.round} of ${src.label} (${src.feed}, ${other.name})`) && good;
+        } catch (e) { good = log("skip", `  could not ask ${other.name} for round ${src.round} of ${src.feed}: ${e.message}`) && good; }
+      }
     }
     codeOk += good; set("k-" + k, pill(good ? "ok" : "bad", good ? "verified" : "mismatch"));
   }
@@ -518,7 +571,7 @@ async function verify() {
   const oldNote = counts.old ? ` ${counts.old} older details are kept by none of the nodes asked; they were checked while public nodes still had them (archived).` : "";
   $("status").innerHTML = counts.bad || counts.skip
     ? `<span class="bad">${counts.bad} mismatches, ${counts.skip} not checkable — see the live log.</span>`
-    : `<span class="ok">All ${counts.ok} checks passed against BSC Testnet, in your browser, just now.</span><span class="warn">${esc(oldNote)}</span>`;
+    : `<span class="ok">All ${counts.ok} checks passed against ${NET.name}, in your browser, just now.</span><span class="warn">${esc(oldNote)}</span>`;
 }
 
 // ---------- history from event logs, for when no node asked keeps the old state ----------
@@ -566,15 +619,30 @@ async function history(v, tok, start, end, receipts) {
 }
 
 (async () => {
+  // the chosen network: its name, document, record folder, nodes and story
+  for (const el of document.querySelectorAll(".net-name")) el.textContent = NET.name;
+  for (const a of document.querySelectorAll(".net-switch a")) if (NETS[a.dataset.net] === NET) a.setAttribute("aria-current", "page");
+  for (const sec of document.querySelectorAll("section[data-net]")) sec.hidden = sec.dataset.net !== NET.id;
+  for (const a of document.querySelectorAll("a[data-blob], a[data-tree]")) {
+    for (const k of ["blob", "tree"]) {
+      if (a.dataset[k]) a.dataset[k] = a.dataset[k].replace("deployments/bsc-testnet", `deployments/${NET.key}`).replace("docs/TESTNET_GUARDS.md", NET.doc);
+    }
+  }
+  $("doc-link").textContent = NET.doc;
+  if (NET.id !== "bsc") $("main-link").href = `./?net=${NET.id}`;
+  if (NET.leadPrices) $("lead-prices").textContent = NET.leadPrices;
+  if (NET.codeNote) $("code-note").innerHTML = NET.codeNote;
+  if (NET.nodesNote) $("nodes-note").innerHTML = NET.nodesNote;
   $("rpc").value = NODES.join("\n"); $("rpc").oninput = () => showNodes(false); showNodes(false);
+  if (!EVIDENCE_COMMIT) { $("status").textContent = `The ${NET.name} evidence is not published yet.`; $("go").disabled = true; return; }
   // every link points at the same fixed commit
   for (const a of document.querySelectorAll("a[data-blob]")) a.href = REPO_BLOB + a.dataset.blob;
   for (const a of document.querySelectorAll("a[data-tree]")) a.href = `https://github.com/${REPO}/tree/${EVIDENCE_COMMIT}/${a.dataset.tree}`;
   const cl = $("commit-link"); cl.textContent = EVIDENCE_COMMIT.slice(0, 12); cl.href = `https://github.com/${REPO}/commit/${EVIDENCE_COMMIT}`;
   $("cmds").textContent = `git clone https://github.com/${REPO} && cd ibiti-epk-core && git checkout ${EVIDENCE_COMMIT}\n`
     + "git checkout master -- scripts/v2/verify_evidence.py   # the latest checker: asks several nodes, as this page does\n"
-    + "python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-guards-evidence.json --doc docs/TESTNET_GUARDS.md\n"
-    + "forge build && python scripts/v2/verify_evidence.py --evidence deployments/bsc-testnet/epk-guards-evidence.json --doc docs/TESTNET_GUARDS.md --build";
+    + `python scripts/v2/verify_evidence.py${NET.id === "bsc" ? "" : " --network " + NET.key} --evidence ${EV_PATH} --doc ${DOC_PATH}\n`
+    + `forge build && python scripts/v2/verify_evidence.py${NET.id === "bsc" ? "" : " --network " + NET.key} --evidence ${EV_PATH} --doc ${DOC_PATH} --build`;
   EV = await getFile(EV_PATH);
   if (!EV) { $("status").textContent = `Could not load the evidence file from GitHub (commit ${EVIDENCE_COMMIT.slice(0, 7)}).`; $("go").disabled = true; return; }
   renderClaims(EV);

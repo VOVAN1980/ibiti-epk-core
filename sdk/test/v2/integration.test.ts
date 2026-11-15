@@ -66,7 +66,9 @@ test("explainEpkError turns every on-chain rejection of the testnet demo into ad
 test("network presets are valid addresses", () => {
   const walk = (o: unknown): string[] => (typeof o === "string" ? [o] : typeof o === "object" && o ? Object.values(o).flatMap(walk) : []);
   for (const a of walk(networks.bscTestnet).filter((x) => x.startsWith("0x"))) assert.ok(isAddress(a), a);
+  for (const a of walk(networks.opbnbTestnet).filter((x) => x.startsWith("0x"))) assert.ok(isAddress(a), a);
   assert.equal(networks.bscTestnet.chainId, 97);
+  assert.equal(networks.opbnbTestnet.chainId, 5611);
 });
 
 // ---- internal audit 2026-11-08: SDK protections

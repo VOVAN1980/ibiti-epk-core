@@ -65,6 +65,30 @@ contract EPKChainsTest is Test {
         assertEq(vault.vaultVersion(), 20_400);
     }
 
+    /// opBNB Testnet runs the same minute clocks as BSC Testnet: release window and upgrade wait 5 minutes
+    /// each, in parallel, and a 5-minute minimum timelock.
+    function test_opbnbTestnet_sameMinuteClocks() public {
+        _deploy(5611, 5 minutes);
+        assertEq(registry.approvalDelay(), 5 minutes);
+        assertEq(vault.delay(), 5 minutes);
+
+        vm.prank(registryOwner);
+        registry.proposeRelease(address(next));
+        bytes memory op = vault.upgradeOperationData(address(next));
+        vm.prank(admin);
+        vault.scheduleUpgrade(address(next), bytes32("op"));
+
+        vm.warp(_now() + 5 minutes - 1);
+        vm.prank(admin);
+        vm.expectRevert(EPKVault.OperationNotReady.selector);
+        vault.executeScheduled(op, bytes32("op"));
+
+        vm.warp(_now() + 1);
+        vm.prank(admin);
+        vault.executeScheduled(op, bytes32("op"));
+        assertEq(_impl(), address(next));
+    }
+
     /// On test networks the vault's own timelock may be as short as 5 minutes (production: 1 hour), so a
     /// panic -> unpause or any loosening change is tested in minutes; below 5 minutes is still refused.
     function test_testnet_minimumTimelockFiveMinutes() public {
@@ -119,7 +143,7 @@ contract EPKChainsTest is Test {
     /// Mainnets (and unknown chains) keep the production rules: 7-day release window, 2-day upgrade
     /// floor, 1-hour minimum timelock. Local test chains too, so the test suite exercises the real rules.
     function test_productionRulesOnMainnetsAndLocalChains() public {
-        uint256[4] memory chains = [uint256(56), 1, 8453, 31337];
+        uint256[5] memory chains = [uint256(56), 204, 1, 8453, 31337]; // BSC, opBNB, Ethereum, Base, local
         for (uint256 i = 0; i < chains.length; i++) {
             vm.chainId(chains[i]);
             EPKVault genesis = new EPKVault();

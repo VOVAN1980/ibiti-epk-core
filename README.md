@@ -26,7 +26,7 @@
 
 ---
 
-> **Status: EPK 2.3.0 — testnet release, BSC Testnet only. Not independently audited, not on any mainnet; do not use it
+> **Status: EPK 2.3.0 — testnet release on BSC Testnet and opBNB Testnet. Not independently audited, not on any mainnet; do not use it
 > with real funds.** TypeScript SDK: [`sdk/`](sdk/) ·
 > [developer guide](docs/INTEGRATION_v2.md)
 
@@ -49,10 +49,10 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 
 | Component | State |
 |---|---|
-| **EPK v2** — `EPKVault` | **Live on BSC Testnet**: release 2.3.0 since 2026-11-08 — emergency evacuation to the owner's cold wallet, minute-scale timelocks on test networks; the public factory creates vaults on 2.3.0 and existing vaults opt in ([`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md)). Five internal security reviews; **not yet independently audited, not on mainnet** (the evacuation needs an independent review first). EPK License (source-available). |
+| **EPK v2** — `EPKVault` | **Live on BSC Testnet**: release 2.3.0 since 2026-11-08 — emergency evacuation to the owner's cold wallet, minute-scale timelocks on test networks; the public factory creates vaults on 2.3.0 and existing vaults opt in ([`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md)). Also **live on opBNB Testnet** since 2026-11-14: the same code on a fresh deployment, with the full demo ([`docs/TESTNET_OPBNB.md`](docs/TESTNET_OPBNB.md)). Five internal security reviews; **not yet independently audited, not on mainnet** (the evacuation needs an independent review first). EPK License (source-available). |
 | **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). EPK License. |
 | **TypeScript SDK** — `@ibiti/epk-sdk` | In this repository, testnet only; on npm with the finished release ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). EPK License. |
-| **EPK Watchtower** | Automatic guardian, working on BSC Testnet. EPK License. |
+| **EPK Watchtower** | Automatic guardian, working on BSC Testnet and opBNB Testnet. EPK License. |
 
 What comes next, and in which order, is in the [roadmap](docs/ROADMAP.md) — the single source of
 truth for this README, the website and DoraHacks.
@@ -82,6 +82,15 @@ Opt-in upgrades are shown live: a vault took release 2.3.0 through the SDK at th
 same funds, 5 minutes after the release was listed (test networks run 5-minute release and upgrade clocks;
 mainnet keeps 7 days + 2 days) — [`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md).
 
+**The same on opBNB Testnet** (BNB Chain's layer 2, 2026-11-14): the same code and the same demo on a fresh deployment
+([`0x3CaF0110…7AFa5b`](https://testnet.opbnbscan.com/address/0x3CaF011091f0dA6eE432d73678a86957057AFa5b)) — 9 of 9 attacks
+rejected, 0 eUSD moved by them; the Watchtower cancelled the stolen key's change 21 blocks (about 5 seconds) later
+and the cold-wallet redirect 25 blocks (about 6 seconds) later; the evacuation moved all 9,940 eUSD to the cold
+wallet — [`docs/TESTNET_OPBNB.md`](docs/TESTNET_OPBNB.md). The guard demo ran there too (2026-11-15): on the real
+PancakeSwap V2 router of opBNB, 12 of 12 attacks rejected, 0 tUSD moved by them; opBNB has no Chainlink feeds and its
+official oracle (Binance Oracle) stopped updating on 2026-10-22, and a guard reading that frozen feed refused to
+trade (`StalePrice`) — [`docs/TESTNET_OPBNB_GUARDS.md`](docs/TESTNET_OPBNB_GUARDS.md).
+
 ### Check it yourself
 
 No need to trust this page. One command — Python 3 only, no Foundry, no keys, no packages —
@@ -91,7 +100,8 @@ own way): chain id, bytecode hashes, who sent what, emitted events, revert reaso
 historical checkpoints.
 
 ```bash
-python scripts/v2/verify_evidence.py
+python scripts/v2/verify_evidence.py                           # BSC Testnet
+python scripts/v2/verify_evidence.py --network opbnb-testnet    # the same demo on opBNB Testnet
 ```
 
 The report labels how each fact was proven (**STRICT** execution trace, **REPLAY**, **STATE** or
@@ -145,7 +155,7 @@ Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
 
 ```bash
 forge build
-forge test                                               # 214 contract tests (3 of them fork BSC Testnet and need an RPC)
+forge test                                               # 215 contract tests (3 of them fork BSC Testnet and need an RPC)
 python -m unittest discover -s watchtower -p "test_*.py" # 30 Watchtower tests, no network
 ```
 
@@ -160,6 +170,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
 - [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_GUARDS.md) · [release 2.3.0](docs/TESTNET_RELEASE.md)
+- [opBNB Testnet demo and evidence](docs/TESTNET_OPBNB.md) · [guard demo on opBNB](docs/TESTNET_OPBNB_GUARDS.md)
 - [Guard modules](docs/GUARDS_v2.md)
 - [Roadmap](docs/ROADMAP.md)
 

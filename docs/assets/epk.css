@@ -124,6 +124,10 @@ h3 { font-size: 21px; line-height: 1.25; font-weight: 700; }
   font: 500 12px/1 var(--font-mono); letter-spacing: 0.18em; text-transform: uppercase; animation: float 6s ease-in-out infinite;
 }
 .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--safe); box-shadow: 0 0 10px var(--safe); animation: pulse 2s ease-in-out infinite; }
+.net-switch { margin: 14px 0 0; font: 500 13px/1.5 var(--font-mono); color: var(--muted); }
+.net-switch a { color: var(--muted); text-decoration: none; border-bottom: 1px dashed rgba(255, 255, 255, 0.25); }
+.net-switch a:hover { color: #fff; }
+.net-switch a[aria-current="page"] { color: var(--safe-soft); border-bottom-color: var(--safe-soft); }
 .hero h1 { font-size: clamp(38px, 6.2vw, 80px); line-height: 1.04; font-weight: 800; margin: 28px auto 0; max-width: 1180px; text-shadow: 0 0 30px rgba(59, 130, 246, 0.35); }
 .grad {
   background: linear-gradient(to right, #60a5fa 10%, #a78bfa 50%, #22d3ee 90%);

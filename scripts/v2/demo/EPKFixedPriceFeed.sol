@@ -3,8 +3,10 @@ pragma solidity ^0.8.24;
 
 /// @title Fixed-price feed for a test stablecoin — TESTNET ONLY
 /// @notice Chainlink-compatible read interface that always reports the same price, timestamped now.
-///         Used only for the demo's own test stablecoin; every other price in the demo (BNB, BUSD)
-///         comes from real Chainlink feeds on BSC Testnet.
+///         BSC Testnet: used only for the demo's own test stablecoin; every other price there (BNB, BUSD)
+///         comes from real Chainlink feeds. opBNB Testnet has no Chainlink feeds: there the BNB price is
+///         also a fixed test price, copied from Chainlink BNB/USD on BSC Testnet (its description names
+///         the round).
 contract EPKFixedPriceFeed {
     uint8 public immutable decimals;
     int256 public immutable answer;

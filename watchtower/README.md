@@ -1,6 +1,6 @@
 # EPK Watchtower
 
-An automatic guardian for an EPK v2 vault. Status: **working on BSC Testnet** (live demo
+An automatic guardian for an EPK v2 vault. Status: **working on BSC Testnet and opBNB Testnet** (live demo
 below); not audited; licensed under the IBITI Labs EPK License ([`LICENSE`](../LICENSE)) like the rest of EPK.
 
 ## Why it exists
@@ -121,6 +121,11 @@ over the raw body and rejects a mismatch or an old timestamp.
 
 The Watchtower's own log of that run: `deployments/bsc-testnet/watchtower/2026-11-08-alerts.log`.
 All of it is re-checked by `scripts/v2/verify_evidence.py` (steps W1–W3 and E1–E5, [`docs/TESTNET_V2.md`](../docs/TESTNET_V2.md)).
+
+The same demo ran on **opBNB Testnet** on 2026-11-14 (`config.opbnb-testnet.json`, polling every 2 seconds): the
+stolen key's change was cancelled 21 blocks (about 5 seconds) after it was mined, the cold-wallet redirect 25 blocks
+(about 6 seconds) later; opBNB makes a block every 0.25 seconds. Log: `deployments/opbnb-testnet/watchtower/2026-11-14-alerts.log`,
+evidence: [`docs/TESTNET_OPBNB.md`](../docs/TESTNET_OPBNB.md).
 
 Rehearsed on a local fork as well: the attack above, an approved upgrade (left alone), and a burst of
 three unexpected changes (each cancelled, then `panic`).
