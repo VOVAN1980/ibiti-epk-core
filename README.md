@@ -18,7 +18,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.3.0_testnet-informational?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/solidity-0.8.24-363636?style=flat-square&logo=solidity" alt="Solidity">
-  <img src="https://img.shields.io/badge/network-BSC_Testnet-F0B90B?style=flat-square&logo=bnbchain&logoColor=white" alt="Network">
+  <img src="https://img.shields.io/badge/network-BSC_Testnet_%7C_opBNB_Testnet-F0B90B?style=flat-square&logo=bnbchain&logoColor=white" alt="Network">
   <img src="https://img.shields.io/badge/license-IBITI_EPK-orange?style=flat-square" alt="License">
   <a href="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml"><img src="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml"><img src="https://github.com/VOVAN1980/ibiti-epk-core/actions/workflows/security.yml/badge.svg" alt="Security"></a>
@@ -50,7 +50,7 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 | Component | State |
 |---|---|
 | **EPK v2** — `EPKVault` | **Live on BSC Testnet**: release 2.3.0 since 2026-11-08 — emergency evacuation to the owner's cold wallet, minute-scale timelocks on test networks; the public factory creates vaults on 2.3.0 and existing vaults opt in ([`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md)). Also **live on opBNB Testnet** since 2026-11-14: the same code on a fresh deployment, with the full demo ([`docs/TESTNET_OPBNB.md`](docs/TESTNET_OPBNB.md)). Five internal security reviews; **not yet independently audited, not on mainnet** (the evacuation needs an independent review first). EPK License (source-available). |
-| **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on a separate BSC Testnet demo vault ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). EPK License. |
+| **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on separate demo vaults on BSC Testnet and opBNB Testnet ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). EPK License. |
 | **TypeScript SDK** — `@ibiti/epk-sdk` | In this repository, testnet only; on npm with the finished release ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). EPK License. |
 | **EPK Watchtower** | Automatic guardian, working on BSC Testnet and opBNB Testnet. EPK License. |
 
@@ -145,7 +145,7 @@ python watchtower/epk_watchtower.py --config watchtower/config.bsc-testnet.json 
 | `test/v2/` | v2 tests: unit, sessions, upgrades, reentrancy, fuzz and stateful invariants | EPK License |
 | `scripts/v2/` | testnet deployment and demo scripts, evidence verifier, upgrade preflight | EPK License |
 | `watchtower/` | automatic guardian and its tests | EPK License |
-| `deployments/bsc-testnet/` | evidence: addresses, transactions, saved traces, verification reports | EPK License |
+| `deployments/bsc-testnet/`, `deployments/opbnb-testnet/` | evidence: addresses, transactions, saved traces, verification reports | EPK License |
 | `docs/` | specifications, security review, roadmap; the website (GitHub Pages) | EPK License |
 | `sdk/` | TypeScript SDK `@ibiti/epk-sdk` | EPK License |
 
