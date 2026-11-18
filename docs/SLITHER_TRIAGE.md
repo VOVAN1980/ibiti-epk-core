@@ -25,6 +25,13 @@ Verified locally on 2026-11-07: `0 result(s) found` for `contracts/v2/`; the ful
 (including all v2 fuzz and invariant tests) passed after the changes. Re-run on 2026-11-08 after the fifth review
 (guard fixes): 0 results.
 
+**Current state (2026-11-19, release 2.4.0, the code frozen for the audit): 27 results, all explained in §2e.**
+All 27 are in the emergency module that arrived with 2.3.0 (`EPKVaultEmergency`, which shares the vault's storage
+layout `EPKVaultLayout`) and in the vault's `fallback` that reaches it; none is in the 2.4.0 changes. They are
+explained here rather than marked inline, because any edit to `EPKVault.sol` — even a comment — changes the
+compiled metadata, and the frozen source must keep matching the 2.4.0 contracts deployed on the test networks byte
+for byte. The inline markers come with the next code change (e.g. an audit fix).
+
 ## 1. Fixed in code
 
 | Detector | Where | Fix |
@@ -140,8 +147,23 @@ numbers shift and inline suppressions stop matching. Keep the working copy of `c
 | `missing-zero-check` | `EPKRegistry` constructor (`council`) | Suppressed: `council = address(0)` is a valid setting — no council, no fast track (`test_noCouncilNoFastTrack`) |
 
 GitHub's code-scanning run of Slither on PR VOVAN1980/ibiti-epk-core#28 reported exactly one new result, the
-`missing-zero-check` above; the assembly suppression held. The local run with the settings in §3 is still due
-before the audit freeze.
+`missing-zero-check` above; the assembly suppression held. Local run before the audit freeze: §2e.
+
+## 2e. Emergency module (2.3.0), triaged on 2026-11-19
+
+Local run: `27 result(s) found` (35 contracts, 102 detectors) on the merge commit of
+VOVAN1980/ibiti-epk-core#29. GitHub's code-scanning run (no path filter) shows the same 27 plus the two
+`EPKRegistry` / `scheduleUpgrade` results of §2d, which are marked inline.
+
+| Detector | Count | Where | Handling |
+|---|---|---|---|
+| `reentrancy-eth` | 1 | `EPKVaultEmergency.evacuate` | False positive: `evacuate` takes the vault's own lock (`_locked`, shared with `execute` / `executeScheduled`) before any call; `_locked = false` after the calls is the lock's release. The only recipient is the owner's cold wallet, set through the timelock. Proof: `test_E8_reentrantColdWalletIsRefused` |
+| `uninitialized-state` | 8 | `EPKVaultLayout` (`admin`, `recovery`, `isGuardian`, `coSigner`, `setupDone`, `assets`, `_trackedAssets`, `sessionManager`) as used by `EPKVaultEmergency` | False positive: the module only runs through the vault's `delegatecall`, on the vault's storage, which the vault initializes. Called directly it has no admin and no assets, so every call fails (`test_moduleCalledDirectlyDoesNothing`) |
+| `constable-states` | 12 | `EPKVaultLayout` | False positive, same reason: these are the vault's storage slots, mirrored so the module writes the same layout. Making them constant would break the append-only storage layout of an upgradeable vault |
+| `unused-state` | 1 | `EPKVaultLayout.operations` in `EPKVaultEmergency` | Kept on purpose: the slot is part of the shared layout; removing it would shift every later slot |
+| `incorrect-equality` | 2 | `EPKVaultEmergency.evacuate` | Not a balance check: `amount == 0` skips an empty asset; `ret.length == 0` accepts tokens whose `transfer` returns nothing (USDT-style). A failed transfer reverts (`TokenCallFailed`) |
+| `missing-zero-check` | 2 | `EPKVaultEmergency.setColdWallet`, `setEvacuator` | Valid on purpose: `address(0)` switches evacuation off (`evacuate` then reverts `NoColdWallet`) or removes the optional evacuator (`test_separateKeysAreEnforced`: switching the evacuator off is always possible); both run only through the timelock |
+| `assembly` | 1 | `EPKVault.fallback` | Justified in the code next to it: one `delegatecall` to `_emergency`, an immutable deployed by the implementation's own constructor. The existing `slither-disable-next-line` comment sits two lines above `fallback()` (a plain comment line is in between), so Slither does not apply it; moved with the next code change |
 
 ## 3. How to reproduce
 
