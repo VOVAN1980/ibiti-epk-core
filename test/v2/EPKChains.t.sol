@@ -62,7 +62,7 @@ contract EPKChainsTest is Test {
         vm.prank(admin);
         vault.executeScheduled(op, bytes32("fast"));
         assertEq(_impl(), address(next));
-        assertEq(vault.vaultVersion(), 20_400);
+        assertEq(vault.vaultVersion(), 20_500);
     }
 
     /// opBNB Testnet runs the same minute clocks as BSC Testnet: release window and upgrade wait 5 minutes

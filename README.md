@@ -122,7 +122,7 @@ The report labels how each fact was proven (**STRICT** execution trace, **REPLAY
 - **Tighten instantly, loosen only through a timelock** that guardians can veto.
 - **`panic()`**: one call pauses the vault and invalidates every policy, session and pending change.
 - **Emergency evacuation**: the admin, the recovery key or an optional evacuator moves every tracked asset at once — only to the cold wallet the owner registered in advance, never anywhere else; changing that wallet waits 3× the timelock (≥ 2 days on mainnet) and guardians can veto it ([design](docs/EVACUATION_v2.md)).
-- **Upgrades only by the owner's decision**: registry of reviewed releases (7-day public window on mainnet, 5 minutes on test networks), ≥ 2-day per-vault timelock on mainnet, guardian veto; nobody — including IBITI — can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)). An urgent patch can skip the public window only with an independent security council's flag; each vault still opts in through its own wait ([fast track](docs/FAST_TRACK_v2.md), not deployed yet).
+- **Upgrades only by the owner's decision**: registry of reviewed releases (7-day public window on mainnet, 5 minutes on test networks), ≥ 2-day per-vault timelock on mainnet, guardian veto; nobody — including IBITI — can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)). An urgent patch can skip the public window only with a security council's flag; from vault release 2.4.0 each vault still opts in itself and waits its own timelock, at least 1 hour on mainnet ([fast track](docs/FAST_TRACK_v2.md), not deployed yet).
 
 ### Watchtower — the automatic guardian
 
@@ -155,7 +155,7 @@ Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
 
 ```bash
 forge build
-forge test                                               # 229 contract tests (3 of them fork BSC Testnet and need an RPC)
+forge test                                               # 232 contract tests (3 of them fork BSC Testnet and need an RPC)
 python -m unittest discover -s watchtower -p "test_*.py" # 30 Watchtower tests, no network
 ```
 

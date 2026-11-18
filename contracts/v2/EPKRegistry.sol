@@ -11,11 +11,12 @@ import {EPKChains} from "./EPKChains.sol";
 ///         A new release becomes usable only `approvalDelay()` after it is proposed (7 days; minutes
 ///         on public test networks, see EPKChains), so the public can inspect it first; a release can be
 ///         revoked instantly (blocks future opt-ins only).
-///         Fast track for urgent security fixes: an independent security council (a multisig, fixed at
+///         Fast track for urgent security fixes: a security council (a multisig, fixed at
 ///         creation; none = no fast track) may make an already-proposed PATCH release usable at once. The
-///         owner (IBITI) alone cannot skip the window, the council alone cannot list code, and every vault
-///         still opts in itself through its own upgrade wait (at least 2 days on mainnets), which its
-///         guardians can veto. The council may also revoke a release instantly.
+///         owner key alone cannot skip the window, the council alone cannot list code, and every vault
+///         still opts in itself; from vault release 2.4.0 it waits only its own timelock for such a fix
+///         (1 hour minimum on mainnets), and its guardians can veto. The council may also revoke a
+///         release instantly.
 contract EPKRegistry is IEPKRegistry {
     struct Release {
         uint64 version; // read from the implementation's own vaultVersion(); 0 = not listed
@@ -31,7 +32,8 @@ contract EPKRegistry is IEPKRegistry {
     ///         exhausted by a single malicious proposal.
     uint64 public constant MAX_VERSION_STEP = 10_000;
 
-    /// @notice Independent security council (a multisig); address(0) = no fast track. Fixed at creation.
+    /// @notice Security council (a multisig, held apart from the owner key); address(0) = no fast track.
+    ///         Fixed at creation.
     address public immutable council;
     address public owner;
     address public pendingOwner;
@@ -39,6 +41,9 @@ contract EPKRegistry is IEPKRegistry {
     mapping(address => Release) public releases;
     /// @notice The latest version listed before each release: a fast-tracked release must be a patch of it.
     mapping(address => uint64) public previousVersionOf;
+    /// @notice Releases the security council fast-tracked as urgent fixes: from vault release 2.4.0 a vault
+    ///         installs them after its own timelock (1 hour minimum on mainnets) instead of the 2-day upgrade wait.
+    mapping(address => bool) public override isUrgent;
 
     event ReleaseProposed(address indexed implementation, uint64 version, uint64 activeAt, bytes32 codehash);
     event ReleaseRevoked(address indexed implementation, uint64 version);
@@ -109,6 +114,7 @@ contract EPKRegistry is IEPKRegistry {
         uint64 previous = previousVersionOf[implementation];
         if (r.version / 100 != previous / 100) revert NotAPatch(previous, r.version);
         r.activeAt = uint64(block.timestamp);
+        isUrgent[implementation] = true;
         emit ReleaseFastTracked(implementation, r.version);
     }
     // slither-disable-end timestamp

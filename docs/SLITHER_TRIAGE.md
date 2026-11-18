@@ -132,6 +132,14 @@ Note for Windows: if Python or an editor rewrites a `.sol` file with CRLF line e
 numbers shift and inline suppressions stop matching. Keep the working copy of `contracts/` in LF and run
 `forge clean` before the check.
 
+## 2d. Fast track for urgent fixes (2026-11-18, vault 2.4.0)
+
+| Detector | Where | Handling |
+|---|---|---|
+| `assembly` | `EPKVault.scheduleUpgrade` | Suppressed: one read-only `staticcall` to the vault's own registry (`isUrgent`), scratch space only (memory-safe); a failed call or an answer shorter than 32 bytes counts as "not urgent". Written in assembly because `try/catch` cost about 100 bytes more and EPKVault must keep 100 bytes under EIP-170 (`test_vaultKeepsAtLeast100BytesUnderEIP170`; behaviour in `test/v2/EPKRegistry.fastTrack.t.sol`) |
+
+Slither has not been re-run on this change yet; it must be before the audit freeze.
+
 ## 3. How to reproduce
 
 ```bash

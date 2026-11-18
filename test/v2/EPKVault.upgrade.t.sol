@@ -16,7 +16,7 @@ contract EPKVaultV21 is EPKVault {
     uint256 public newSetting; // appended after all v2.3.0 storage
 
     function vaultVersion() public pure virtual override returns (uint64) {
-        return 20_400; // 2.4.0
+        return 20_500; // 2.5.0
     }
 
     function _migrate(uint64 from) internal virtual override reinitializer(2) {
@@ -33,7 +33,7 @@ contract EPKVaultV22 is EPKVaultV21 {
     uint256 public v22Setting;
 
     function vaultVersion() public pure override returns (uint64) {
-        return 20_500; // 2.5.0
+        return 20_600; // 2.6.0
     }
 
     function _migrate(uint64 from) internal override reinitializer(3) {
@@ -45,7 +45,7 @@ contract EPKVaultV22 is EPKVaultV21 {
 /// A release whose author forgot the migration: it can never be installed.
 contract NoMigrationVault is EPKVault {
     function vaultVersion() public pure override returns (uint64) {
-        return 20_400;
+        return 20_500;
     }
 }
 
@@ -64,7 +64,7 @@ contract EPKVault210 is EPKVault {
 /// What an attacker would like to install.
 contract MaliciousVault is EPKVault {
     function vaultVersion() public pure override returns (uint64) {
-        return 20_500;
+        return 20_600;
     }
 
     function drain(address token, address to) external {
@@ -196,9 +196,9 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 
     function test_vaultIsProxyOnGenesis() public view {
         assertEq(_impl(), address(genesis));
-        assertEq(vault.vaultVersion(), 20_300);
+        assertEq(vault.vaultVersion(), 20_400);
         assertEq(vault.registry(), address(registry));
-        assertEq(registry.versionOf(address(genesis)), 20_300);
+        assertEq(registry.versionOf(address(genesis)), 20_400);
     }
 
     function test_upgradeKeepsAddressFundsAndSettings() public {
@@ -208,7 +208,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 
         // same address, new code, migrated state
         assertEq(_impl(), address(v21));
-        assertEq(vault.vaultVersion(), 20_400);
+        assertEq(vault.vaultVersion(), 20_500);
         assertEq(EPKVaultV21(payable(address(vault))).hello(), "2.1");
         assertEq(EPKVaultV21(payable(address(vault))).newSetting(), 42);
 
@@ -251,7 +251,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         _list(address(v22));
 
         _upgradeTo(address(v22)); // 2.3.0 -> 2.5.0 directly
-        assertEq(vault.vaultVersion(), 20_500);
+        assertEq(vault.vaultVersion(), 20_600);
         assertEq(EPKVaultV22(payable(address(vault))).newSetting(), 42);
         assertEq(EPKVaultV22(payable(address(vault))).v22Setting(), 7);
     }
@@ -395,7 +395,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         _listV21();
         _upgradeV21();
         vm.prank(admin);
-        vm.expectRevert(abi.encodeWithSelector(EPKVault.NotNewerVersion.selector, 20_400, 20_300));
+        vm.expectRevert(abi.encodeWithSelector(EPKVault.NotNewerVersion.selector, 20_500, 20_400));
         vault.scheduleUpgrade(address(genesis), bytes32(0));
     }
 
@@ -551,9 +551,9 @@ contract EPKVaultUpgradeTest is UpgradeBase {
         registry.proposeRelease(address(v21));
 
         vm.startPrank(registryOwner);
-        vm.expectRevert(abi.encodeWithSelector(EPKRegistry.VersionNotHigher.selector, 20_300, 20_300));
+        vm.expectRevert(abi.encodeWithSelector(EPKRegistry.VersionNotHigher.selector, 20_400, 20_400));
         registry.proposeRelease(address(same));
-        vm.expectRevert(abi.encodeWithSelector(EPKRegistry.VersionStepTooLarge.selector, 20_300, 90_000));
+        vm.expectRevert(abi.encodeWithSelector(EPKRegistry.VersionStepTooLarge.selector, 20_400, 90_000));
         registry.proposeRelease(address(far));
         vm.expectRevert(abi.encodeWithSelector(EPKRegistry.NoCode.selector, attacker));
         registry.proposeRelease(attacker);
@@ -569,7 +569,7 @@ contract EPKVaultUpgradeTest is UpgradeBase {
 
         assertFalse(registry.isApproved(address(v21))); // still in its public delay
         assertTrue(registry.isApproved(address(genesis)));
-        assertEq(registry.versionOf(address(v21)), 20_400);
+        assertEq(registry.versionOf(address(v21)), 20_500);
 
         vm.prank(guardian);
         vm.expectRevert(EPKRegistry.NotPendingOwner.selector);
@@ -711,7 +711,7 @@ contract Upgrade210To220Test is UpgradeBase {
         _upgradeTo(address(current));
 
         assertEq(_impl(), address(current));
-        assertEq(vault.vaultVersion(), 20_300);
+        assertEq(vault.vaultVersion(), 20_400);
         assertEq(vault.recovery(), recoveryKey);
         assertTrue(vault.isDestination(friend));
         assertEq(token.balanceOf(address(vault)), 1_000e18);

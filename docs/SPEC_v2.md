@@ -136,7 +136,7 @@ Narrowing an envelope applies to **every open session of it at once**: sessions 
 
 Each vault can move to a newer implementation without changing its address or moving funds — **only by its own decision**:
 
-- `scheduleUpgrade(newImplementation, salt)` (admin) → **max(2× delay, 2 days)** → `executeScheduled` (admin);
+- `scheduleUpgrade(newImplementation, salt)` (admin) → **max(2× delay, 2 days)** → `executeScheduled` (admin); from vault 2.4.0 a patch the registry's security council flagged as urgent waits only the vault's own delay, if shorter (≥ 1 hour on mainnets; [`FAST_TRACK_v2.md`](FAST_TRACK_v2.md));
 - the new implementation must be approved in the vault's `EPKRegistry` (fixed per vault; 7-day public approval delay, revocable, codehash pinned, version read from the code) and have a strictly higher `vaultVersion()`;
 - the release's own migration always runs once (vault-only; it receives the version the vault comes from, so skipped releases are handled); nothing else can ride along;
 - ordinary operations still pending from the old release become stale;

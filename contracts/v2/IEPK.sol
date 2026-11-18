@@ -5,6 +5,8 @@ pragma solidity ^0.8.24;
 interface IEPKRegistry {
     function isApproved(address implementation) external view returns (bool);
     function versionOf(address implementation) external view returns (uint64);
+    /// @notice True when the registry's security council fast-tracked this release as an urgent fix.
+    function isUrgent(address implementation) external view returns (bool);
 }
 
 /// @notice Every EPKVault implementation reports its own version.

@@ -127,6 +127,25 @@ export const epkRegistryAbi = [
   },
   {
     "type": "function",
+    "name": "isUrgent",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "latestVersion",
     "inputs": [],
     "outputs": [
