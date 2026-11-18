@@ -50,7 +50,7 @@ contract EPKVaultEvacuationTest is Test {
 
     function setUp() public {
         EPKVault impl = new EPKVault();
-        EPKRegistry registry = new EPKRegistry(makeAddr("registryOwner"), address(impl));
+        EPKRegistry registry = new EPKRegistry(makeAddr("registryOwner"), address(impl), address(0));
         factory = new EPKVaultFactory(address(impl), address(registry));
         token = new TestToken("TKN");
         untracked = new TestToken("UNT");
@@ -228,7 +228,7 @@ contract EPKVaultEvacuationTest is Test {
     function test_testnet_coldWalletChangeInFifteenMinutes() public {
         vm.chainId(97);
         EPKVault impl = new EPKVault();
-        EPKRegistry r = new EPKRegistry(makeAddr("registryOwner"), address(impl));
+        EPKRegistry r = new EPKRegistry(makeAddr("registryOwner"), address(impl), address(0));
         factory = new EPKVaultFactory(address(impl), address(r));
         EPKVault v = _newVault(5 minutes, bytes32("testnet"));
         vm.prank(admin);

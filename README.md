@@ -122,7 +122,7 @@ The report labels how each fact was proven (**STRICT** execution trace, **REPLAY
 - **Tighten instantly, loosen only through a timelock** that guardians can veto.
 - **`panic()`**: one call pauses the vault and invalidates every policy, session and pending change.
 - **Emergency evacuation**: the admin, the recovery key or an optional evacuator moves every tracked asset at once — only to the cold wallet the owner registered in advance, never anywhere else; changing that wallet waits 3× the timelock (≥ 2 days on mainnet) and guardians can veto it ([design](docs/EVACUATION_v2.md)).
-- **Upgrades only by the owner's decision**: registry of reviewed releases (7-day public window), ≥ 2-day per-vault timelock, guardian veto; nobody — including IBITI — can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)).
+- **Upgrades only by the owner's decision**: registry of reviewed releases (7-day public window on mainnet, 5 minutes on test networks), ≥ 2-day per-vault timelock on mainnet, guardian veto; nobody — including IBITI — can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)). An urgent patch can skip the public window only with an independent security council's flag; each vault still opts in through its own wait ([fast track](docs/FAST_TRACK_v2.md), not deployed yet).
 
 ### Watchtower — the automatic guardian
 
@@ -155,7 +155,7 @@ Requirements: [Foundry](https://book.getfoundry.sh/) and Python 3.
 
 ```bash
 forge build
-forge test                                               # 215 contract tests (3 of them fork BSC Testnet and need an RPC)
+forge test                                               # 229 contract tests (3 of them fork BSC Testnet and need an RPC)
 python -m unittest discover -s watchtower -p "test_*.py" # 30 Watchtower tests, no network
 ```
 
@@ -167,7 +167,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 
 - [Specification — EPK v2 (EPKVault)](docs/SPEC_v2.md)
 - [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
-- [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md)
+- [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md) · [Fast track for urgent fixes](docs/FAST_TRACK_v2.md)
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
 - [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_GUARDS.md) · [release 2.3.0](docs/TESTNET_RELEASE.md)
 - [opBNB Testnet demo and evidence](docs/TESTNET_OPBNB.md) · [guard demo on opBNB](docs/TESTNET_OPBNB_GUARDS.md)

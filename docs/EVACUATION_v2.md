@@ -133,4 +133,4 @@ unexpected change), and with option C can evacuate on its own when the owner ena
 2. Cold-wallet change wait in production: **max(3 × delay, 2 days)**, cancellable by any guardian.
 3. Evacuation also pauses the vault and revokes policies and sessions, like `panic`: **yes**.
 
-Not part of this item: the fast track for critical security fixes (roadmap item 6b) — a separate design.
+Not part of this item: the fast track for critical security fixes (roadmap item 6b) — see [`FAST_TRACK_v2.md`](FAST_TRACK_v2.md).

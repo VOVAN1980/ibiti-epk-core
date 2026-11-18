@@ -55,7 +55,7 @@ contract EPKVaultTest is Test {
         coSigner = vm.addr(coSignerPk);
 
         EPKVault impl = new EPKVault();
-        EPKRegistry registry = new EPKRegistry(makeAddr("registryOwner"), address(impl));
+        EPKRegistry registry = new EPKRegistry(makeAddr("registryOwner"), address(impl), address(0));
         factory = new EPKVaultFactory(address(impl), address(registry));
         token = new TestToken("TKN");
         untracked = new TestToken("UNT");

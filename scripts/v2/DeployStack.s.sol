@@ -13,7 +13,8 @@ import {EPKDemoNetwork} from "./demo/EPKDemoNetwork.sol";
 /// @title Step 1 on a new test network — the EPK contracts and the demo token
 /// @notice Deploys the current EPKVault release (its constructor deploys the release's emergency module), a
 ///         registry of releases that lists it as its genesis release, the public factory that creates vaults on
-///         it, and the eUSD demo token. The deployer (PRIVATE_KEY) owns the registry. Writes
+///         it, and the eUSD demo token. The deployer (PRIVATE_KEY) owns the registry; EPK_COUNCIL (optional)
+///         is the security council that may fast-track patch releases. Writes
 ///         deployments/<network>/epk-v2.json, which the demo scripts read. Test networks only (EPK is not
 ///         audited); refuses to overwrite an existing record.
 ///   forge script scripts/v2/DeployStack.s.sol:DeployStack --rpc-url $RPC --broadcast --slow
@@ -25,10 +26,12 @@ contract DeployStack is Script {
 
         uint256 pk = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(pk);
+        // optional security council (a multisig) that may fast-track patch releases; none = no fast track
+        address council = vm.envOr("EPK_COUNCIL", address(0));
 
         vm.startBroadcast(pk);
         EPKVault implementation = new EPKVault();
-        EPKRegistry registry = new EPKRegistry(deployer, address(implementation));
+        EPKRegistry registry = new EPKRegistry(deployer, address(implementation), council);
         EPKVaultFactory factory = new EPKVaultFactory(address(implementation), address(registry));
         EPKDemoToken token = new EPKDemoToken();
         vm.stopBroadcast();
@@ -44,6 +47,7 @@ contract DeployStack is Script {
         // the release's emergency module: the first contract its constructor created
         vm.serializeAddress(o, "emergencyModule", vm.computeCreateAddress(address(implementation), 1));
         vm.serializeAddress(o, "registry", address(registry));
+        vm.serializeAddress(o, "council", council);
         vm.serializeAddress(o, "factory", address(factory));
         string memory json = vm.serializeAddress(o, "token", address(token));
         vm.writeJson(json, out);

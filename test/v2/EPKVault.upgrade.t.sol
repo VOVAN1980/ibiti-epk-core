@@ -113,7 +113,7 @@ abstract contract UpgradeBase is Test {
         genesis = new EPKVault();
         v21 = new EPKVaultV21();
         evil = new MaliciousVault();
-        registry = new EPKRegistry(registryOwner, address(genesis));
+        registry = new EPKRegistry(registryOwner, address(genesis), address(0));
         factory = new EPKVaultFactory(address(genesis), address(registry));
         token = new TestToken("TKN");
 
@@ -688,7 +688,7 @@ contract Upgrade210To220Test is UpgradeBase {
     function test_vault210UpgradesTo220() public {
         EPKVault210 old = new EPKVault210();
         EPKVault current = new EPKVault();
-        registry = new EPKRegistry(registryOwner, address(old));
+        registry = new EPKRegistry(registryOwner, address(old), address(0));
         factory = new EPKVaultFactory(address(old), address(registry));
         token = new TestToken("TKN");
         address[] memory g = new address[](2);
