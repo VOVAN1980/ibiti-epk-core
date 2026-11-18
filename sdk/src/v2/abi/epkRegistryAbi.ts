@@ -12,6 +12,11 @@ export const epkRegistryAbi = [
         "name": "genesisImplementation",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "council_",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -77,10 +82,55 @@ export const epkRegistryAbi = [
   },
   {
     "type": "function",
+    "name": "council",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "fastTrack",
+    "inputs": [
+      {
+        "name": "implementation",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "isApproved",
     "inputs": [
       {
         "name": "implementation",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isUrgent",
+    "inputs": [
+      {
+        "name": "",
         "type": "address",
         "internalType": "address"
       }
@@ -129,6 +179,25 @@ export const epkRegistryAbi = [
         "name": "",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "previousVersionOf",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
       }
     ],
     "stateMutability": "view"
@@ -265,6 +334,25 @@ export const epkRegistryAbi = [
   },
   {
     "type": "event",
+    "name": "ReleaseFastTracked",
+    "inputs": [
+      {
+        "name": "implementation",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "version",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "ReleaseProposed",
     "inputs": [
       {
@@ -348,6 +436,22 @@ export const epkRegistryAbi = [
   },
   {
     "type": "error",
+    "name": "NotAPatch",
+    "inputs": [
+      {
+        "name": "previous",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "version",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "NotAVault",
     "inputs": [
       {
@@ -359,8 +463,29 @@ export const epkRegistryAbi = [
   },
   {
     "type": "error",
+    "name": "NotCouncil",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "NotOwner",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotOwnerOrCouncil",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotPending",
+    "inputs": [
+      {
+        "name": "implementation",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",

@@ -31,7 +31,7 @@ export const epkErrorHelp: Record<string, { meaning: string; fix: string }> = {
   // ---- limits
   LimitExceeded: { meaning: "The vault-wide limit for this asset in the current window would be exceeded.", fix: "Wait for the window to refill (availableToSpend) or raise the limit through the timelock." },
   BudgetExceeded: { meaning: "This session's own budget for the asset would be exceeded.", fix: "Wait for it to refill (budgetAvailable) or use another session." },
-  CoSignatureRequired: { meaning: "This outflow is above the co-sign threshold and needs the co-signer's signature.", fix: "Get getCoSignDigest signed by the co-signer and pass it as coSignature." },
+  CoSignatureRequired: { meaning: "This outflow is above the co-sign threshold and needs the co-signer's signature.", fix: "Have the co-signer approve the batch (coSignBatch) and pass it as coSignature." },
   OutsideEnvelope: { meaning: "The session asked for more than its envelope allows (expiry or inactive envelope).", fix: "Open the session inside the envelope's max TTL, on an active envelope." },
   // ---- configuration and timelock
   NotTimelocked: { meaning: "This change loosens the rules and must go through the timelock.", fix: "Schedule it (VaultAdmin.apply after setup) and execute after the delay." },

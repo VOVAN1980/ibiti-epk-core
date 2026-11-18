@@ -95,7 +95,7 @@ abstract contract GuardBase is Test {
 
     function _deployVault() internal {
         EPKVault impl = new EPKVault();
-        EPKRegistry registry = new EPKRegistry(makeAddr("registryOwner"), address(impl));
+        EPKRegistry registry = new EPKRegistry(makeAddr("registryOwner"), address(impl), address(0));
         factory = new EPKVaultFactory(address(impl), address(registry));
         address[] memory g = new address[](2);
         g[0] = guardian;

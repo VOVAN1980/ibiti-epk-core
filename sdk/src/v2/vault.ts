@@ -67,6 +67,26 @@ export function executeDigest(chainId: number, vault: Address, message: ExecuteM
   return hashTypedData(executeTypedData(chainId, vault, message));
 }
 
+/** EIP-712 type of the co-signer's approval — identical to the contract's `_COSIGN_TYPEHASH`. */
+export const coSignTypes = {
+  CoSign: [{ name: "executeDigest", type: "bytes32" }],
+} as const;
+
+/** Typed data the co-signer signs: its approval of exactly one batch, named by that batch's execute digest. */
+export function coSignTypedData(chainId: number, vault: Address, executeDigest: Hex) {
+  return {
+    domain: { name: "EPK Vault", version: "2", chainId, verifyingContract: vault },
+    types: coSignTypes,
+    primaryType: "CoSign" as const,
+    message: { executeDigest },
+  };
+}
+
+/** The digest `EPKVault.getCoSignDigest` returns, computed offline. */
+export function coSignDigest(chainId: number, vault: Address, executeDigest: Hex): Hex {
+  return hashTypedData(coSignTypedData(chainId, vault, executeDigest));
+}
+
 /** Operation id of a timelocked call: keccak256(abi.encode(data, salt)), as `EPKVault.hashOperation`. */
 export function hashOperation(data: Hex, salt: Hex): Hex {
   return keccak256(encodeAbiParameters([{ type: "bytes" }, { type: "bytes32" }], [data, salt]));
@@ -170,7 +190,27 @@ export class EPKVaultClient {
     ])) as Hex;
   }
 
+  /** The vault's independent co-signer (address(0) = none). */
+  async coSigner(): Promise<Address> {
+    return (await this.read("coSigner")) as Address;
+  }
+
+  /** The co-sign digest as the vault itself computes it (one RPC call; cross-checks `coSignDigest`). */
+  async getCoSignDigest(executeDigest: Hex): Promise<Hex> {
+    return (await this.read("getCoSignDigest", [executeDigest])) as Hex;
+  }
+
   // ---------------------------------------------------------------- batches
+
+  /** Chain to sign for: the signer's, which must be the public client's (a wrong or lying RPC must not move it). */
+  private async signingChain(signer: WalletClient<Transport, Chain, Account>, name: string): Promise<number> {
+    const rpcChainId = await this.publicClient.getChainId();
+    const signerChainId = signer.chain?.id;
+    if (signerChainId !== undefined && signerChainId !== rpcChainId) {
+      throw new Error(`${name}: the signer is on chain ${signerChainId} but the public client is on chain ${rpcChainId}`);
+    }
+    return signerChainId ?? rpcChainId;
+  }
 
   /**
    * Sign a batch with the policy / session key held by `signer` (a viem Account or wallet).
@@ -186,18 +226,37 @@ export class EPKVaultClient {
     nonce?: bigint;
     deadline?: bigint;
   }): Promise<{ signature: Hex; nonce: bigint; deadline: bigint; digest: Hex }> {
-    const rpcChainId = await this.publicClient.getChainId();
-    const signerChainId = args.signer.chain?.id;
-    if (signerChainId !== undefined && signerChainId !== rpcChainId) {
-      throw new Error(`signBatch: the signer is on chain ${signerChainId} but the public client is on chain ${rpcChainId}`);
-    }
-    const chainId = signerChainId ?? rpcChainId;
+    const chainId = await this.signingChain(args.signer, "signBatch");
     const nonce = args.nonce ?? (await this.nonce(args.policyId));
     const deadline = args.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 3600);
     const message: ExecuteMessage = { policyId: args.policyId, agent: args.agent, calls: args.calls, nonce, deadline };
     const typed = executeTypedData(chainId, this.address, message);
     const signature = await args.signer.signTypedData({ account: args.signer.account, ...typed });
     return { signature, nonce, deadline, digest: hashTypedData(typed) };
+  }
+
+  /**
+   * Co-sign a batch as the vault's independent co-signer: needed when one batch moves more of an asset than
+   * its `coSignAbove`. It takes the whole batch, not a bare digest, so the co-signer sees what it approves —
+   * check `message.calls` against your own rules before calling this. Refuses when `signer` is not the vault's
+   * current co-signer, or is on another chain than the public client. Pass `coSignature` to `simulate` /
+   * `execute` together with the operator's signature. (A contract co-signer, ERC-1271, signs
+   * `coSignTypedData` its own way.)
+   */
+  async coSignBatch(args: {
+    message: ExecuteMessage;
+    signer: WalletClient<Transport, Chain, Account>;
+  }): Promise<{ coSignature: Hex; digest: Hex; coSignDigest: Hex }> {
+    const chainId = await this.signingChain(args.signer, "coSignBatch");
+    const expected = await this.coSigner();
+    if (BigInt(expected) === 0n) throw new Error("coSignBatch: this vault has no co-signer");
+    if (expected.toLowerCase() !== args.signer.account.address.toLowerCase()) {
+      throw new Error(`coSignBatch: ${args.signer.account.address} is not this vault's co-signer (${expected})`);
+    }
+    const digest = executeDigest(chainId, this.address, args.message);
+    const typed = coSignTypedData(chainId, this.address, digest);
+    const coSignature = await args.signer.signTypedData({ account: args.signer.account, ...typed });
+    return { coSignature, digest, coSignDigest: hashTypedData(typed) };
   }
 
   /**

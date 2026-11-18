@@ -493,7 +493,7 @@ contract EPKVault is EPKVaultLayout, Initializable, UUPSUpgradeable, IVersionedV
 
     /// @notice Implementation version: major * 10_000 + minor * 100 + patch.
     function vaultVersion() public pure virtual override returns (uint64) {
-        return 20_300; // 2.3.0
+        return 20_400; // 2.4.0
     }
 
     receive() external payable {}
@@ -559,15 +559,31 @@ contract EPKVault is EPKVaultLayout, Initializable, UUPSUpgradeable, IVersionedV
     }
 
     /// @notice Opt this vault into a newer, registry-approved implementation. Address, funds and
-    ///         settings stay. Takes max(2 × delay, UPGRADE_DELAY_FLOOR); any guardian (or the recovery
-    ///         key) can veto; a panic cancels it. The new release's `migrate()` always runs with it;
+    ///         settings stay. Takes max(2 × delay, UPGRADE_DELAY_FLOOR), or only `delay` for an urgent fix
+    ///         the registry's security council fast-tracked; any guardian (or the recovery key) can veto;
+    ///         a panic cancels it. The new release's `migrate()` always runs with it;
     ///         no other code can be attached to an upgrade.
     ///         The release must be listed in the registry; it may still be in its public release window
     ///         (both clocks run in parallel), but it can only be EXECUTED once the registry approves it.
+    // slither-disable-next-line assembly
     function scheduleUpgrade(address newImplementation, bytes32 salt) external onlyAdmin returns (bytes32 id) {
         _requireUpgradeAllowed(newImplementation, false);
-        uint256 wait = delay * 2;
+        uint256 d = delay;
+        uint256 wait = d * 2;
         if (wait < UPGRADE_DELAY_FLOOR) wait = UPGRADE_DELAY_FLOOR;
+        // An urgent fix the registry's security council fast-tracked waits only this vault's own timelock
+        // (always shorter than the wait above; 1 hour minimum on mainnets); guardians can still veto.
+        // Read-only `registry.isUrgent(newImplementation)` in assembly to stay under EIP-170: a failed call
+        // or a short answer (a registry from before the fast track has no isUrgent) counts as "no".
+        address reg = registry;
+        bytes4 sel = IEPKRegistry.isUrgent.selector;
+        assembly ("memory-safe") {
+            mstore(0x00, sel)
+            mstore(0x04, newImplementation)
+            if and(staticcall(gas(), reg, 0x00, 0x24, 0x00, 0x20), gt(returndatasize(), 0x1f)) {
+                if mload(0x00) { wait := d }
+            }
+        }
         if (EPKChains.isTestChain()) wait = TEST_UPGRADE_WAIT;
         id = _schedule(_upgradeCall(newImplementation), salt, wait, false, false, address(0));
     }
@@ -1024,12 +1040,12 @@ contract EPKVault is EPKVaultLayout, Initializable, UUPSUpgradeable, IVersionedV
     }
 
     /// @dev Data migration of the release a vault upgrades to; it runs every step that `from` has not
-    ///      reached yet (vaults may skip releases). 2.3.0 needs none: 2.1 only appended `envelopeGuard`
-    ///      (empty by default) and 2.2 and 2.3 add no storage, so 2.0.x – 2.2.x vaults upgrade directly.
+    ///      reached yet (vaults may skip releases). 2.4.0 needs none: 2.1 only appended `envelopeGuard`
+    ///      (empty by default) and 2.2 – 2.4 add no storage, so 2.0.x – 2.3.x vaults upgrade directly.
     ///      Every later release overrides this as `internal override reinitializer(n)`; one that forgets
     ///      to (a different `vaultVersion`) refuses here, so it can never be installed.
     function _migrate(uint64 /* from */ ) internal virtual {
-        if (vaultVersion() != 20_300) revert BadOperation();
+        if (vaultVersion() != 20_400) revert BadOperation();
     }
 
     /// @dev Shortest timelock a vault may use: 1 hour; 5 minutes on public test networks (EPKChains).

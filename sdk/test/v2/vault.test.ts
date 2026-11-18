@@ -9,6 +9,8 @@ import { recoverTypedDataAddress, decodeFunctionData, type Hex } from "viem";
 import {
   executeDigest,
   executeTypedData,
+  coSignDigest,
+  coSignTypedData,
   hashOperation,
   decodeEpkError,
   v2SwapExactTokens,
@@ -57,6 +59,25 @@ test("a signature over the typed data recovers the signer", async () => {
   const typed = executeTypedData(97, VAULT, message);
   const signature = await account.signTypedData(typed);
   assert.equal(await recoverTypedDataAddress({ ...typed, signature }), account.address);
+});
+
+test("coSignDigest equals the vault's own getCoSignDigest", () => {
+  const digest = executeDigest(97, VAULT, message);
+  assert.equal(coSignDigest(97, VAULT, digest), "0x55b6c00d6754295c296c9a6edea1f090154cfe346b75bb74bb93bb9227fd1ca8");
+});
+
+test("a co-signature recovers the co-signer and approves only that batch", async () => {
+  const coSigner = privateKeyToAccount("0x000000000000000000000000000000000000000000000000000000000000c051");
+  const digest = executeDigest(97, VAULT, message);
+  const typed = coSignTypedData(97, VAULT, digest);
+  const signature = await coSigner.signTypedData(typed);
+  assert.equal(await recoverTypedDataAddress({ ...typed, signature }), coSigner.address);
+  // another batch, chain or vault is another approval; the co-sign digest is never the execute digest itself
+  const other = executeDigest(97, VAULT, { ...message, nonce: 8n });
+  assert.notEqual(coSignDigest(97, VAULT, other), coSignDigest(97, VAULT, digest));
+  assert.notEqual(coSignDigest(56, VAULT, digest), coSignDigest(97, VAULT, digest));
+  assert.notEqual(coSignDigest(97, OPERATOR, digest), coSignDigest(97, VAULT, digest));
+  assert.notEqual(coSignDigest(97, VAULT, digest), digest);
 });
 
 test("hashOperation equals the vault's hashOperation", () => {

@@ -23,7 +23,7 @@ contract EPKChainsTest is Test {
         vm.chainId(chainId);
         EPKVault genesis = new EPKVault();
         next = new EPKVaultV21();
-        registry = new EPKRegistry(registryOwner, address(genesis));
+        registry = new EPKRegistry(registryOwner, address(genesis), address(0));
         EPKVaultFactory factory = new EPKVaultFactory(address(genesis), address(registry));
         address[] memory g = new address[](2);
         g[0] = makeAddr("g1");
@@ -62,7 +62,7 @@ contract EPKChainsTest is Test {
         vm.prank(admin);
         vault.executeScheduled(op, bytes32("fast"));
         assertEq(_impl(), address(next));
-        assertEq(vault.vaultVersion(), 20_400);
+        assertEq(vault.vaultVersion(), 20_500);
     }
 
     /// opBNB Testnet runs the same minute clocks as BSC Testnet: release window and upgrade wait 5 minutes
@@ -110,7 +110,7 @@ contract EPKChainsTest is Test {
         assertFalse(vault.paused());
 
         EPKVault genesis = new EPKVault();
-        EPKRegistry r = new EPKRegistry(registryOwner, address(genesis));
+        EPKRegistry r = new EPKRegistry(registryOwner, address(genesis), address(0));
         EPKVaultFactory f = new EPKVaultFactory(address(genesis), address(r));
         address[] memory g = new address[](2);
         g[0] = makeAddr("g1");
@@ -147,7 +147,7 @@ contract EPKChainsTest is Test {
         for (uint256 i = 0; i < chains.length; i++) {
             vm.chainId(chains[i]);
             EPKVault genesis = new EPKVault();
-            EPKRegistry r = new EPKRegistry(registryOwner, address(genesis));
+            EPKRegistry r = new EPKRegistry(registryOwner, address(genesis), address(0));
             assertEq(r.approvalDelay(), 7 days);
             EPKVaultFactory f = new EPKVaultFactory(address(genesis), address(r));
             address[] memory g = new address[](2);

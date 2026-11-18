@@ -71,6 +71,7 @@ Tests: `test/v2/EPKVault.upgrade.t.sol`. Storage snapshots: `docs/storage-layout
 3. A customer who wants it: admin calls `vault.scheduleUpgrade(impl, salt)` — from 2.1.0 this may happen **during** the release window: both clocks run in parallel, so a new release reaches a vault in 7 days, not 7 + 2.
    - Rejected immediately if the release is not listed or not newer than the current version.
    - Waits **max(2 × vault delay, 2 days)** — the floor holds even if the delay was lowered first. Visible as `OperationScheduled`.
+   - Exception from vault 2.4.0: a patch release the registry's security council flagged as an urgent fix (`isUrgent`) waits only the vault's own delay, if shorter — at least 1 hour on mainnets ([`FAST_TRACK_v2.md`](FAST_TRACK_v2.md)). The veto and `panic` rules are unchanged.
    - The code can still only run once the registry approves it (step 4): scheduling early never shortens the public review window, and a release revoked during its window can never be installed.
    - Any guardian **or the recovery key** can `cancel`; `panic` / `revokeAll` invalidate it.
 4. After the delay the **admin** calls `executeScheduled(vault.upgradeOperationData(impl), salt)`. `_authorizeUpgrade` re-checks: called by the vault itself, release still approved (not revoked), version still newer.
@@ -123,9 +124,9 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 | Release whose code lies about its version | the registry reads the version from the code itself |
 | Version space exhausted by one proposal | at most one major step (`MAX_VERSION_STEP = 10_000`) per release |
 | Bricking via a non-UUPS release | OZ `upgradeToAndCall` requires the new implementation's `proxiableUUID`; every release must keep `UUPSUpgradeable` |
-| Malicious or buggy approved release | audit before listing, 7-day public window, instant revocation, per-vault opt-in with ≥ 2 days and veto, `panic` |
+| Malicious or buggy approved release | audit before listing, 7-day public window, instant revocation, per-vault opt-in with ≥ 2 days and veto, `panic`; an urgent patch skips the window only with the security council's flag and still needs the per-vault opt-in, the vault's own delay (≥ 1 hour) and veto |
 | Code at the release address changes | codehash pinned; EIP-7702 delegated accounts (`0xEF…`) rejected; implementations contain no `selfdestruct` |
-| Upgrade faster than intended after lowering the delay | fixed floor `UPGRADE_DELAY_FLOOR = 2 days` |
+| Upgrade faster than intended after lowering the delay | fixed floor `UPGRADE_DELAY_FLOOR = 2 days`; only a council-flagged urgent patch, which is already listed code, can be installed after the vault's own delay (≥ 1 hour) |
 | `pause` alone does not stop upgrades | `panic` / `revokeAll` invalidate pending upgrades; a new upgrade scheduled afterwards again needs ≥ 2 days, and monitoring must veto it again |
 | New vaults on a revoked (buggy) release | the factory refuses to create vaults on a non-approved implementation |
 | Payers using `transfer` / `send` (2300 gas) | `EPKVaultProxy.receive()` accepts native coins without delegating |
@@ -143,7 +144,7 @@ Things that are **impossible**: calling `upgradeToAndCall` directly (any caller)
 6. Tests: full suite + an upgrade test from **every** previous release (including skipping releases) + invariants after upgrade.
 7. Independent audit → `proposeRelease` → 7 days → announce.
 8. Static analysis: Slither must report no unexplained findings ([SLITHER_TRIAGE.md](SLITHER_TRIAGE.md)).
-9. Bytecode budget: `EPKVault` 2.3.0 is 24,390 B of the 24,576 B limit (v2 is compiled with optimizer_runs = 1 for size, for the Shanghai EVM). Its emergency evacuation lives in a separate module, `EPKVaultEmergency` (3,726 B), deployed by the implementation's constructor and reached through the vault's fallback; a size test fails the build with less than 100 B of headroom. New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
+9. Bytecode budget: `EPKVault` 2.4.0 is 24,475 B of the 24,576 B limit (2.3.0: 24,390 B; 2.4.0 adds the fast-track check) (v2 is compiled with optimizer_runs = 1 for size, for the Shanghai EVM). Its emergency evacuation lives in a separate module, `EPKVaultEmergency` (3,726 B), deployed by the implementation's constructor and reached through the vault's fallback; a size test fails the build with less than 100 B of headroom. New features should go into validators/modules or external libraries; a release that does not fit must split logic before it can ship.
 
 ## 10. Test evidence
 

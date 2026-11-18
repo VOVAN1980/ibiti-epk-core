@@ -96,3 +96,33 @@ test("signBatch refuses to sign when the signer and the RPC are on different cha
     /signer is on chain 56 but the public client is on chain 97/,
   );
 });
+
+test("coSignBatch signs only with the vault's own co-signer, on the vault's chain", async () => {
+  const { createPublicClient, createWalletClient, custom, encodeAbiParameters, recoverTypedDataAddress } = await import("viem");
+  const { privateKeyToAccount } = await import("viem/accounts");
+  const { bsc, bscTestnet } = await import("viem/chains");
+  const { EPKVaultClient, coSignTypedData, executeDigest } = await import("../../src/v2/index.js");
+  const coSigner = privateKeyToAccount(`0x${"22".repeat(32)}`);
+  const stranger = privateKeyToAccount(`0x${"33".repeat(32)}`);
+  let onChain: `0x${string}` = coSigner.address; // what the vault's coSigner() returns
+  const rpc = custom({
+    request: async ({ method }: { method: string }) =>
+      method === "eth_chainId" ? "0x61" : method === "eth_call" ? encodeAbiParameters([{ type: "address" }], [onChain]) : "0x0",
+  });
+  const publicClient = createPublicClient({ transport: rpc });
+  const vaultAddress = networks.bscTestnet.demo.guardVault;
+  const vault = new EPKVaultClient({ address: vaultAddress, publicClient: publicClient as never });
+  const message = { policyId: 0n, agent: coSigner.address, calls: [], nonce: 3n, deadline: 1800000000n };
+  const wallet = (account: typeof coSigner, chain = bscTestnet) => createWalletClient({ account, chain, transport: rpc }) as never;
+
+  await assert.rejects(vault.coSignBatch({ message, signer: wallet(stranger) }), /is not this vault's co-signer/);
+  await assert.rejects(vault.coSignBatch({ message, signer: wallet(coSigner, bsc as never) }), /signer is on chain 56 but the public client is on chain 97/);
+
+  const out = await vault.coSignBatch({ message, signer: wallet(coSigner) });
+  assert.equal(out.digest, executeDigest(97, vaultAddress, message));
+  const typed = coSignTypedData(97, vaultAddress, out.digest);
+  assert.equal(await recoverTypedDataAddress({ ...typed, signature: out.coSignature }), coSigner.address);
+
+  onChain = "0x0000000000000000000000000000000000000000";
+  await assert.rejects(vault.coSignBatch({ message, signer: wallet(coSigner) }), /has no co-signer/);
+});
