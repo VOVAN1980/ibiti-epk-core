@@ -47,15 +47,14 @@ An owner who set a longer timelock keeps it, also for urgent fixes. A registry t
 
 On test networks the fast track changes almost nothing in time, because everything already takes minutes there. Its value is on mainnet.
 
-## Who holds the council keys (planned)
+## Who holds the council keys
 
-Nothing in the contracts depends on this: the council is one address, and the multisig behind it decides how many signatures it needs.
+**Not decided yet.** Nothing in the contracts depends on it: the council is one address, and the multisig behind it decides how many signatures it needs and who holds the keys. It has to be settled before a registry with a council is deployed.
 
-- **Public test networks** (audit, hackathon demos): 2 test keys, both must sign.
-- **Mainnet**: 3 keys, any 2 sign — 2 held by IBITI's owner and team, 1 by the EPK developers.
-- **Rule for both**: the key that proposes releases (registry owner) and the council keys are held by different people or at least on different devices, so no single stolen key or device can both propose code and flag it urgent.
+Two rules apply to whatever is chosen:
 
-The council's address cannot be changed later, so on mainnet a 2-of-3 multisig is preferred over 2 of 2: one lost key does not end the fast track, and the other two can replace it.
+- The key that proposes releases (registry owner) and the council keys are held by different people, or at least on different devices, so no single stolen key or device can both propose code and flag it urgent.
+- The council's address cannot be changed later. A multisig that survives one lost key (for example 2 of 3) keeps the fast track usable; with 2 of 2, one lost key ends it for that registry (the normal path still works).
 
 ## Threat model
 
