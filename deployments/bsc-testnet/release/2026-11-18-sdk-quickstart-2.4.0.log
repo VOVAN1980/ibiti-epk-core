@@ -1,0 +1,8 @@
+22:02:47  1. vault created: 0xF11eEa9130db938cEF0753C460283756854ee369 (predicted correctly)
+22:03:09  2. configured: limit 0.002 tBNB/day, payee 0x072f8E34…, policy #0 for the bot
+22:03:22  3. setup finalized; vault holds 0.003 tBNB
+22:03:26  4. bot paid 0.0005 tBNB to the treasury: tx 0xc5deec6d69c4668dfa89af8706ef69e5ca08499c62098e0fcc812bd0c71cc428
+22:03:26     left today: 0.001500069444444444 tBNB
+22:03:26  5a. stolen key pays a stranger -> CallNotAllowed: This target + function is not allowed for the policy / session envelope. → Owner: allow it with setCall / setEnvelopeCall (timelocked). (A called token or router can return the same error data: confirm on the vault before loosening anything.)
+22:03:27  5b. stolen key tries to take more than today's limit -> LimitExceeded(0x0000000000000000000000000000000000000000, 2000000000000000, 1500092592592592): The vault-wide limit for this asset in the current window would be exceeded. → Wait for the window to refill (availableToSpend) or raise the limit through the timelock. (A called token or router can return the same error data: confirm on the vault before loosening anything.)
+22:03:27  done. Your vault: https://testnet.bscscan.com/address/0xF11eEa9130db938cEF0753C460283756854ee369

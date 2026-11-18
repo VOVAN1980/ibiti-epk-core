@@ -1,6 +1,6 @@
 # Fast track for urgent security fixes (roadmap 6b)
 
-Status: **built and tested (2026-11-18) in the release registry and in vault release 2.4.0; not deployed yet, not audited.** The deployed testnet release stays 2.3.0.
+Status: **built and tested (2026-11-18) in the release registry and in vault release 2.4.0; on BSC Testnet and opBNB Testnet since 2026-11-18 ([`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)); not audited, not on any mainnet.** A whole urgent cycle on-chain waits for the first real patch release; until then it runs in the tests.
 
 ## The problem
 
@@ -73,7 +73,7 @@ Two rules apply to whatever is chosen:
 
 ## Not covered
 
-- **Vaults keep the registry they were created with.** Registries deployed before this change have no council, so their vaults keep the normal path. The vaults on BSC Testnet and opBNB Testnet, including the demo vaults, keep running as they are.
+- **Vaults keep the registry they were created with.** Registries deployed before this change have no council, so their vaults keep the normal path. On BSC Testnet and opBNB Testnet the vaults created before 2026-11-18, including the demo vaults, stay on those registries; new vaults from the SDK's public factories get a registry with a council.
 - **Vaults below 2.4.0** still wait their normal 2 days on mainnet for a flagged fix: the shorter wait is part of the vault code.
 
 ## Tests

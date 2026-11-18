@@ -1,12 +1,16 @@
 {
+  "adminKey": "V21_ADMIN_PRIVATE_KEY",
   "chainId": 97,
-  "codehash": "0x39333931f5618d09a33bbe2e5a4efe5af85a3fe33e6467b670654197db3f1845",
-  "fastVault": "0x9248fb523dE74420b56c733fB9FA14917A054FEb",
-  "fastVaultTokensBefore": 10000000000000000000,
-  "implementation": "0x214c7a5a9B6b25d559ac714050B66A09E050eA32",
+  "codehash": "0xc82618b36d15383b0d3bd892d1ce69912657cca43cac8f29a51d0ab0da13cde0",
+  "emergencyModule": "0xc6Eb413ddB07a19b0Bf69882074134873A2f4299",
+  "implementation": "0xB391b1a92AEb6891DbC2f987eb5d117FC62FCc9E",
   "registry": "0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db",
-  "startedAtBlock": 141605181,
-  "version": 20300,
-  "factory": "0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B",
-  "emergencyModule": "0xFc7eE3221d93E06F781B33fbe9a1a7Bbc074d003"
+  "startedAtBlock": 143522461,
+  "token": "0xc58699856ED5c978F7bf47e46650Bdb23d9bB119",
+  "upgradeVault": "0x9248fb523dE74420b56c733fB9FA14917A054FEb",
+  "upgradeVaultTokensBefore": 10000000000000000000,
+  "version": 20400,
+  "councilRegistry": "0x56B66a65300b2344c22191FD27a3C3Dccc958dfC",
+  "council": "0x714889FEae680E012302679130AE880B010b9560",
+  "factory": "0x0d0D4F2590962816Fc9dA07CF55Fa9E645D4DD67"
 }

@@ -57,7 +57,7 @@ Gas money (0.05 tBNB) came from BSC Testnet through BNB Chain's official bridge 
 | EPKVault 2.3.0 implementation | [0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9](https://testnet.opbnbscan.com/address/0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9) |
 | EPKVaultEmergency — the 2.3.0 release's emergency module, deployed by the implementation | [0xF3939aEB10FDa58216d14Cd86de892Bc538Fa9F6](https://testnet.opbnbscan.com/address/0xF3939aEB10FDa58216d14Cd86de892Bc538Fa9F6) |
 | EPKRegistry (5-minute test-network release window) | [0x81Ac99466291D2324bf459c7345F5506D9b90158](https://testnet.opbnbscan.com/address/0x81Ac99466291D2324bf459c7345F5506D9b90158) |
-| EPKVaultFactory for 2.3.0 — the SDK's public factory | [0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4](https://testnet.opbnbscan.com/address/0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4) |
+| EPKVaultFactory for 2.3.0 — this demo's factory (the SDK's public factory until release 2.4.0, [`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)) | [0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4](https://testnet.opbnbscan.com/address/0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4) |
 | EPK Demo USD (eUSD) test token | [0xD0F6C69aD004230b4383B72Dc848701e566BeA7C](https://testnet.opbnbscan.com/address/0xD0F6C69aD004230b4383B72Dc848701e566BeA7C) |
 | Demo vault (customer proxy) | [0x3CaF011091f0dA6eE432d73678a86957057AFa5b](https://testnet.opbnbscan.com/address/0x3CaF011091f0dA6eE432d73678a86957057AFa5b) |
 
@@ -140,6 +140,6 @@ live against the chain.
 
 The guard demo (protected swaps on the real PancakeSwap V2 router, ThreatFeed V2, agent sessions with and
 without a guard) also ran on opBNB Testnet, on its own vault: [`TESTNET_OPBNB_GUARDS.md`](TESTNET_OPBNB_GUARDS.md).
-Not shown on opBNB: the opt-in upgrade of an existing vault ([`TESTNET_RELEASE.md`](TESTNET_RELEASE.md), BSC
-Testnet). A vault can only move to a newer release, and opBNB Testnet started on the latest one, 2.3.0; the upgrade
-will run on both networks with the next release. The code is the same on both networks.
+The opt-in upgrade of an existing vault ran on opBNB Testnet too, with the next release: on 2026-11-18 a vault
+created on 2.3.0 moved to 2.4.0 at the same address with the same funds, through the SDK, about 5 minutes after
+the release was listed ([`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)). The code is the same on both networks.

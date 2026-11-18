@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.3.0_testnet-informational?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-2.4.0_testnet-informational?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/solidity-0.8.24-363636?style=flat-square&logo=solidity" alt="Solidity">
   <img src="https://img.shields.io/badge/network-BSC_Testnet_%7C_opBNB_Testnet-F0B90B?style=flat-square&logo=bnbchain&logoColor=white" alt="Network">
   <img src="https://img.shields.io/badge/license-IBITI_EPK-orange?style=flat-square" alt="License">
@@ -26,7 +26,7 @@
 
 ---
 
-> **Status: EPK 2.3.0 — testnet release on BSC Testnet and opBNB Testnet. Not independently audited, not on any mainnet; do not use it
+> **Status: EPK 2.4.0 — testnet release on BSC Testnet and opBNB Testnet. Not independently audited, not on any mainnet; do not use it
 > with real funds.** TypeScript SDK: [`sdk/`](sdk/) ·
 > [developer guide](docs/INTEGRATION_v2.md)
 
@@ -49,7 +49,7 @@ Watchtower — can cancel. What it does not cover is listed openly [below](#limi
 
 | Component | State |
 |---|---|
-| **EPK v2** — `EPKVault` | **Live on BSC Testnet**: release 2.3.0 since 2026-11-08 — emergency evacuation to the owner's cold wallet, minute-scale timelocks on test networks; the public factory creates vaults on 2.3.0 and existing vaults opt in ([`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md)). Also **live on opBNB Testnet** since 2026-11-14: the same code on a fresh deployment, with the full demo ([`docs/TESTNET_OPBNB.md`](docs/TESTNET_OPBNB.md)). Five internal security reviews; **not yet independently audited, not on mainnet** (the evacuation needs an independent review first). EPK License (source-available). |
+| **EPK v2** — `EPKVault` | **Live on BSC Testnet and opBNB Testnet**: release 2.4.0 since 2026-11-18 — the fast track for urgent security fixes (a security council's second key flags a patch; each vault's owner still decides), on top of 2.3.0's emergency evacuation to the owner's cold wallet and minute-scale timelocks on test networks; the public factories create vaults on 2.4.0 and existing vaults opt in ([`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md)). The full demos run on 2.3.0: BSC Testnet since 2026-11-08, opBNB Testnet since 2026-11-14 on a fresh deployment ([`docs/TESTNET_OPBNB.md`](docs/TESTNET_OPBNB.md)). Five internal security reviews; **not yet independently audited, not on mainnet** (the evacuation needs an independent review first). EPK License (source-available). |
 | **Guard modules** — DexGuard, ThreatFeed V2, CompositeGuard | Built and tested; live on separate demo vaults on BSC Testnet and opBNB Testnet ([docs/GUARDS_v2.md](docs/GUARDS_v2.md)). EPK License. |
 | **TypeScript SDK** — `@ibiti/epk-sdk` | In this repository, testnet only; on npm with the finished release ([docs/INTEGRATION_v2.md](docs/INTEGRATION_v2.md)). EPK License. |
 | **EPK Watchtower** | Automatic guardian, working on BSC Testnet and opBNB Testnet. EPK License. |
@@ -78,9 +78,10 @@ One vault at one address from start to finish
 
 **9 of 9** attack transactions rejected · **0 eUSD** left the vault during the attacks; the only way out in an
 emergency was the owner's own cold wallet.
-Opt-in upgrades are shown live: a vault took release 2.3.0 through the SDK at the same address with the
-same funds, 5 minutes after the release was listed (test networks run 5-minute release and upgrade clocks;
-mainnet keeps 7 days + 2 days) — [`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md).
+Opt-in upgrades are shown live: on both BSC Testnet and opBNB Testnet a vault took release 2.4.0 through the
+SDK at the same address with the same funds, 5 minutes after the release was listed (test networks run 5-minute
+release and upgrade clocks; mainnet keeps 7 days, the vault's 2-day wait running in parallel) —
+[`docs/TESTNET_RELEASE.md`](docs/TESTNET_RELEASE.md).
 
 **The same on opBNB Testnet** (BNB Chain's layer 2, 2026-11-14): the same code and the same demo on a fresh deployment
 ([`0x3CaF0110…7AFa5b`](https://testnet.opbnbscan.com/address/0x3CaF011091f0dA6eE432d73678a86957057AFa5b)) — 9 of 9 attacks
@@ -122,7 +123,7 @@ The report labels how each fact was proven (**STRICT** execution trace, **REPLAY
 - **Tighten instantly, loosen only through a timelock** that guardians can veto.
 - **`panic()`**: one call pauses the vault and invalidates every policy, session and pending change.
 - **Emergency evacuation**: the admin, the recovery key or an optional evacuator moves every tracked asset at once — only to the cold wallet the owner registered in advance, never anywhere else; changing that wallet waits 3× the timelock (≥ 2 days on mainnet) and guardians can veto it ([design](docs/EVACUATION_v2.md)).
-- **Upgrades only by the owner's decision**: registry of reviewed releases (7-day public window on mainnet, 5 minutes on test networks), ≥ 2-day per-vault timelock on mainnet, guardian veto; nobody — including IBITI — can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)). An urgent patch can skip the public window only with a security council's flag; from vault release 2.4.0 each vault still opts in itself and waits its own timelock, at least 1 hour on mainnet ([fast track](docs/FAST_TRACK_v2.md), not deployed yet).
+- **Upgrades only by the owner's decision**: registry of reviewed releases (7-day public window on mainnet, 5 minutes on test networks), ≥ 2-day per-vault timelock on mainnet, guardian veto; nobody — including IBITI — can upgrade a vault for its owner ([architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)). An urgent patch can skip the public window only with a security council's flag; from vault release 2.4.0 each vault still opts in itself and waits its own timelock, at least 1 hour on mainnet ([fast track](docs/FAST_TRACK_v2.md), on BSC Testnet and opBNB Testnet since 2026-11-18).
 
 ### Watchtower — the automatic guardian
 
@@ -169,7 +170,7 @@ justified in [docs/SLITHER_TRIAGE.md](docs/SLITHER_TRIAGE.md).
 - [Upgrade architecture](docs/EPK_V2_UPGRADE_ARCHITECTURE.md)
 - [Internal security review](docs/SECURITY_REVIEW_v2.md) · [Slither triage](docs/SLITHER_TRIAGE.md) · [Fast track for urgent fixes](docs/FAST_TRACK_v2.md)
 - [Developer guide — integrate EPK v2 with the TypeScript SDK](docs/INTEGRATION_v2.md)
-- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_GUARDS.md) · [release 2.3.0](docs/TESTNET_RELEASE.md)
+- [BSC Testnet demo and evidence](docs/TESTNET_V2.md) · [guard demo](docs/TESTNET_GUARDS.md) · [release 2.4.0](docs/TESTNET_RELEASE.md)
 - [opBNB Testnet demo and evidence](docs/TESTNET_OPBNB.md) · [guard demo on opBNB](docs/TESTNET_OPBNB_GUARDS.md)
 - [Guard modules](docs/GUARDS_v2.md)
 - [Roadmap](docs/ROADMAP.md)

@@ -125,8 +125,8 @@ abstract contract GuardDemoPool is Script {
 
 /// @title EPK guard demo on the current EPKVault release (BSC Testnet or opBNB Testnet)
 /// @notice A vault created through the PUBLIC factory of the current release (BSC Testnet: the SDK's
-///         `networks.bscTestnet.epk.factory`, read from deployments/bsc-testnet/epk-release.json; opBNB Testnet:
-///         `networks.opbnbTestnet.epk.factory`, from deployments/opbnb-testnet/epk-v2.json; the registries run the
+///         `networks.bscTestnet.epk.factory` / `networks.opbnbTestnet.epk.factory`, read from
+///         deployments/<network>/epk-release.json; the registries run the
 ///         5-minute public-test-network clocks), guarded by a DexGuard, ThreatFeed V2 and CompositeGuard deployed
 ///         from this repository's code, on the real PancakeSwap V2 router of the network.
 ///         BSC Testnet: prices from the real Chainlink BNB/USD and BUSD/USD feeds; tUSD and its fixed $1 feed
@@ -227,8 +227,8 @@ contract DeployGuardDemo is GuardDemoPool {
     function run() external {
         _onlyGuardNetworks();
         bool opbnb = block.chainid == OPBNB_TESTNET;
-        // the public stack of the current release: BSC Testnet's release record, opBNB Testnet's stack record
-        string memory relPath = EPKDemoNetwork.file(opbnb ? "epk-v2.json" : "epk-release.json");
+        // the public stack of the current release (scripts/v2/ReleaseTestnet.s.sol)
+        string memory relPath = EPKDemoNetwork.file("epk-release.json");
         string memory rel = vm.readFile(relPath);
         EPKVaultFactory factory = EPKVaultFactory(vm.parseJsonAddress(rel, ".factory"));
         address impl = vm.parseJsonAddress(rel, ".implementation");

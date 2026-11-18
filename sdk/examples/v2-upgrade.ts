@@ -1,22 +1,30 @@
 // SDK v2: an opt-in vault upgrade driven entirely from TypeScript — schedule, watch, wait, execute.
-// Runs on BSC Testnet against the fast-upgrade demo vault (test networks: 5-minute delays, same code as
-// mainnet): opts it into the current release (deployments/bsc-testnet/epk-release.json). Needs V21_ADMIN_PRIVATE_KEY
-// in ../.env (the demo vault's admin). SENDS TRANSACTIONS.
-//   npx tsx examples/v2-upgrade.ts
+// Runs on BSC Testnet or opBNB Testnet against the network's upgrade-demo vault (test networks: 5-minute delays,
+// same code as mainnet): opts it into the current release (deployments/<network>/epk-release.json). Needs the
+// demo vault's admin key named there (`adminKey`) in the environment or in ../.env. SENDS TRANSACTIONS.
+//   npx tsx examples/v2-upgrade.ts          (BSC Testnet)
+//   npx tsx examples/v2-upgrade.ts opbnb    (opBNB Testnet)
 import { readFileSync } from "node:fs";
 import { createPublicClient, createWalletClient, http, keccak256, toBytes, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { bscTestnet } from "viem/chains";
+import { bscTestnet, opBNBTestnet } from "viem/chains";
 
 import { EPKUpgrader, watchVault } from "../src/v2/index.js";
 
-const demo = JSON.parse(readFileSync("../deployments/bsc-testnet/epk-release.json", "utf8")) as Record<string, string>;
-const vault = demo.fastVault as Address;
+const opbnb = process.argv[2] === "opbnb";
+const chain = opbnb ? opBNBTestnet : bscTestnet;
+const demo = JSON.parse(
+  readFileSync(`../deployments/${opbnb ? "opbnb" : "bsc"}-testnet/epk-release.json`, "utf8"),
+) as Record<string, string>;
+const vault = demo.upgradeVault as Address;
 const release = demo.implementation as Address;
 const salt = keccak256(toBytes(`EPK SDK v2 upgrade to ${demo.version}`));
-const rpc = process.env.BSC_TESTNET_RPC ?? "https://bsc-testnet-rpc.publicnode.com";
+const rpc = opbnb
+  ? (process.env.OPBNB_TESTNET_RPC ?? "https://opbnb-testnet-rpc.bnbchain.org")
+  : (process.env.BSC_TESTNET_RPC ?? "https://bsc-testnet-rpc.publicnode.com");
 
 function envKey(name: string): Hex {
+  if (process.env[name]) return process.env[name]!.trim() as Hex;
   const line = readFileSync("../.env", "utf8").split(/\r?\n/).find((l) => l.startsWith(name + "="));
   if (!line) throw new Error(`${name} missing in ../.env`);
   return line.slice(name.length + 1).trim() as Hex;
@@ -25,8 +33,8 @@ function envKey(name: string): Hex {
 const t = () => new Date().toISOString().slice(11, 19) + " UTC";
 
 async function main() {
-  const publicClient = createPublicClient({ chain: bscTestnet, transport: http(rpc) });
-  const admin = createWalletClient({ account: privateKeyToAccount(envKey("V21_ADMIN_PRIVATE_KEY")), chain: bscTestnet, transport: http(rpc) });
+  const publicClient = createPublicClient({ chain, transport: http(rpc) });
+  const admin = createWalletClient({ account: privateKeyToAccount(envKey(demo.adminKey)), chain, transport: http(rpc) });
   const upgrader = new EPKUpgrader(vault, publicClient, admin);
   const registry = await upgrader.registry();
   const fromBlock = (await publicClient.getBlockNumber()) - 5n;

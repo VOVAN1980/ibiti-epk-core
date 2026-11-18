@@ -1,0 +1,18 @@
+== opbnb, 2026-11-18T22:01:15Z, RPC https://opbnb-testnet-rpc.bnbchain.org
+release 0xc389da518ee4597417E29d1686cE84d057a85FFD: vaultVersion() = 20400 [2.04e4], code hash 0x73e79221adb0062fd617cc8c4a3f541e7a5044476e9d24081127b8bdec9d2055 (recorded: 0x73e79221adb0062fd617cc8c4a3f541e7a5044476e9d24081127b8bdec9d2055)
+-- registry with a security council 0x4e7A2d483FBd1f831344ef8472DE0eD680E004E5
+council() = 0x714889FEae680E012302679130AE880B010b9560   (recorded: 0x714889FEae680E012302679130AE880B010b9560)
+owner() = 0xA2BD166173925E5b8E640f091b0f3bEcBbBE15f8
+approvalDelay() = 300 s
+isApproved(release) = true, versionOf(release) = 20400 [2.04e4], isUrgent(release) = false
+fastTrack(release) simulated from the owner: reverts NotCouncil()
+fastTrack(release) simulated from a stranger: reverts NotCouncil()
+fastTrack(release) simulated from the council: reverts NotPending(address)   (the genesis release is already active: nothing to rush)
+-- public factory 0xF0e8814072101e942Ab0c399305B406c5DCDF418
+implementation() = 0xc389da518ee4597417E29d1686cE84d057a85FFD, registry() = 0x4e7A2d483FBd1f831344ef8472DE0eD680E004E5
+-- the registry existing vaults use 0x81Ac99466291D2324bf459c7345F5506D9b90158
+isApproved(release) = true, versionOf(release) = 20400 [2.04e4]
+council(): reverts — a registry from before the fast track has no council, so its vaults keep the normal path
+-- upgrade-demo vault 0xbd2ad182A89a16C8c808F0A3369a3fA488663395
+vaultVersion() = 20400 [2.04e4], implementation slot = 0xc389da518ee4597417e29d1686ce84d057a85ffd, registry() = 0x81Ac99466291D2324bf459c7345F5506D9b90158
+test tokens in the vault = 10000000000000000000 [1e19]   (recorded before the upgrade: 10000000000000000000)

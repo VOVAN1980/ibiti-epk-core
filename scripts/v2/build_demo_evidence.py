@@ -46,9 +46,9 @@ def by_selector(txs, sig):
 
 def main():
     core = json.load(open(f"{D}/epk-v2.json"))
-    # BSC Testnet: the release went out to an existing registry (epk-release.json); a new network gets the
-    # whole stack at once (DeployStack.s.sol), so its record holds the release too
-    rel = json.load(open(f"{D}/epk-release.json")) if os.path.exists(f"{D}/epk-release.json") else core
+    # the stack the demo vault was created through (SetupDemoVault.s.sol reads the same record): its release,
+    # emergency module, registry and factory. Later releases (epk-release.json) do not change this demo.
+    rel = core
     vtext = f"{rel['version'] // 10000}.{rel['version'] // 100 % 100}.{rel['version'] % 100}"
     v = json.load(open(f"{D}/epk-v2-vault.json"))
     attacks = json.load(open(f"{D}/epk-v2-attacks.json"))
