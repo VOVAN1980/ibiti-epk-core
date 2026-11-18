@@ -1,0 +1,16 @@
+{
+  "adminKey": "PRIVATE_KEY",
+  "chainId": 5611,
+  "codehash": "0x73e79221adb0062fd617cc8c4a3f541e7a5044476e9d24081127b8bdec9d2055",
+  "emergencyModule": "0x4f9930Ccac8Ad1af8ba317c13013EE57182A8bFb",
+  "implementation": "0xc389da518ee4597417E29d1686cE84d057a85FFD",
+  "registry": "0x81Ac99466291D2324bf459c7345F5506D9b90158",
+  "startedAtBlock": 224917670,
+  "token": "0xD0F6C69aD004230b4383B72Dc848701e566BeA7C",
+  "upgradeVault": "0xbd2ad182A89a16C8c808F0A3369a3fA488663395",
+  "upgradeVaultTokensBefore": 10000000000000000000,
+  "version": 20400,
+  "councilRegistry": "0x4e7A2d483FBd1f831344ef8472DE0eD680E004E5",
+  "council": "0x714889FEae680E012302679130AE880B010b9560",
+  "factory": "0xF0e8814072101e942Ab0c399305B406c5DCDF418"
+}

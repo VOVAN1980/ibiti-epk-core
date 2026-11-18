@@ -51,7 +51,7 @@ Run from the repo root (Foundry loads `.env`; `$BSC_RPC_URL` comes from it).
 | EPKVault 2.3.0 implementation | [0x214c7a5a9B6b25d559ac714050B66A09E050eA32](https://testnet.bscscan.com/address/0x214c7a5a9B6b25d559ac714050B66A09E050eA32) |
 | EPKVaultEmergency — the 2.3.0 release's emergency module, deployed by the implementation | [0xFc7eE3221d93E06F781B33fbe9a1a7Bbc074d003](https://testnet.bscscan.com/address/0xFc7eE3221d93E06F781B33fbe9a1a7Bbc074d003) |
 | EPKRegistry (5-minute test-network release window) | [0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db](https://testnet.bscscan.com/address/0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db) |
-| EPKVaultFactory for 2.3.0 — the SDK's public factory | [0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B](https://testnet.bscscan.com/address/0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B) |
+| EPKVaultFactory for 2.3.0 — this demo's factory (the SDK's public factory until release 2.4.0, [`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)) | [0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B](https://testnet.bscscan.com/address/0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B) |
 | EPK Demo USD (eUSD) test token | [0x84649B8cb58A572a9DA6F00b24D1Dc6412443d8b](https://testnet.bscscan.com/address/0x84649B8cb58A572a9DA6F00b24D1Dc6412443d8b) |
 | Demo vault (customer proxy) | [0x1538f0Cee859c883E12046a6aa52c7CA0f4bD4Db](https://testnet.bscscan.com/address/0x1538f0Cee859c883E12046a6aa52c7CA0f4bD4Db) |
 

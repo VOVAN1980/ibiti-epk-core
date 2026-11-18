@@ -1,8 +1,11 @@
 {
   "chainId": 97,
+  "codehash": "0x39333931f5618d09a33bbe2e5a4efe5af85a3fe33e6467b670654197db3f1845",
   "deployer": "0xA2BD166173925E5b8E640f091b0f3bEcBbBE15f8",
+  "emergencyModule": "0xFc7eE3221d93E06F781B33fbe9a1a7Bbc074d003",
   "factory": "0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B",
   "implementation": "0x214c7a5a9B6b25d559ac714050B66A09E050eA32",
   "registry": "0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db",
-  "token": "0x84649B8cb58A572a9DA6F00b24D1Dc6412443d8b"
+  "token": "0x84649B8cb58A572a9DA6F00b24D1Dc6412443d8b",
+  "version": 20300
 }

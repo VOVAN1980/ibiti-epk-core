@@ -1,0 +1,16 @@
+21:53:03 UTC  vault 0xbd2ad182A89a16C8c808F0A3369a3fA488663395 runs 20300; release window 300 s
+21:53:04 UTC  status: not-scheduled
+21:53:11 UTC  [watch] scheduled upgradeToAndCall — "UPGRADE the vault's code" — ready at 21:58:08 UTC
+21:53:12 UTC  scheduled: tx 0x1f2c940afdd3e4eecfffcd2c548d2d101518b51592dcb1c145699cf86d3854ed, operation 0x1fb685784d363d8d92d24ebd6766e253f7f213413cadbdd13c96357adc0425cd
+21:53:14 UTC  waiting… executable at 21:58:08 UTC
+21:53:47 UTC  waiting… executable at 21:58:08 UTC
+21:54:19 UTC  waiting… executable at 21:58:08 UTC
+21:54:53 UTC  waiting… executable at 21:58:08 UTC
+21:55:28 UTC  waiting… executable at 21:58:08 UTC
+21:56:01 UTC  waiting… executable at 21:58:08 UTC
+21:56:33 UTC  waiting… executable at 21:58:08 UTC
+21:57:08 UTC  waiting… executable at 21:58:08 UTC
+21:57:41 UTC  waiting… executable at 21:58:08 UTC
+21:58:15 UTC  executed: tx 0x412e2cf1ecf6d313066b536321f2947be71c65796fd9f27dfdf5c4a47a6da8de
+21:58:15 UTC  vault 0xbd2ad182A89a16C8c808F0A3369a3fA488663395 now runs 20400
+21:58:18 UTC  [watch] Upgraded -> 0xc389da518ee4597417E29d1686cE84d057a85FFD

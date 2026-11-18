@@ -15,6 +15,7 @@ Each run is complete in the git commit named here (documents, evidence, traces, 
 | Release 2.2.0 (the fifth review's vault fixes), opt-in upgrade through the SDK | 2026-11-08 | [`20b7e94`](https://github.com/VOVAN1980/ibiti-epk-core/tree/20b7e94b22c5dcb8fb958025772d38b485510f80) — `docs/TESTNET_V22.md` |
 | Demo on EPKVault 2.2.0: agent payment, attacks, panic, recovery, Watchtower | 2026-11-08 | [`d99008c`](https://github.com/VOVAN1980/ibiti-epk-core/tree/d99008c33c8a44632c2779f832db85e6b5599371) — `docs/TESTNET_V2.md` |
 | Guard demo on EPKVault 2.2.0 | 2026-11-08 | [`dfe6d0e`](https://github.com/VOVAN1980/ibiti-epk-core/tree/dfe6d0e0dbf4e803016f76d897e3e776576a33c8) — `docs/TESTNET_V22_GUARDS.md` |
+| Release 2.3.0 (emergency evacuation) on BSC Testnet: opt-in upgrade through the SDK, public factory and SDK quickstart on 2.3.0 | 2026-11-08 | [`70b0c9c`](https://github.com/VOVAN1980/ibiti-epk-core/tree/70b0c9c90b9647406c9eb70075b40dc0153af2c6) — `docs/TESTNET_RELEASE.md` |
 
 ## Archived from `master` on 2026-11-10
 

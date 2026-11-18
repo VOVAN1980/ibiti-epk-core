@@ -1,0 +1,4 @@
+OK  EPKVault release 0xc389da518ee4597417E29d1686cE84d057a85FFD: 24475 bytes, equals out/EPKVault.sol/EPKVault.json (immutables masked)
+OK  its emergency module 0x4f9930Ccac8Ad1af8ba317c13013EE57182A8bFb: 3726 bytes, equals out/EPKVault.sol/EPKVaultEmergency.json (immutables masked)
+OK  registry with a security council 0x4e7A2d483FBd1f831344ef8472DE0eD680E004E5: 2953 bytes, equals out/EPKRegistry.sol/EPKRegistry.json (immutables masked)
+OK  public factory 0xF0e8814072101e942Ab0c399305B406c5DCDF418: 2331 bytes, equals out/EPKVaultFactory.sol/EPKVaultFactory.json (immutables masked)

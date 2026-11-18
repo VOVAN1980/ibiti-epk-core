@@ -74,6 +74,8 @@ contract EPKRegistry is IEPKRegistry {
     /// @param genesisImplementation the first implementation, listed immediately (nobody uses the
     ///        registry before it exists, so there is nothing to protect with a delay yet).
     /// @param council_ the security council allowed to fast-track patch releases; address(0) = none.
+    // slither-disable-start missing-zero-check
+    // missing-zero-check: council_ = 0 is a valid setting (no council, no fast track).
     constructor(address owner_, address genesisImplementation, address council_) {
         if (owner_ == address(0)) revert ZeroAddress();
         council = council_;
@@ -81,6 +83,7 @@ contract EPKRegistry is IEPKRegistry {
         emit OwnershipTransferred(address(0), owner_);
         _list(genesisImplementation, uint64(block.timestamp), true);
     }
+    // slither-disable-end missing-zero-check
 
     function proposeRelease(address implementation) external onlyOwner {
         _list(implementation, uint64(block.timestamp + approvalDelay()), false);

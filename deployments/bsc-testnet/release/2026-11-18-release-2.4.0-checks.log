@@ -1,0 +1,19 @@
+== bsc, 2026-11-18T22:01:49Z, RPC https://data-seed-prebsc-1-s1.bnbchain.org:8545
+release 0xB391b1a92AEb6891DbC2f987eb5d117FC62FCc9E: vaultVersion() = 20400 [2.04e4], code hash 0xc82618b36d15383b0d3bd892d1ce69912657cca43cac8f29a51d0ab0da13cde0 (recorded: 0xc82618b36d15383b0d3bd892d1ce69912657cca43cac8f29a51d0ab0da13cde0)
+-- registry with a security council 0x56B66a65300b2344c22191FD27a3C3Dccc958dfC
+council() = 0x714889FEae680E012302679130AE880B010b9560   (recorded: 0x714889FEae680E012302679130AE880B010b9560)
+owner() = 0x8502C5cFdaF6Dbad23995a68735534d813672A71
+approvalDelay() = 300 s
+isApproved(release) = true, versionOf(release) = 20400 [2.04e4], isUrgent(release) = false
+fastTrack(release) simulated from the owner: reverts NotCouncil()
+fastTrack(release) simulated from a stranger: reverts NotCouncil()
+fastTrack(release) simulated from the council: reverts NotPending(address)   (the genesis release is already active: nothing to rush)
+-- public factory 0x0d0D4F2590962816Fc9dA07CF55Fa9E645D4DD67
+implementation() = 0xB391b1a92AEb6891DbC2f987eb5d117FC62FCc9E, registry() = 0x56B66a65300b2344c22191FD27a3C3Dccc958dfC
+-- the registry existing vaults use 0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db
+isApproved(release) = true, versionOf(release) = 20400 [2.04e4]
+council(): reverts — a registry from before the fast track has no council, so its vaults keep the normal path
+-- upgrade-demo vault 0x9248fb523dE74420b56c733fB9FA14917A054FEb
+vaultVersion() = 20400 [2.04e4], implementation slot = 0xb391b1a92aeb6891dbc2f987eb5d117fc62fcc9e, registry() = 0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db
+test tokens in the vault = 10000000000000000000 [1e19]   (recorded before the upgrade: 10000000000000000000)
+quickstart vault 0xF11eEa9130db938cEF0753C460283756854ee369: vaultVersion() = 20400 [2.04e4], registry() = 0x56B66a65300b2344c22191FD27a3C3Dccc958dfC
