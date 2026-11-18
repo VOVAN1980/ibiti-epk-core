@@ -102,6 +102,19 @@ else console.log(explainEpkError(findRevertData(check.raw)!)); // e.g. "LimitExc
 
 `availableToSpend(token)` shows what is left in the current window.
 
+**Large payments need the co-signer.** If a batch moves more of an asset than its `coSignAbove` (set with
+`setAsset`), the vault also wants the independent co-signer's approval (`setCoSigner`). The co-signer runs on
+its own machine with its own key, gets the whole batch, checks it with its own rules and only then signs:
+
+```ts
+const message = { policyId: botPolicy, agent: BOT, calls, nonce: signed.nonce, deadline: signed.deadline };
+// on the co-signer's machine — refuses unless coSignerWallet is this vault's co-signer, on the vault's chain
+const { coSignature } = await vaultOnCoSigner.coSignBatch({ message, signer: coSignerWallet });
+await vaultAsBot.execute({ policyId: botPolicy, calls, deadline: signed.deadline, signature: signed.signature, coSignature });
+```
+
+`coSignDigest` / `coSignTypedData` give the same approval offline (e.g. for a hardware wallet or a contract co-signer).
+
 ## 5. AI-agent sessions
 
 ```ts
