@@ -116,6 +116,21 @@ h3 { font-size: 21px; line-height: 1.25; font-weight: 700; }
 .btn-small { padding: 10px 16px; font-size: 14px; border-radius: 11px; }
 .btn svg { width: 18px; height: 18px; }
 
+/* ---------- contact card (opens from every mail link) ---------- */
+.contact-card { width: min(440px, calc(100vw - 32px)); padding: 0; border-radius: var(--radius); border: 1px solid var(--line-strong); background: rgba(12, 12, 18, 0.97); color: var(--text); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(59, 130, 246, 0.14); }
+.contact-card::backdrop { background: rgba(2, 2, 4, 0.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.contact-card .cc-in { position: relative; padding: 26px; }
+.contact-card h3 { margin: 0; padding-right: 40px; font: 700 22px/1.2 var(--font-display); }
+.contact-card .cc-sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+.contact-card .cc-mail { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 8px 8px 8px 16px; border-radius: 14px; border: 1px solid var(--line-strong); background: rgba(255, 255, 255, 0.04); }
+.contact-card .cc-addr { flex: 1; min-width: 0; font: 500 15px/1.3 var(--font-mono); overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
+.contact-card .cc-copy { flex: none; }
+.contact-card .cc-hint { margin: 12px 0 0; color: var(--dim); font-size: 13px; line-height: 1.5; }
+.contact-card .cc-label { margin: 20px 0 8px; color: var(--dim); font: 600 11px/1 var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.contact-card .cc-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.contact-card .cc-row .btn { flex: 1 1 0; min-width: 110px; }
+.contact-card .cc-close { position: absolute; top: 14px; right: 14px; border: 0; cursor: pointer; font-size: 15px; }
+
 /* ---------- hero ---------- */
 .hero { padding: 150px 0 70px; text-align: center; }
 .badge {

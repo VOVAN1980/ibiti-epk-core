@@ -210,4 +210,77 @@
       .catch(function () { /* evidence unreachable: the static numbers in the HTML stay */ });
   };
   EPK.liveStats();
+
+  // ---------- contact: a mail link opens a small card (address + copy, Gmail, mail app, Telegram)
+  // instead of asking the computer for a mail program it may not have. Without this script the
+  // plain mailto: link still works. ----------
+  var TELEGRAM = "https://t.me/IBITILabs_official";
+  var contact = null;
+  var parseMail = function (href) {
+    var rest = href.slice(7), q = rest.indexOf("?"), out = { to: decodeURIComponent(q < 0 ? rest : rest.slice(0, q)), subject: "", body: "" };
+    if (q >= 0) rest.slice(q + 1).split("&").forEach(function (pair) {
+      var i = pair.indexOf("="), key = (i < 0 ? pair : pair.slice(0, i)).toLowerCase();
+      if (key === "subject" || key === "body") out[key] = decodeURIComponent(i < 0 ? "" : pair.slice(i + 1));
+    });
+    return out;
+  };
+  var copyText = function (text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (ok, fail) {
+      var t = document.createElement("textarea");
+      t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.appendChild(t); t.select();
+      var done = false;
+      try { done = document.execCommand("copy"); } catch (e) { /* not allowed */ }
+      document.body.removeChild(t);
+      if (done) { ok(); } else { fail(); }
+    });
+  };
+  var openContact = function (href) {
+    var mail = parseMail(href), enc = encodeURIComponent;
+    if (!contact) {
+      contact = document.createElement("dialog");
+      contact.className = "contact-card";
+      contact.setAttribute("aria-labelledby", "cc-title");
+      contact.innerHTML =
+        '<div class="cc-in">' +
+        '<button type="button" class="icon-btn cc-close" aria-label="Close">&#x2715;</button>' +
+        '<h3 id="cc-title">Write to us</h3><p class="cc-sub"></p>' +
+        '<div class="cc-mail"><span class="cc-addr"></span><button type="button" class="btn btn-primary btn-small cc-copy">Copy</button></div>' +
+        '<p class="cc-hint"></p>' +
+        '<p class="cc-label">Open in</p>' +
+        '<div class="cc-row"><a class="btn btn-ghost btn-small cc-gmail" target="_blank" rel="noopener">Gmail</a>' +
+        '<a class="btn btn-ghost btn-small cc-app">Mail app</a>' +
+        '<a class="btn btn-ghost btn-small" href="' + TELEGRAM + '" target="_blank" rel="noopener">Telegram</a></div>' +
+        '</div>';
+      document.body.appendChild(contact);
+      contact.querySelector(".cc-close").addEventListener("click", function () { contact.close(); });
+      // a click outside the card lands on the dialog itself (the card is its only child)
+      contact.addEventListener("click", function (e) { if (e.target === contact) contact.close(); });
+      contact.querySelector(".cc-copy").addEventListener("click", function () {
+        var b = this;
+        copyText(contact.querySelector(".cc-addr").textContent).then(
+          function () { b.textContent = "Copied ✓"; },
+          function () { b.textContent = "Select and copy"; });
+      });
+    }
+    var hint = mail.body.split(/\r?\n/).map(function (s) { return s.replace(/:\s*$/, "").trim(); }).filter(Boolean);
+    contact.querySelector(".cc-sub").textContent = mail.subject || "";
+    contact.querySelector(".cc-sub").hidden = !mail.subject;
+    contact.querySelector(".cc-addr").textContent = mail.to;
+    contact.querySelector(".cc-copy").textContent = "Copy";
+    contact.querySelector(".cc-hint").textContent = hint.length ? "Please include: " + hint.join(" · ") : "";
+    contact.querySelector(".cc-hint").hidden = !hint.length;
+    contact.querySelector(".cc-gmail").href = "https://mail.google.com/mail/?view=cm&fs=1&to=" + enc(mail.to) +
+      (mail.subject ? "&su=" + enc(mail.subject) : "") + (mail.body ? "&body=" + enc(mail.body) : "");
+    contact.querySelector(".cc-app").href = href;
+    contact.showModal();
+  };
+  document.addEventListener("click", function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest ? e.target.closest('a[href^="mailto:"]') : null;
+    if (!a || !window.HTMLDialogElement || (contact && contact.contains(a))) return;
+    e.preventDefault();
+    openContact(a.getAttribute("href"));
+  });
 })();
