@@ -137,8 +137,11 @@ numbers shift and inline suppressions stop matching. Keep the working copy of `c
 | Detector | Where | Handling |
 |---|---|---|
 | `assembly` | `EPKVault.scheduleUpgrade` | Suppressed: one read-only `staticcall` to the vault's own registry (`isUrgent`), scratch space only (memory-safe); a failed call or an answer shorter than 32 bytes counts as "not urgent". Written in assembly because `try/catch` cost about 100 bytes more and EPKVault must keep 100 bytes under EIP-170 (`test_vaultKeepsAtLeast100BytesUnderEIP170`; behaviour in `test/v2/EPKRegistry.fastTrack.t.sol`) |
+| `missing-zero-check` | `EPKRegistry` constructor (`council`) | Suppressed: `council = address(0)` is a valid setting — no council, no fast track (`test_noCouncilNoFastTrack`) |
 
-Slither has not been re-run on this change yet; it must be before the audit freeze.
+GitHub's code-scanning run of Slither on PR VOVAN1980/ibiti-epk-core#28 reported exactly one new result, the
+`missing-zero-check` above; the assembly suppression held. The local run with the settings in §3 is still due
+before the audit freeze.
 
 ## 3. How to reproduce
 
