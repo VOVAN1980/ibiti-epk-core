@@ -237,6 +237,9 @@ contract EPKVaultReentrancyTest is Test {
         EPKVault v = _vault(bytes32("fz"), address(0), address(0), target);
         vm.assume(target != address(v));
 
+        // the fuzzer may pick an address that already holds ether (e.g. Foundry's default sender),
+        // so check that nothing ARRIVED, not that the balance is zero
+        uint256 balanceBefore = target.balance;
         EPKVault.Call[] memory calls = new EPKVault.Call[](1);
         calls[0] = EPKVault.Call(target, value, "");
         uint256 deadline = _now() + 1 hours;
@@ -244,7 +247,7 @@ contract EPKVaultReentrancyTest is Test {
         vm.prank(agent);
         vm.expectRevert(abi.encodeWithSelector(EPKVault.DestinationNotAllowed.selector, target));
         v.execute(pid, calls, deadline, sig, "");
-        assertEq(target.balance, 0);
+        assertEq(target.balance, balanceBefore);
     }
 
     function test_nativeToDestinationWorksAndIsLimited() public {

@@ -39,7 +39,7 @@ allowed destination — could be swept by anyone, so DexGuard refuses any token 
 
 | Contract | Address |
 |---|---|
-| EPKVault 2.3.0 implementation (the current public release) | [0x214c7a5a9B6b25d559ac714050B66A09E050eA32](https://testnet.bscscan.com/address/0x214c7a5a9B6b25d559ac714050B66A09E050eA32) |
+| EPKVault 2.3.0 implementation (this demo's release; the current release is 2.4.0, [`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)) | [0x214c7a5a9B6b25d559ac714050B66A09E050eA32](https://testnet.bscscan.com/address/0x214c7a5a9B6b25d559ac714050B66A09E050eA32) |
 | EPKRegistry of the public stack (5-minute test-network release window) | [0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db](https://testnet.bscscan.com/address/0xe6475FF06BDb17b828B8411Ca12F5a657daCD9db) |
 | EPKVaultFactory for 2.3.0 — this demo's factory (the SDK's public factory until release 2.4.0, [`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)) | [0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B](https://testnet.bscscan.com/address/0xbBCeFb781E1A9A21593C4E22a28B6AA2C2bc817B) |
 | EPKVault 2.3.0 guard demo vault (proxy) | [0x3Bdd9c884B168bbFa41C181328548a5e42180FD3](https://testnet.bscscan.com/address/0x3Bdd9c884B168bbFa41C181328548a5e42180FD3) |

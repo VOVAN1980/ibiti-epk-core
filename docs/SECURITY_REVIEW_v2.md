@@ -152,36 +152,44 @@ forge test --match-path "test/v2/*"
 FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --match-path "test/v2/*" --report summary
 ```
 
-Results on 2026-11-06:
+Results on 2026-11-19 (the code frozen for the audit at tag `v2.4.0-testnet`):
 
-- EPK v2: **120 / 120 tests passing** (2026-11-06).
+- All contracts: **232 tests — 229 pass, 3 skipped** (the DexGuard fork tests, which need a BSC Testnet RPC).
+- Vault core: 62 unit and fuzz tests (`test/v2/EPKVault.t.sol`); fuzz tests at 257 runs each, including `testFuzz_compromisedOperatorCannotDrain` (operator signer, agent and co-signer all compromised).
 - Agent sessions: 24 unit tests + 3 stateful invariants with a compromised session manager and compromised session keys (`test/v2/EPKVault.sessions.t.sol`).
-- Static analysis: Slither reports **0** results on `contracts/v2/` — every original finding fixed or justified with proof tests, see [SLITHER_TRIAGE.md](SLITHER_TRIAGE.md); reentrancy and native-transfer proofs in `test/v2/EPKVault.reentrancy.t.sol`.
-- v2 unit + fuzz: 55 passing; fuzz tests at 257 runs each, including `testFuzz_compromisedOperatorCannotDrain` (operator signer, agent and co-signer all compromised).
-- v2 upgrade mechanism: 27 unit/fuzz + 2 stateful invariants (`test/v2/EPKVault.upgrade.t.sol`), see [EPK_V2_UPGRADE_ARCHITECTURE.md §10](EPK_V2_UPGRADE_ARCHITECTURE.md#10-test-evidence).
-- v2 stateful invariants: 4 passing, 64 runs × depth 60 (3 840 attacker actions each), with a check that the attacker achieved successful executions in every run:
+- Upgrade mechanism: 27 unit/fuzz + 2 stateful invariants + 1 cross-release upgrade test (`test/v2/EPKVault.upgrade.t.sol`), see [EPK_V2_UPGRADE_ARCHITECTURE.md §10](EPK_V2_UPGRADE_ARCHITECTURE.md#10-test-evidence).
+- Emergency evacuation: 22 tests — attacks E1–E11 and the size guard (`test/v2/EPKVault.evacuation.t.sol`).
+- Fast track for urgent patches: 17 tests (`test/v2/EPKRegistry.fastTrack.t.sol`).
+- Reentrancy and native transfers: 5 tests (`test/v2/EPKVault.reentrancy.t.sol`); test vs production clocks: 7 tests (`test/v2/EPKChains.t.sol`).
+- Guard modules: DexGuard 11 unit + 22 with a vault + 7 from the fifth review + 3 stateful invariants (+3 fork tests, skipped without an RPC); ThreatFeedGuard and CompositeGuard 12.
+- v2 stateful invariants of the vault: 4 passing, 64 runs × depth 60 (3 840 attacker actions each), with a check that the attacker achieved successful executions in every run:
   - `invariant_outflowNeverExceedsTheLimit`
   - `invariant_noAllowanceSurvives`
   - `invariant_attackerGetsNothing`
   - `invariant_onlyAllowlistedDestinationsReceive`
+- Static analysis: Slither 0.11.6 reports 27 results on `contracts/v2/`, all in the emergency module and the vault's `fallback` that reaches it, each explained in [SLITHER_TRIAGE.md §2e](SLITHER_TRIAGE.md); every earlier finding is fixed or justified with proof tests. Reentrancy and native-transfer proofs are in `test/v2/EPKVault.reentrancy.t.sol`.
 - Coverage (v2 tests, `--ir-minimum`): see section 5.
 
 ## 5. Coverage
 
-`FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --match-path "test/v2/*" --report summary`:
+`FOUNDRY_PROFILE=coverage forge coverage --ir-minimum --match-path "test/v2/*" --no-match-test test_vaultKeepsAtLeast100BytesUnderEIP170 --report summary`, on 2026-11-19 (the size guard is left out: the coverage profile builds without the optimizer, so the vault is far over the EIP-170 limit there by design):
 
 | File | Lines | Statements | Branches | Functions |
 |---|---|---|---|---|
-| `contracts/v2/EPKVault.sol` | 97.09% (501/516) | 94.48% (684/724) | 82.86% (116/140) | 100% (95/95) |
-| `contracts/v2/EPKRegistry.sol` | 100% (46/46) | 94.44% (51/54) | 75.00% (9/12) | 100% (9/9) |
+| `contracts/v2/EPKVault.sol` (with the emergency module) | 95.48% (570/597) | 93.90% (800/852) | 82.93% (136/164) | 100% (104/104) |
+| `contracts/v2/EPKRegistry.sol` | 100% (61/61) | 97.47% (77/79) | 88.24% (15/17) | 100% (11/11) |
 | `contracts/v2/EPKVaultFactory.sol` | 100% (17/17) | 95.00% (19/20) | 50.00% (1/2) | 100% (5/5) |
+| `contracts/v2/EPKChains.sol` | 100% (5/5) | 100% (7/7) | — (0/0) | 100% (1/1) |
+| `contracts/v2/guards/DexGuard.sol` | 97.17% (206/212) | 96.92% (315/325) | 85.07% (57/67) | 100% (28/28) |
+| `contracts/v2/guards/ThreatFeedGuard.sol` | 97.26% (71/73) | 89.22% (91/102) | 45.00% (9/20) | 87.50% (14/16) |
+| `contracts/v2/guards/CompositeGuard.sol` | 93.75% (30/32) | 95.56% (43/45) | 87.50% (7/8) | 100% (8/8) |
 
 With via-IR + `--ir-minimum`, Foundry's source maps under-report some branches ; the uncovered remainder is mostly defensive `revert` paths (e.g. zero-address and malformed-calldata checks).
 
 ## 6. Before mainnet
 
-1. Independent audit by a professional firm (scope: this document's contracts, the guard modules, the Watchtower and the SDK signing code).
+1. Independent audit by a professional firm. Scope: the contracts frozen for it on 2026-11-19 at tag [`v2.4.0-testnet`](https://github.com/VOVAN1980/ibiti-epk-core/releases/tag/v2.4.0-testnet) — the vault with its emergency module, the registry with the fast track, the factory and the guard modules. The Watchtower, the SDK and the scripts are not in this scope.
 2. Public testnet deployment (done 2026-11-07) and a bug bounty.
 3. Monitoring bot as a guardian — built (the Watchtower); run at least two, always on, on separate hosts.
-3a. Done 2026-11-08: the fixes A5-3 and A5-4 (§1e) are in every vault release since 2.2.0. The current release, 2.3.0 (emergency evacuation, [`EVACUATION_v2.md`](EVACUATION_v2.md)), is on BSC Testnet — the public factory creates vaults on it and the 5-minute demo vault opted in ([`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)). The guard demo runs on a 2.3.0 vault with the fixed guards — 12 attacks rejected on-chain ([`TESTNET_GUARDS.md`](TESTNET_GUARDS.md)). The evacuation is new code and needs the independent review of step 1 before any mainnet.
+3a. Done 2026-11-08: the fixes A5-3 and A5-4 (§1e) are in every vault release since 2.2.0. The current release is 2.4.0 (the fast track for urgent patches, [`FAST_TRACK_v2.md`](FAST_TRACK_v2.md), on top of 2.3.0's emergency evacuation, [`EVACUATION_v2.md`](EVACUATION_v2.md)): on BSC Testnet and opBNB Testnet since 2026-11-18, and the public factories create vaults on it ([`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)). The demo vaults stay on 2.3.0, exactly as their evidence records them; the guard demo runs with the fixed guards — 12 attacks rejected on-chain ([`TESTNET_GUARDS.md`](TESTNET_GUARDS.md)). The evacuation and the fast track are the newest code and need the independent review of step 1 before any mainnet.
 4. Integration validators for every generic call that will be allowlisted (DEX, lending, bridges).

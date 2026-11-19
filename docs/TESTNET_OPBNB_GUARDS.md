@@ -50,7 +50,7 @@ what the guards do not cover.
 
 | Contract | Address |
 |---|---|
-| EPKVault 2.3.0 implementation (the current public release) | [0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9](https://testnet.opbnbscan.com/address/0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9) |
+| EPKVault 2.3.0 implementation (this demo's release; the current release is 2.4.0, [`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)) | [0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9](https://testnet.opbnbscan.com/address/0x73a79604Bc39b1f6B57Cc68159EE3fc041Ac7Dd9) |
 | EPKRegistry of the public stack (5-minute test-network release window) | [0x81Ac99466291D2324bf459c7345F5506D9b90158](https://testnet.opbnbscan.com/address/0x81Ac99466291D2324bf459c7345F5506D9b90158) |
 | EPKVaultFactory for 2.3.0 — this demo's factory (the SDK's public factory until release 2.4.0, [`TESTNET_RELEASE.md`](TESTNET_RELEASE.md)) | [0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4](https://testnet.opbnbscan.com/address/0x67516e2Bb516D5cAa20408bE622fBAb57d31DEE4) |
 | EPKVault 2.3.0 guard demo vault (proxy) | [0x9390c190E3E1d900C7B7EbA197f8c6AF89B9949E](https://testnet.opbnbscan.com/address/0x9390c190E3E1d900C7B7EbA197f8c6AF89B9949E) |
