@@ -90,7 +90,7 @@ job. If the extra role costs too much code size (§6), fall back to A, not B.
 
 ## 6. Engineering constraint: code size
 
-`EPKVault` 2.3.0 is **24,145 bytes**; the EIP-170 limit is 24,576. **431 bytes** remain. Evacuation needs new
+Before evacuation, `EPKVault` was **24,145 bytes**; the EIP-170 limit is 24,576. **431 bytes** remain. Evacuation needs new
 storage, two functions, a loop over the tracked assets and two events — plausibly 400–700 bytes.
 
 **Measured (2026-11-08):** with evacuation inside the vault, `EPKVault` is 25,587 bytes — 1,011 over the
